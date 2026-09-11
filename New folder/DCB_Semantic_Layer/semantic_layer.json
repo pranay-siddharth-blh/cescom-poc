@@ -1,0 +1,128 @@
+{
+  "_purpose": "Structured schema/business-logic module for an NL2SQL prompt (mirrors bescom-ai's schema_combined.py pattern, per HANDOFF.md section 6). See semantic_layer.md for the human-readable version of the same facts, and example_queries.sql for verified worked SQL.",
+  "database": "DCB_Star_Schema/dcb_star_schema.sqlite",
+
+  "glossary": {
+    "DCB": "Demand-Collection-Balance -- the periodic financial-position report: for every tariff category in every sub-division, how many customers, what was billed (Demand), what was paid (Collection), what's still owed (Balance).",
+    "LT": "Low Tension -- low-voltage connections: households, small shops, small pump sets.",
+    "HT": "High Tension -- high-voltage bulk connections: factories, large irrigation schemes, apartment complexes.",
+    "DC/MNR": "Dead Connections / Non-Recovery status -- installations that exist on paper but aren't actively billed/collectable.",
+    "FAC": "Fuel Adjustment Charge -- a pass-through surcharge tied to fuel cost fluctuations.",
+    "ARR": "Average Revenue Realized -- revenue per unit of energy actually realized (revised_arr column).",
+    "OB": "Opening Balance -- amount owed carried in from the prior period.",
+    "CB": "Closing Balance -- OB + Demand - Collection for the period; becomes next period's OB.",
+    "P&G Surcharge": "A tariff component that only exists from fiscal_year 2025-26 onward. NULL in all earlier years is correct, not missing data.",
+    "Sub Total / LT-TOTAL / HT-TOTAL / GRAND TOTAL": "The source report's own printed running subtotals. Stored in fact_dcb_rollups, never in fact_dcb."
+  },
+
+  "tariff_code_glossary": {
+    "LT-1": "Domestic lighting -- subsidized Bhagyajyothi/Kutirajyothi schemes, usage-slab tiered.",
+    "LT-2": "Lighting & motive power, institutions/municipal premises (BMA, Urban Local Bodies, Village Panchayat, private institutions).",
+    "LT-3": "Commercial lighting & motive power, plus permanent hoarding/advertisement connections.",
+    "LT-4": "Irrigation Pump (IP) Sets -- agricultural pumps, split by HP band and metered/unmetered.",
+    "LT-5": "Heating & Motive Power, larger LT loads, tiered by HP band.",
+    "LT-6": "Public utilities -- Public Lighting, municipal Water Supply pumping, EV charging.",
+    "LT-7": "Temporary Supply -- short-term/prepaid-meter connections.",
+    "61.xxxx / 62.xxxx": "Miscellaneous revenue codes -- fees, penalties, rentals, surcharges. Not consumption billing.",
+    "HT-1": "Bulk Water Supply & Sewerage Pumping.",
+    "HT-2": "Industrial and commercial HT consumers.",
+    "HT-3": "Lift Irrigation schemes, govt & private.",
+    "HT-4": "Residential apartment complexes, HT-connected.",
+    "HT-5": "Temporary Supply, HT-scale (67 HP+).",
+    "HT-6": "Large-scale irrigation/agriculture/horticulture, HT-connected.",
+    "HT-7": "Lift Irrigation, government department schemes.",
+    "HT IPP / LT IPP / AUXILIARY CONSUMPTION": "Special accounting categories, near-zero installation counts. Not regular billed consumer categories -- treat with caution."
+  },
+
+  "tables": {
+    "dim_fiscal_year": {
+      "grain": "one row per fiscal year",
+      "key_columns": {
+        "fiscal_year": "PK, string like '2015-16' -- always sort/filter as text",
+        "start_year": "integer, e.g. 2015 -- use this for year arithmetic, not fiscal_year"
+      }
+    },
+    "dim_subdivision": {
+      "grain": "one row per organizational unit",
+      "key_columns": {
+        "subdivision_id": "PK",
+        "subdivision_name": "e.g. 'Holenarasipura', 'Division_Total'",
+        "subdivision_type": "'division' (whole-division rollup, i.e. Division_Total) | 'sub_division' | 'section' (Konanur) | 'office' (Division_Office, administrative, no consumers)"
+      },
+      "notes": "Saligrama only exists FY2015-16 to 2017-18 (closed, not a gap). Division_Office only exists FY2020-21 to 2023-24 (real, all-zero installations)."
+    },
+    "dim_tariff_category": {
+      "grain": "one row per distinct (tariff_code, description) pair ever billed",
+      "key_columns": {
+        "tariff_category_id": "PK",
+        "tariff_code": "e.g. 'LT-1', 'HT-2(a)(ii)' -- repeats across multiple rows (different usage-slab descriptions); GROUP BY tariff_code for a tariff-class-level question",
+        "description": "the usage-slab / customer-type text distinguishing rows with the same tariff_code"
+      }
+    },
+    "fact_dcb": {
+      "grain": "one row per (fiscal_year, subdivision_id, tariff_category_id)",
+      "safe_to_sum": true,
+      "key_columns": {
+        "source_row_count": "how many raw source rows were combined into this one -- if >1, percentage/ratio columns on this row are NULL (see non_additive_columns)",
+        "tariff_category_forward_filled": "'yes' if this row's tariff code was inferred (source didn't reprint it) rather than printed directly"
+      },
+      "column_groups": {
+        "installations": ["total_installations", "live_installations", "billed_installations", "dc_installations", "mnr_installations", "dc_mnr_installations (pre-2018-19 combined form)"],
+        "load_and_consumption": ["connected_load_kw", "connected_load_hp", "connected_load_kva", "consumption_metered", "consumption_assessed", "consumption_wheeled", "consumption_total"],
+        "opening_balance": ["ob_revenue", "ob_interest", "ob_tax", "ob_fac", "ob_pg_surcharge (2025-26+ only)", "opening_balance_total"],
+        "demand": ["demand_fixed_charges", "demand_others", "demand_energy_charges", "demand_fac_standalone", "demand_pg_surcharge_standalone (2025-26+ only)", "demand_revenue_subtotal", "demand_interest", "demand_tax", "demand_fac", "demand_pg_surcharge (2025-26+ only)", "demand_total"],
+        "collection": ["collection_revenue_chq_cash", "collection_revenue_adjust", "collection_revenue_total", "collection_interest_*", "collection_tax_*", "collection_fac_*", "collection_pg_surcharge_* (2025-26+ only)", "collection_grand_total"],
+        "opening_balance_plus_demand": ["ob_plus_demand_revenue", "ob_plus_demand_interest", "ob_plus_demand_tax", "ob_plus_demand_fac", "ob_plus_demand_pg_surcharge", "ob_plus_demand_total"],
+        "closing_balance": ["closing_balance_revenue", "closing_balance_interest", "closing_balance_tax", "closing_balance_fac", "closing_balance_pg_surcharge", "closing_balance_total"],
+        "non_additive_ratios": ["pct_live_installations", "pct_billed_installations", "pct_dc_mnr", "pct_metered_consumption", "pct_assessed_consumption", "pct_collection_efficiency_with_adj", "pct_collection_efficiency_without_adj", "pct_recovery_of_avg_cost", "ratio_arrears_to_demand", "demand_per_unit", "demand_per_unit_only", "collection_per_unit_with_adj", "collection_per_unit_without_adj", "consumption_per_installation"]
+      }
+    },
+    "fact_dcb_rollups": {
+      "grain": "one row per (fiscal_year, subdivision_id, rollup_type) -- the report's own printed subtotal/total rows",
+      "safe_to_sum": false,
+      "note": "Has the same numeric columns as fact_dcb but no tariff_category_id (a rollup spans multiple categories by definition)",
+      "key_columns": {
+        "rollup_type": "'sub_total' | 'lt_total' | 'ht_total' | 'lt_ht_total' (LT+HT, excludes Misc.) | 'misc_total' | 'grand_total' (= lt_ht_total + misc_total, the true official total)",
+        "tariff_code_summarized": "for rollup_type='sub_total' only: which tariff_code it subtotals, as free text (not an FK)",
+        "sl_no_text": "the original printed label, e.g. 'GRAND TOTAL (LT+HT+Misc.)'"
+      }
+    },
+    "reconciliation_report": {
+      "grain": "QA table: one row per (fiscal_year, subdivision_id, metric)",
+      "purpose": "fact_dcb summed vs. the block's own printed grand_total. All 292 checks currently show 0.0% deviation."
+    }
+  },
+
+  "views": {
+    "fact_dcb_subdivisions": "fact_dcb filtered to subdivision_type IN ('sub_division','section') -- use this, not raw fact_dcb, when summing across sub-divisions (excludes Division_Total and Division_Office).",
+    "fact_dcb_grand_totals": "fact_dcb_rollups filtered to rollup_type='grand_total' -- the report's own official headline figure per (year, subdivision)."
+  },
+
+  "joins": [
+    "fact_dcb.fiscal_year = dim_fiscal_year.fiscal_year",
+    "fact_dcb.subdivision_id = dim_subdivision.subdivision_id",
+    "fact_dcb.tariff_category_id = dim_tariff_category.tariff_category_id",
+    "fact_dcb_rollups.fiscal_year = dim_fiscal_year.fiscal_year",
+    "fact_dcb_rollups.subdivision_id = dim_subdivision.subdivision_id"
+  ],
+
+  "rules": [
+    "Never SUM() fact_dcb and fact_dcb_rollups together -- fact_dcb_rollups holds the report's own subtotals, mixing them double-counts.",
+    "Want a computed total? SUM() over fact_dcb. Want the report's own official/printed figure? Read the matching fact_dcb_rollups row (or fact_dcb_grand_totals view) directly, don't recompute.",
+    "To total the whole Division: filter dim_subdivision.subdivision_type = 'division' (the Division_Total row) OR SUM() the fact_dcb_subdivisions view -- never both, and never include Division_Office (it's administrative, not geographic).",
+    "fiscal_year is a string ('2015-16') -- sort/filter as text, or join dim_fiscal_year.start_year for integer year arithmetic.",
+    "Percentage/ratio/per-unit columns (see non_additive_ratios) cannot be summed or averaged across rows meaningfully -- recompute from the underlying totals (e.g. collection_grand_total / demand_total) instead of aggregating the stored ratio column.",
+    "Saligrama only exists FY2015-16 to 2017-18; Division_Office only exists FY2020-21 to 2023-24 -- absence outside those ranges is correct, not a bug.",
+    "tariff_code repeats across multiple dim_tariff_category rows (different usage-slab descriptions) -- GROUP BY tariff_code for a tariff-class-level question, by tariff_category_id/description for a slab-level question.",
+    "demand_revenue_subtotal = demand_fixed_charges + demand_others + demand_energy_charges holds on ~99% of rows (per the source sheet's own header formula), EXCEPT the Misc. revenue tariff codes (61.xxxx / 62.xxxx, e.g. '61.9047' Service Connections, '61.9067' Other Receipts) -- those are flat fees, not consumption-based tariffs, so the source correctly puts the full amount directly in demand_revenue_subtotal with Fixed/Others/Energy all zero. This is correct source data, not an extraction bug -- do not 'fix' or flag these rows; exclude tariff_code LIKE '6_.%' from any automated check of this formula, and allow a small rounding tolerance (a ~1-unit-on-2-million mismatch can occur on an otherwise normal row from ordinary source-side rounding)."
+  ],
+
+  "common_metrics": {
+    "collection_efficiency_pct": "SUM(collection_grand_total) * 100.0 / SUM(demand_total)",
+    "outstanding_arrears": "SUM(closing_balance_total)",
+    "domestic_demand": "SUM(demand_total) WHERE tariff_code LIKE 'LT-1%'",
+    "industrial_demand": "SUM(demand_total) WHERE tariff_code LIKE 'HT-2%'",
+    "low_tension_total": "SUM(demand_total) WHERE tariff_code LIKE 'LT%'",
+    "high_tension_total": "SUM(demand_total) WHERE tariff_code LIKE 'HT%'"
+  }
+}

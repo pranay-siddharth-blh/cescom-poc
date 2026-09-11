@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCB Star Schema</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+
+  :root{
+    --paper:#EEF2EF;
+    --ink:#16211C;
+    --ink-soft:#46564C;
+    --line:#7C8C81;
+    --accent:#C97A2E;
+    --accent-soft:#E4B27A;
+    --fact-fill:#DCE6DE;
+    --dim-fill:#F1E4CE;
+    --qa-fill:#E7E0EA;
+    --surface:#FFFFFF;
+    --border:#C7D0C9;
+  }
+
+  *{box-sizing:border-box;}
+  html, body{ background:var(--paper); }
+  body{
+    color:var(--ink);
+    font-family:"IBM Plex Sans", "Segoe UI", sans-serif;
+    padding-inline:20px;
+    padding-block:24px 40px;
+    max-width:1100px;
+    margin-inline:auto;
+  }
+  code, .mono{ font-family:"IBM Plex Mono","SFMono-Regular",Consolas,monospace; }
+
+  header{ margin-bottom:26px; }
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:32px;
+    line-height:1.1;
+    margin:0 0 14px;
+  }
+  header p{
+    font-size:15px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:72ch;
+    margin:0 0 18px;
+  }
+  .stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .stats li{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:7px 12px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .stats li b{
+    font-family:"IBM Plex Mono",monospace;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .stats li.hero{ border-color:var(--accent); color:var(--ink); }
+  .stats li.hero b{ color:var(--accent); }
+
+  figure{ margin:0 0 16px; break-inside:avoid; page-break-inside:avoid; }
+  .diagram-frame{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+  }
+  svg{ display:block; width:100%; height:auto; }
+  figcaption{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    line-height:1.5;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 30px;
+    padding:10px 16px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    background:var(--surface);
+    break-inside:avoid;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .legend svg{ width:34px; height:12px; flex:none; }
+
+  h2{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:19px;
+    margin:0 0 6px;
+  }
+  .section-note{
+    font-size:13px;
+    color:var(--ink-soft);
+    max-width:78ch;
+    margin:0 0 18px;
+    line-height:1.55;
+  }
+
+  /* CSS multi-column, not grid: grid rows force a full page break in Chrome's
+     print engine whenever a row doesn't fit, wasting the rest of that page.
+     Columns reflow content across pages like text does. */
+  /* Plain block flow, not grid/flex/multicol: those all fragment unreliably
+     across print pages in Chrome (a row or the whole container jumps to the
+     next page instead of packing tightly). Stacked blocks paginate cleanly. */
+  .groups-intro{ page-break-before:always; }
+  .groups{ margin-bottom:20px; }
+  .group-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 16px;
+    break-inside:avoid;
+    margin-bottom:10px;
+  }
+  .group-card ul{ row-gap:5px; }
+  .group-card h3{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:13.5px;
+    margin:0 0 4px;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    color:var(--ink);
+  }
+  .group-card h3 em{
+    font-style:normal;
+    color:var(--accent);
+    font-weight:600;
+  }
+  .group-card p{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+    line-height:1.5;
+  }
+  .group-card ul{
+    list-style:none;
+    padding:0;
+    margin:0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+  .group-card li{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:10px;
+    color:var(--ink-soft);
+    background:var(--paper);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 6px;
+    white-space:nowrap;
+  }
+
+  footer{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--border);
+    padding-top:14px;
+    line-height:1.6;
+    column-span:all;
+    margin-top:8px;
+  }
+  footer code{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">dcb-ai-app &middot; data model</p>
+  <h1>DCB Star Schema</h1>
+  <p>Holenarasipura Division's Demand&ndash;Collection&ndash;Balance report, modeled as a star schema in <code>dcb_star_schema.sqlite</code>. Two fact tables share three dimensions &mdash; one dimension, <code>dim_tariff_category</code>, only ever joins to <code>fact_dcb</code>, since a rollup row spans more than one tariff category by definition.</p>
+  <ul class="stats">
+    <li><b>11</b>&nbsp;fiscal years</li>
+    <li><b>8</b>&nbsp;sub-divisions</li>
+    <li><b>139</b>&nbsp;tariff categories</li>
+    <li><b>5,488</b>&nbsp;fact_dcb rows</li>
+    <li><b>2,232</b>&nbsp;rollup rows</li>
+    <li class="hero"><b>0.0%</b>&nbsp;reconciliation deviation</li>
+  </ul>
+</header>
+
+<figure>
+  <div class="diagram-frame">
+    <svg viewBox="0 0 1220 650" role="img" aria-label="Star schema diagram: dim_fiscal_year, dim_subdivision and dim_tariff_category connect to the central fact_dcb table; fact_dcb_rollups shares dim_fiscal_year and dim_subdivision but not dim_tariff_category; both fact tables are checked against reconciliation_report; two views, fact_dcb_subdivisions and fact_dcb_grand_totals, derive from fact_dcb and fact_dcb_rollups respectively.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <g stroke="currentColor" fill="none" opacity="0.55">
+        <line x1="150" y1="140" x2="430" y2="200" marker-end="url(#arrow)"/>
+        <line x1="270" y1="105" x2="780" y2="255" marker-end="url(#arrow)"/>
+        <line x1="950" y1="160" x2="660" y2="215" marker-end="url(#arrow)"/>
+        <line x1="1015" y1="160" x2="920" y2="220" marker-end="url(#arrow)"/>
+        <line x1="270" y1="500" x2="380" y2="460" marker-end="url(#arrow)"/>
+      </g>
+
+      <line x1="660" y1="330" x2="780" y2="320" stroke="currentColor" stroke-dasharray="2 5" opacity="0.55"/>
+
+      <g stroke="var(--accent)" fill="none" stroke-dasharray="1 5" stroke-linecap="round">
+        <line x1="660" y1="460" x2="660" y2="500"/>
+        <line x1="780" y1="442" x2="740" y2="500"/>
+      </g>
+
+      <g stroke="currentColor" fill="none" stroke-dasharray="4 4" opacity="0.6">
+        <line x1="500" y1="460" x2="500" y2="470"/>
+        <line x1="900" y1="442" x2="900" y2="462"/>
+      </g>
+
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity="0.75">
+        <text x="250" y="150">fiscal_year</text>
+        <text x="470" y="165">fiscal_year</text>
+        <text x="800" y="185">subdivision_id</text>
+        <text x="985" y="200">subdivision_id</text>
+        <text x="255" y="470">tariff_category_id</text>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--accent)">
+        <text x="668" y="480">compares</text>
+      </g>
+
+      <g>
+        <rect x="30" y="30" width="240" height="110" rx="9" fill="var(--dim-fill)" stroke="var(--line)"/>
+        <text x="48" y="55" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="currentColor">dim_fiscal_year</text>
+        <text x="48" y="72" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="currentColor" opacity="0.65">11 rows</text>
+        <text x="48" y="93" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">fiscal_year &nbsp;TEXT &middot; PK</text>
+        <text x="48" y="110" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.8">start_year, end_year &nbsp;INT</text>
+        <text x="48" y="128" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">e.g. '2015-16' &rarr; 2015, 2016</text>
+      </g>
+
+      <g>
+        <rect x="950" y="30" width="240" height="130" rx="9" fill="var(--dim-fill)" stroke="var(--line)"/>
+        <text x="968" y="55" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="currentColor">dim_subdivision</text>
+        <text x="968" y="72" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="currentColor" opacity="0.65">8 rows</text>
+        <text x="968" y="93" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">subdivision_id &nbsp;INT &middot; PK</text>
+        <text x="968" y="110" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.8">subdivision_name, _type</text>
+        <text x="968" y="130" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">division&middot;1  sub_division&middot;5</text>
+        <text x="968" y="145" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">section&middot;1  office&middot;1</text>
+      </g>
+
+      <g>
+        <rect x="30" y="500" width="240" height="110" rx="9" fill="var(--dim-fill)" stroke="var(--line)"/>
+        <text x="48" y="525" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="currentColor">dim_tariff_category</text>
+        <text x="48" y="542" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="currentColor" opacity="0.65">139 rows</text>
+        <text x="48" y="563" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">tariff_category_id &middot; PK</text>
+        <text x="48" y="580" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.8">tariff_code, description</text>
+        <text x="48" y="598" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">e.g. 'LT-1', 'HT-2(a)(ii)'</text>
+      </g>
+
+      <g>
+        <rect x="360" y="200" width="300" height="260" rx="10" fill="var(--fact-fill)" stroke="var(--accent)" stroke-width="1.6"/>
+        <text x="380" y="228" font-family="IBM Plex Mono, monospace" font-size="17" font-weight="700" fill="currentColor">fact_dcb</text>
+        <text x="380" y="246" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor" opacity="0.65">5,488 rows &middot; grain: year &times; sub-division &times; tariff slab</text>
+        <line x1="380" y1="256" x2="640" y2="256" stroke="currentColor" opacity="0.25"/>
+        <text x="380" y="276" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">fact_id &nbsp;INT &middot; PK</text>
+        <text x="380" y="293" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.85">fiscal_year, subdivision_id,</text>
+        <text x="380" y="308" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.85">tariff_category_id &nbsp;&middot;&middot;&middot; FK</text>
+        <text x="380" y="326" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">+ source_row_count, forward-filled flag</text>
+        <line x1="380" y1="338" x2="640" y2="338" stroke="currentColor" opacity="0.25"/>
+        <text x="380" y="357" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="currentColor" opacity="0.75">77 measure columns in 9 groups &darr;</text>
+
+        <g font-family="IBM Plex Mono, monospace" font-size="10" fill="currentColor">
+          <rect x="380" y="368" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="424" y="384" text-anchor="middle">install.</text>
+          <rect x="474" y="368" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="518" y="384" text-anchor="middle">load/cons.</text>
+          <rect x="568" y="368" width="72" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="604" y="384" text-anchor="middle">OB</text>
+          <rect x="380" y="398" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="424" y="414" text-anchor="middle">demand</text>
+          <rect x="474" y="398" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="518" y="414" text-anchor="middle">collection</text>
+          <rect x="568" y="398" width="72" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="604" y="414" text-anchor="middle">OB+dem.</text>
+          <rect x="380" y="428" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="424" y="444" text-anchor="middle">closing bal.</text>
+          <rect x="474" y="428" width="88" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="518" y="444" text-anchor="middle">ratios/%</text>
+          <rect x="568" y="428" width="72" height="24" rx="5" fill="var(--paper)" stroke="var(--border)"/>
+          <text x="604" y="444" text-anchor="middle">other</text>
+        </g>
+      </g>
+
+      <g>
+        <rect x="780" y="220" width="260" height="222" rx="10" fill="var(--fact-fill)" stroke="var(--line)" stroke-width="1.3"/>
+        <text x="798" y="248" font-family="IBM Plex Mono, monospace" font-size="17" font-weight="700" fill="currentColor">fact_dcb_rollups</text>
+        <text x="798" y="266" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor" opacity="0.65">2,232 rows</text>
+        <line x1="798" y1="276" x2="1020" y2="276" stroke="currentColor" opacity="0.25"/>
+        <text x="798" y="295" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">rollup_id &nbsp;INT &middot; PK</text>
+        <text x="798" y="312" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.85">fiscal_year, subdivision_id &middot; FK</text>
+        <text x="798" y="329" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.85">rollup_type, sl_no_text,</text>
+        <text x="798" y="344" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" opacity="0.85">tariff_code_summarized</text>
+        <text x="798" y="365" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--accent)">&larr; same 77 measures as fact_dcb</text>
+        <text x="798" y="383" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">no tariff_category_id: a rollup</text>
+        <text x="798" y="397" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">spans multiple tariff categories</text>
+        <text x="798" y="418" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">rollup_type: 6 kinds, sub_total</text>
+        <text x="798" y="432" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.6">through grand_total</text>
+      </g>
+
+      <g>
+        <rect x="380" y="470" width="240" height="28" rx="14" fill="none" stroke="currentColor" stroke-dasharray="3 4" opacity="0.7"/>
+        <text x="500" y="488" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">VIEW fact_dcb_subdivisions</text>
+      </g>
+
+      <g>
+        <rect x="790" y="462" width="240" height="28" rx="14" fill="none" stroke="currentColor" stroke-dasharray="3 4" opacity="0.7"/>
+        <text x="910" y="480" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor">VIEW fact_dcb_grand_totals</text>
+      </g>
+
+      <g>
+        <rect x="470" y="500" width="300" height="110" rx="10" fill="var(--qa-fill)" stroke="var(--accent)" stroke-dasharray="2 3"/>
+        <text x="488" y="526" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="currentColor">reconciliation_report</text>
+        <text x="488" y="544" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="currentColor" opacity="0.65">292 rows &middot; QA, not part of the star</text>
+        <text x="488" y="567" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="currentColor" opacity="0.85">fact_dcb (summed) vs. fact_dcb_rollups</text>
+        <text x="488" y="583" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="currentColor" opacity="0.85">grand_total, per metric per block</text>
+        <text x="488" y="602" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="var(--accent)">0.0% max deviation, all 292 checks</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>Solid arrows are foreign keys (many fact rows &rarr; one dimension row). The dotted copper lines show <code>reconciliation_report</code> comparing the two fact tables, not a join. Dashed pills are views, derived from the table they point into.</figcaption>
+</figure>
+
+<div class="legend">
+  <span><svg viewBox="0 0 34 12"><line x1="1" y1="6" x2="24" y2="6" stroke="currentColor"/><polygon points="24,2 32,6 24,10" fill="currentColor"/></svg> foreign key (many &rarr; one)</span>
+  <span><svg viewBox="0 0 34 12"><line x1="1" y1="6" x2="30" y2="6" stroke="currentColor" stroke-dasharray="4 4"/></svg> view, derived from</span>
+  <span><svg viewBox="0 0 34 12"><line x1="1" y1="6" x2="30" y2="6" stroke="var(--accent)" stroke-dasharray="1 5" stroke-linecap="round"/></svg> QA comparison, not a join</span>
+</div>
+
+<div class="groups-intro">
+  <h2>The 77 measure columns, grouped</h2>
+  <p class="section-note">Both fact tables carry the identical set of 77 numeric columns &mdash; the DCB arithmetic chain (Opening Balance &rarr; Demand &rarr; Collection &rarr; Closing Balance), each broken into Revenue / Interest / Tax / FAC sub-components, plus a P&amp;G Surcharge component that only exists from fiscal year 2025-26 onward.</p>
+</div>
+
+<div class="groups">
+  <div class="group-card">
+    <h3>Installations <em>6</em></h3>
+    <p>Customer counts, including dead/non-recoverable connections.</p>
+    <ul>
+      <li>total_installations</li><li>live_installations</li><li>billed_installations</li>
+      <li>dc_installations</li><li>mnr_installations</li><li>dc_mnr_installations</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Load &amp; consumption <em>7</em></h3>
+    <p>Connected load and energy consumed.</p>
+    <ul>
+      <li>connected_load_kw</li><li>connected_load_hp</li><li>connected_load_kva</li>
+      <li>consumption_metered</li><li>consumption_assessed</li><li>consumption_wheeled</li>
+      <li>consumption_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Opening balance <em>6</em></h3>
+    <p>Amount owed carried in from the prior period.</p>
+    <ul>
+      <li>ob_revenue</li><li>ob_interest</li><li>ob_tax</li><li>ob_fac</li>
+      <li>ob_pg_surcharge</li><li>opening_balance_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Demand <em>11</em></h3>
+    <p>What was billed this period.</p>
+    <ul>
+      <li>demand_fixed_charges</li><li>demand_others</li><li>demand_energy_charges</li>
+      <li>demand_fac_standalone</li><li>demand_pg_surcharge_standalone</li>
+      <li>demand_revenue_subtotal</li><li>demand_interest</li><li>demand_tax</li>
+      <li>demand_fac</li><li>demand_pg_surcharge</li><li>demand_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Collection <em>16</em></h3>
+    <p>What was actually paid, by component and by payment channel.</p>
+    <ul>
+      <li>collection_revenue_chq_cash</li><li>collection_revenue_adjust</li><li>collection_revenue_total</li>
+      <li>collection_interest_chq_cash</li><li>collection_interest_adjust</li><li>collection_interest_total</li>
+      <li>collection_tax_chq_cash</li><li>collection_tax_adjust</li><li>collection_tax_total</li>
+      <li>collection_fac_chq_cash</li><li>collection_fac_adjust</li><li>collection_fac_total</li>
+      <li>collection_pg_surcharge_chq_cash</li><li>collection_pg_surcharge_adjust</li>
+      <li>collection_pg_surcharge_total</li><li>collection_grand_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Opening balance + demand <em>6</em></h3>
+    <p>The pre-collection total each period starts from.</p>
+    <ul>
+      <li>ob_plus_demand_revenue</li><li>ob_plus_demand_interest</li><li>ob_plus_demand_tax</li>
+      <li>ob_plus_demand_fac</li><li>ob_plus_demand_pg_surcharge</li><li>ob_plus_demand_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Closing balance <em>6</em></h3>
+    <p>= Opening Balance + Demand &minus; Collection. Becomes next period's opening balance.</p>
+    <ul>
+      <li>closing_balance_revenue</li><li>closing_balance_interest</li><li>closing_balance_tax</li>
+      <li>closing_balance_fac</li><li>closing_balance_pg_surcharge</li><li>closing_balance_total</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Ratios &amp; per-unit <em>14</em></h3>
+    <p>Not additive &mdash; NULL when a fact_dcb row combines more than one source row.</p>
+    <ul>
+      <li>pct_live_installations</li><li>pct_billed_installations</li><li>pct_dc_mnr</li>
+      <li>pct_metered_consumption</li><li>pct_assessed_consumption</li>
+      <li>pct_collection_efficiency_with_adj</li><li>pct_collection_efficiency_without_adj</li>
+      <li>pct_recovery_of_avg_cost</li><li>ratio_arrears_to_demand</li>
+      <li>demand_per_unit</li><li>demand_per_unit_only</li>
+      <li>collection_per_unit_with_adj</li><li>collection_per_unit_without_adj</li>
+      <li>consumption_per_installation</li>
+    </ul>
+  </div>
+  <div class="group-card">
+    <h3>Other <em>5</em></h3>
+    <p>Regulatory and diagnostic figures.</p>
+    <ul>
+      <li>revised_arr</li><li>security_deposit_held</li><li>approved_avg_cost_of_supply</li>
+      <li>diff_billed_vs_live</li><li>diff_live_vs_total</li>
+    </ul>
+  </div>
+
+  <footer>
+    Generated from <code>DCB_Star_Schema/dcb_star_schema.sqlite</code> (schema DDL in <code>schema.sql</code> in the same folder). Query rules and the tariff-code glossary are in <code>DCB_Semantic_Layer/semantic_layer.md</code>. Full pipeline: raw <code>.xlsx</code> &rarr; <code>DCB_Segregated_By_SubDivision/</code> &rarr; <code>DCB_Staging_DB/</code> &rarr; <code>DCB_Star_Schema/</code> &rarr; <code>DCB_Semantic_Layer/</code> &mdash; see <code>HANDOFF.md</code>.
+  </footer>
+</div>
+
+</body>
+</html>
