@@ -17,6 +17,7 @@ attributable to a stage, not just a total):
 """
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -55,16 +56,34 @@ def _format_value(value) -> str:
     return str(value)
 
 
+_FORMAT_SPEC_RE = re.compile(r"(\{[a-zA-Z_][a-zA-Z0-9_]*)(:[^}]*)(\})")
+
+
+def _strip_format_specs(template: str) -> str:
+    """Drop any Python format spec (e.g. '{pct:.2f}' -> '{pct}') the LLM put
+    in a placeholder. _format_value() below already turns every DB value
+    into a display-ready string (with its own comma/decimal formatting), so
+    a template-supplied numeric format spec (':.2f', ':,' etc.) would be
+    applied to a str, not the original number, and str.format() raises
+    ValueError for that ("Unknown format code 'f' for object of type
+    'str'") -- a real crash caught during the first live-LLM eval run of
+    this project (see CLAUDE.md). Stripping the spec up front makes every
+    template safe to fill regardless of what formatting the LLM attempted."""
+    return _FORMAT_SPEC_RE.sub(r"\1\3", template)
+
+
 def _fill_template(template: str, columns: list[str], rows: list[tuple], entities: dict) -> str:
     if not rows:
         return "No matching data was found for that question."
+
+    template = _strip_format_specs(template)
 
     if len(rows) == 1:
         row_dict = {col: _format_value(val) for col, val in zip(columns, rows[0])}
         fill_values = {**entities, **row_dict}
         try:
             return template.format(**fill_values)
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, ValueError):
             pass  # fall through to the generic renderer below
 
     # Multiple rows, or the template didn't match the single row's

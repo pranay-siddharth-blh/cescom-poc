@@ -165,29 +165,149 @@ proven correct without a real API key:
   false` and `answer: "Sorry, the generated query didn't pass the
   read-only safety check."` — the unsafe SQL never reached the DB layer.
 
-### 3d. What has NOT been run yet: the real 10-question eval
+### 3d. Live smoke test + full 10-question eval — real results
 
-**`tests/eval_queries.py` (the real Gemini-call eval over the 10
-`example_queries.sql` questions + 2 adversarial ones) has not been run
-in this session — there is no `GEMINI_API_KEY` in this environment.**
-The user explicitly chose "build now, test later" when asked. Everything
-in §3a–3c is real evidence that the plumbing around the LLM call is
-correct; it is **not** evidence that Gemini actually generates correct
-SQL for these 10 questions, and no latency baseline exists yet for the
-one stage (`llm_ms`) that will dominate real end-to-end latency.
+Once the user filled in `.env` (project root) with a real `GEMINI_API_KEY`
+and `GEMINI_MODEL=gemini-3.5-flash-lite`, confirmed present via
+`len(settings.gemini_api_key) == 53` (never printed the key itself):
 
-**Before this project is considered done**, run:
-```bash
-cp .env.example .env   # from this folder (project root) -- fill in real GEMINI_API_KEY / GEMINI_MODEL
-cd dcb-ai-app
-python -m tests.eval_queries
-```
-(`.env` lives at the project root, sibling to `dcb-ai-app/`, matching the
-sibling BLH-BESCOM project's one-`.env`-at-root convention — see
-`app/config.py`.)
-and update this section with the real, verbatim SQL/answer/timing output
-it produces (it writes `tests/eval_report.md` — paste or link that here,
-don't hand-summarize it).
+**Smoke test** — a minimal direct call (`client.models.generate_content`,
+no JSON schema, just `contents='Reply with exactly the single word: PONG'`):
+`SMOKE TEST: PASS`, model replied `'PONG'`.
+
+**Full eval, run 1 — 3 real bugs found and fixed live** (this eval is
+what caught them, so this project now has the same "found and fixed
+during real testing" track record as the data pipeline's own §4):
+
+1. **Crash: `ValueError: Unknown format code 'f' for object of type 'str'`
+   in `_fill_template`**, on question 7. `_format_value()` pre-converts
+   every DB value to a display-ready *string* (with its own comma/decimal
+   formatting); the LLM's `answer_template` for Q7 included a Python
+   format spec like `{pct:.2f}`, and applying a numeric format code to an
+   already-stringified value raises. **Fix:** `app/pipeline.py` now
+   strips any `:spec` inside a `{placeholder:spec}` token before calling
+   `.format()` (`_strip_format_specs`), and the fallback `except` clause
+   also catches `ValueError`, not just `KeyError`/`IndexError`.
+2. **Wrong refusal on question 5** ("Compare LT-1 vs HT-2 demand").
+   `extract_entities()` only captured a single `tariff_code` (first match,
+   then `break`), and the prompt told the LLM to treat pre-extracted
+   entities as authoritative — so the model concluded it couldn't handle
+   a second tariff code not in that list and returned `answerable: false`
+   with a confused refusal message. **Fix:** the router now collects
+   *all* matching tariff codes (`entities["tariff_codes"]` when there are
+   2+, `entities["tariff_code"]` unchanged when there's exactly 1), and
+   `app/prompts.py`'s entity-block wording was softened from "reuse these
+   exact values... do not re-derive" to explicitly say the list is a
+   convenience, not exhaustive, and the model should read any other named
+   entities directly from the question.
+3. **Silent wrong-answer on question 8** (DC/MNR installations by
+   sub-division, 2024-25): came back `answerable: true` but every row was
+   `NULL`/`N/A`. Root cause: **`DCB_Semantic_Layer/example_queries.sql`'s
+   10 worked SQL patterns were never actually loaded into the prompt at
+   all**, despite `semantic_layer.json`'s own `_purpose` field and
+   `HANDOFF.md` §6 saying that's exactly what they're for — a real gap in
+   design point #7 ("grounding rules enforced"), not just an LLM mistake.
+   Without that worked example, the LLM summed only the pre-2018-19
+   `dc_mnr_installations` column and never applied the `COALESCE`
+   pattern needed for 2018-19-onward's split `dc_installations`/
+   `mnr_installations` columns — so it silently queried the wrong side of
+   a source-layout switch and got `NULL` for every 2024-25 row without
+   any error. **Fix:** `app/prompts.py::load_example_queries()` now loads
+   `example_queries.sql` (unpruned — only ~4KB) into every prompt.
+4. **Placeholder leakage into SQL on question 10**, found in a later
+   re-run: the LLM generated `SELECT ... WHERE s.subdivision_name =
+   '{subdivision_name}' AND f.fiscal_year = '{fiscal_year}'` — literal,
+   unresolved `{...}` tokens *inside the SQL string itself*, conflating
+   the `sql` field's "bake in literal values" contract with the separate
+   `answer_template` placeholder mechanism. SQLite has no `{}` syntax, so
+   this matched nothing and returned a single all-`NULL` row instead of
+   an error — another silent-wrong-answer failure mode, not a crash.
+   **Fix, two layers:** `app/prompts.py`'s `SYSTEM_INSTRUCTIONS` now
+   explicitly states `sql` and `answer_template` use different
+   substitution mechanisms and forbids `{...}` tokens in `sql`; and
+   `app/sql_safety.py::validate_readonly_sql` now rejects any SQL
+   containing an unresolved `\{[a-zA-Z_]\w*\}` token as unsafe *before*
+   execution, so even if a future prompt tweak fails to prevent this, the
+   app refuses to silently run a query that can't actually match anything
+   rather than returning a misleadingly clean-looking `NULL` result.
+
+**Final clean re-run (after all 4 fixes) — the real, verbatim result for
+all 10 example questions + 2 adversarial ones:**
+
+#### Q1. What was the collection efficiency in Arkalgud in 2024-25?
+- SQL: `SELECT ROUND(SUM(f.collection_grand_total) * 100.0 / SUM(f.demand_total), 2) AS collection_efficiency_pct FROM fact_dcb f JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE s.subdivision_name = 'Arkalgud' AND f.fiscal_year = '2024-25'`
+- Result: `[(93.62,)]` — matches `example_queries.sql`'s own documented `93.62%` exactly.
+- Answer: *"The collection efficiency in Arkalgud in 2024-25 was 93.62%."*
+- Timing: `{router_ms: 0.0, llm_ms: 1531.0, safety_ms: 0.0, db_ms: 0.0, fill_ms: 0.0}`, total **1531 ms**.
+
+#### Q2. What's the year-over-year growth in total installations for the whole division?
+- SQL: `SELECT r.fiscal_year AS fiscal_year, r.total_installations AS total_installations, r.total_installations - LAG(r.total_installations) OVER (ORDER BY d.start_year) AS yoy_change FROM fact_dcb_grand_totals r JOIN dim_subdivision s ON r.subdivision_id = s.subdivision_id JOIN dim_fiscal_year d ON r.fiscal_year = d.fiscal_year WHERE s.subdivision_name = 'Division_Total' ORDER BY d.start_year`
+- Result (11 rows, e.g.): `('2015-16', 159149.0, None)`, `('2016-17', 166060.0, 6911.0)`, ... `('2025-26', 183794.0, 1901.0)`.
+- Answer (multi-row fallback, per the documented limitation below — first 10 of 11 shown): *"Results: (showing 10 of 11 rows) 1. fiscal_year=2015-16, total_installations=159,149, yoy_change=N/A ... 10. fiscal_year=2024-25, total_installations=181,893, yoy_change=5,844"*
+- Timing: total **1172 ms**.
+
+#### Q3. Which tariff category generated the most demand in 2023-24?
+- SQL: `SELECT t.tariff_code AS tariff_code, t.description AS description, SUM(f.demand_total) AS total_demand FROM fact_dcb f JOIN dim_tariff_category t ON f.tariff_category_id = t.tariff_category_id JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE f.fiscal_year = '2023-24' AND s.subdivision_name = 'Division_Total' GROUP BY t.tariff_code, t.description ORDER BY total_demand DESC LIMIT 1`
+- Result: `[('LT-4(a)', 'IP Sets - <=10Hp, Rural Feeder (Un-Metered)', 1687837231.91)]` — matches `example_queries.sql`'s documented "LT-4(a) tops the list."
+- Answer: *"In fiscal year 2023-24, the tariff category that generated the most demand was LT-4(a) (IP Sets - <=10Hp, Rural Feeder (Un-Metered)) with a total demand of 1,687,837,231.91."*
+- Timing: total **1390 ms**.
+
+#### Q4. How much outstanding balance (arrears) does Konanur currently carry?
+- SQL: `SELECT f.fiscal_year AS fiscal_year, SUM(f.closing_balance_total) AS outstanding_balance FROM fact_dcb f JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE s.subdivision_name = 'Konanur' GROUP BY f.fiscal_year ORDER BY f.fiscal_year DESC LIMIT 1`
+- Result: `[('2025-26', 30717819.028217457)]`
+- Answer: *"For fiscal year 2025-26, Konanur currently carries an outstanding balance (arrears) of 30,717,819.03."*
+- Timing: total **1188 ms**.
+
+#### Q5. Compare domestic (LT-1) vs industrial (HT-2) demand across all years.
+- SQL: `SELECT f.fiscal_year AS fiscal_year, SUM(CASE WHEN t.tariff_code LIKE 'LT-1%' THEN f.demand_total ELSE 0 END) AS domestic_lt1_demand, SUM(CASE WHEN t.tariff_code LIKE 'HT-2%' THEN f.demand_total ELSE 0 END) AS industrial_ht2_demand FROM fact_dcb f JOIN dim_tariff_category t ON f.tariff_category_id = t.tariff_category_id JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE s.subdivision_name = 'Division_Total' GROUP BY f.fiscal_year ORDER BY f.fiscal_year`
+- Result (11 rows, e.g.): `('2015-16', 37954648.5142, 23399034.7482)` ... `('2025-26', 542708386.6741, 141349133.1922)`.
+- Answer (multi-row fallback, first 10 of 11 shown): *"Results: (showing 10 of 11 rows) 1. fiscal_year=2015-16, domestic_lt1_demand=37,954,648.51, industrial_ht2_demand=23,399,034.75 ... 10. fiscal_year=2024-25, domestic_lt1_demand=473,913,919.16, industrial_ht2_demand=144,256,241.73"*
+- Timing: total **2203 ms** (this run's slowest — see latency summary).
+
+#### Q6. What's the official printed GRAND TOTAL demand for 2025-26?
+- SQL: `SELECT r.demand_total AS demand_total, r.collection_grand_total AS collection_grand_total FROM fact_dcb_grand_totals r JOIN dim_subdivision s ON r.subdivision_id = s.subdivision_id WHERE r.fiscal_year = '2025-26' AND s.subdivision_name = 'Division_Total'`
+- Result: `[(3541649882.7938004, 3300093200.7644)]`
+- Answer: *"The official printed GRAND TOTAL demand for fiscal year 2025-26 is 3,541,649,882.79 (with a collection grand total of 3,300,093,200.76)."*
+- Timing: total **1344 ms**.
+
+#### Q7. Which sub-division has the best collection efficiency in the most recent year?
+- SQL: `SELECT s.subdivision_name AS subdivision_name, ROUND(SUM(f.collection_grand_total) * 100.0 / SUM(f.demand_total), 2) AS collection_efficiency_pct FROM fact_dcb f JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE f.fiscal_year = (SELECT MAX(fiscal_year) FROM fact_dcb) AND s.subdivision_type IN ('sub_division', 'section') GROUP BY s.subdivision_name ORDER BY collection_efficiency_pct DESC LIMIT 1`
+- Result: `[('Konanur', 97.46)]` — matches `example_queries.sql`'s documented "Konanur leads at 97.46% (2025-26)" exactly.
+- Answer: *"The sub-division with the best collection efficiency in the most recent year is Konanur with a collection efficiency of 97.46%."*
+- Timing: total **1219 ms**.
+
+#### Q8. How many installations are dead or non-recoverable (DC/MNR) by sub-division, for 2024-25?
+- SQL: `SELECT s.subdivision_name, SUM(COALESCE(f.dc_installations, 0) + COALESCE(f.mnr_installations, 0) + COALESCE(f.dc_mnr_installations, 0)) AS dead_or_nonrecoverable FROM fact_dcb f JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE s.subdivision_type IN ('sub_division', 'section') AND f.fiscal_year = '2024-25' GROUP BY s.subdivision_name ORDER BY dead_or_nonrecoverable DESC`
+- Result: `[('Holenarasipura', 11806.0), ('Arkalgud', 7743.0), ('Ramanathapura', 6917.0), ('Hangarahalli', 5401.0), ('Konanur', 4222.0)]` — correctly uses the `COALESCE` pattern (see bug #3 above; this is the query that was `NULL` before the fix).
+- Answer: *"Results: 1. subdivision_name=Holenarasipura, dead_or_nonrecoverable=11,806 2. subdivision_name=Arkalgud, dead_or_nonrecoverable=7,743 3. subdivision_name=Ramanathapura, dead_or_nonrecoverable=6,917 4. subdivision_name=Hangarahalli, dead_or_nonrecoverable=5,401 5. subdivision_name=Konanur, dead_or_nonrecoverable=4,222"*
+- Timing: total **1343 ms**.
+
+#### Q9. What's the trend in Miscellaneous revenue (fees and penalties) over the years?
+- SQL: `SELECT r.fiscal_year AS fiscal_year, r.demand_total AS misc_revenue_demand FROM fact_dcb_rollups r JOIN dim_subdivision s ON r.subdivision_id = s.subdivision_id WHERE r.rollup_type = 'misc_total' AND s.subdivision_name = 'Division_Total' ORDER BY r.fiscal_year`
+- Result (11 rows, e.g.): `('2015-16', 2552571.0)` ... `('2025-26', 12715969.37)`, rising to a clear peak of `112,362,444.88` in 2024-25.
+- Answer (multi-row fallback, first 10 of 11 shown): *"Results: (showing 10 of 11 rows) 1. fiscal_year=2015-16, misc_revenue_demand=2,552,571 ... 10. fiscal_year=2024-25, misc_revenue_demand=112,362,444.88"*
+- Timing: total **1219 ms**.
+
+#### Q10. Show the full DCB chain — opening balance, demand, collection, and closing balance — for Holenarasipura in 2024-25.
+- SQL: `SELECT SUM(f.opening_balance_total) AS opening_balance, SUM(f.demand_total) AS demand, SUM(f.collection_grand_total) AS collection, SUM(f.closing_balance_total) AS closing_balance FROM fact_dcb f JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id WHERE s.subdivision_name = 'Holenarasipura' AND f.fiscal_year = '2024-25'` — real literal values now, not the `{subdivision_name}`/`{fiscal_year}` placeholder leak from bug #4 above.
+- Result: `[(162003262.46606404, 1034457103.7718816, 942195118.9479599, 254265247.28998575)]`
+- Answer: *"For Holenarasipura in 2024-25, the full DCB chain is as follows: Opening Balance = 162,003,262.47, Demand = 1,034,457,103.77, Collection = 942,195,118.95, and Closing Balance = 254,265,247.29."* — hand-checked: 162,003,262.47 + 1,034,457,103.77 − 942,195,118.95 = 254,265,247.29, exactly matching the closing balance, confirming `example_queries.sql`'s documented invariant holds.
+- Timing: total **1359 ms**.
+
+#### QA1 (adversarial). What was the total demand for tariff code ZZ-99 in 2024-25?
+- `answerable: false`. Answer: *"I don't see a tariff code matching ZZ-99 in the database."* — correctly refused a nonexistent tariff code instead of hallucinating a number. Timing: total **922 ms**.
+
+#### QA2 (adversarial). What is the combined total demand if I add up every sub-division's demand plus the Division_Total for 2024-25?
+- `answerable: false`. Answer: *"The question asks to add every sub-division's demand plus the Division_Total, which violates business semantic rules by double-counting the division total (since Division_Total is already the sum of all sub-divisions)."* — the grounding rule against double-counting `Division_Total` held under a direct adversarial prompt. Timing: total **1235 ms**.
+
+**Latency baseline (final clean run, 12 questions, `gemini-3.5-flash-lite`):**
+- Wall time for the full run: **16,125 ms**
+- Mean total latency per question: **1,343.8 ms**
+- Min / max total latency: **922 ms** (QA1) / **2,203 ms** (Q5)
+- Mean LLM-call latency: **1,338.6 ms** — i.e. the LLM call is ~99.6% of total latency; every other stage (router, safety check, DB query, template fill) is consistently 0–16 ms combined. This confirms the architecture's core bet: the single-call + pruning + persistent-connection design successfully keeps the app's own overhead negligible, so total latency is essentially just `gemini-3.5-flash-lite`'s own response time.
+- Full raw output (all 12 questions) is also saved verbatim at `dcb-ai-app/tests/eval_report.md`.
+
+One benign SDK warning appeared on every call and is not an error: `Direct use of automatic function calling (AFC) in AsyncModels.generate_content is not recommended...` — an advisory from `google-genai` about a different, unused code path (function-calling), harmless here since this app never registers tools/functions with Gemini.
 
 ## 4. Known limitations (honest, not hidden)
 
@@ -223,4 +343,31 @@ don't hand-summarize it).
   queries than text-level `LIMIT` injection), but means the row cap
   bounds result size, not necessarily query cost — the wall-clock
   timeout is the real cost bound.
-- **No live-LLM latency baseline yet** — see §3d.
+- **Grounding-rule compliance (design point #7) is prompted, not
+  mechanically enforced — unlike read-only safety (design point #6),
+  which is.** `app/sql_safety.py` code-enforces SELECT-only and rejects
+  unresolved placeholders regardless of what the LLM does; there is no
+  equivalent code-level check that a generated query actually avoids
+  double-counting `Division_Total`, mixes `fact_dcb`/`fact_dcb_rollups`,
+  etc. — the app trusts the prompt's rules. This isn't hypothetical: an
+  intermediate re-run of question 3 during this session's live eval
+  (while bugs #1/#2 above were being fixed, before the final clean run)
+  generated `SELECT t.tariff_code, SUM(f.demand_total) ... GROUP BY
+  t.tariff_code` with **no `s.subdivision_name = 'Division_Total'`
+  filter at all** — silently summing that tariff code's demand across
+  every real sub-division *and* the Division_Total rollup together,
+  exactly the double-counting the semantic layer's rules exist to
+  prevent. That specific run was superseded by the final clean run
+  (§3d), which correctly included the filter, but the underlying gap is
+  real: at `temperature=0.0`, Gemini's SQL for the same question is not
+  perfectly reproducible run-to-run, and nothing here mechanically
+  catches a grounding-rule violation the way `sql_safety.py` catches an
+  unsafe statement. A production version of this app should add a
+  code-level double-counting check (e.g. flag any query that both joins
+  `dim_subdivision` without a `subdivision_type`/`subdivision_name`
+  filter *and* aggregates a metric column) rather than relying on the
+  prompt alone.
+- **Live-LLM latency baseline: established** — see §3d. Mean **1,343.8
+  ms** total per question, of which the LLM call itself is **~99.6%**
+  (mean **1,338.6 ms**); every other stage (router, safety, DB, fill)
+  together adds only 0–16 ms. Measured with `gemini-3.5-flash-lite`.

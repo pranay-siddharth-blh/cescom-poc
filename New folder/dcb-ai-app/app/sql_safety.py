@@ -28,6 +28,16 @@ _FORBIDDEN_RE = re.compile(
 # A leading SELECT or WITH (CTE) is the only shape allowed.
 _ALLOWED_START_RE = re.compile(r"^\s*(SELECT|WITH)\b", re.IGNORECASE)
 
+# SQLite has no {name} syntax, so a curly-brace token in generated SQL can
+# only be a leftover, unresolved answer_template-style placeholder (the LLM
+# confusing the `sql` field's literal-value contract with `answer_template`'s
+# separate {placeholder} substitution mechanism — a real failure caught in
+# this project's first live-LLM eval run: it produced SQL literally
+# containing '{fiscal_year}', which matched nothing and returned an all-NULL
+# row instead of an error). Catch it here rather than silently running a
+# query that looks successful but is actually answering nothing.
+_UNRESOLVED_PLACEHOLDER_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z0-9_]*\}")
+
 
 class UnsafeSQLError(ValueError):
     pass
@@ -55,6 +65,14 @@ def validate_readonly_sql(sql: str) -> str:
 
     if not _ALLOWED_START_RE.match(cleaned):
         raise UnsafeSQLError("Only SELECT / WITH ... SELECT statements are allowed.")
+
+    placeholder_match = _UNRESOLVED_PLACEHOLDER_RE.search(cleaned)
+    if placeholder_match:
+        raise UnsafeSQLError(
+            f"SQL contains an unresolved template placeholder {placeholder_match.group(0)!r} "
+            "instead of a literal value — refusing to execute a query that would "
+            "silently match nothing."
+        )
 
     match = _FORBIDDEN_RE.search(cleaned)
     if match:

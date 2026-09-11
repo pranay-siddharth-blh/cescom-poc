@@ -78,13 +78,25 @@ def extract_entities(question: str, index: RouterIndex) -> dict:
                 entities["fiscal_year"] = year
                 break
 
-    for code in [
-        "LT-1", "LT-2", "LT-3", "LT-4", "LT-5", "LT-6", "LT-7",
-        "HT-1", "HT-2", "HT-3", "HT-4", "HT-5", "HT-6", "HT-7",
-    ]:
-        if code.lower() in q_lower:
-            entities["tariff_code"] = code
-            break
+    tariff_codes_found = [
+        code
+        for code in (
+            "LT-1", "LT-2", "LT-3", "LT-4", "LT-5", "LT-6", "LT-7",
+            "HT-1", "HT-2", "HT-3", "HT-4", "HT-5", "HT-6", "HT-7",
+        )
+        if code.lower() in q_lower
+    ]
+    # A question can legitimately name more than one tariff code (e.g. "LT-1
+    # vs HT-2") -- found via a real crash/misfire during the first live-LLM
+    # eval run (see CLAUDE.md): extracting only the first match and telling
+    # the LLM to treat it as authoritative caused the model to wrongly
+    # refuse to answer a valid comparison question. Single match keeps the
+    # simple `tariff_code` key other prompts/tests expect; 2+ matches go in
+    # `tariff_codes` instead.
+    if len(tariff_codes_found) == 1:
+        entities["tariff_code"] = tariff_codes_found[0]
+    elif len(tariff_codes_found) > 1:
+        entities["tariff_codes"] = tariff_codes_found
 
     return entities
 

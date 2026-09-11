@@ -7,7 +7,9 @@ from pathlib import Path
 from app.config import PROJECT_ROOT
 
 _SCHEMA_SQL_PATH = PROJECT_ROOT / "DCB_Star_Schema" / "schema.sql"
+_EXAMPLE_QUERIES_PATH = PROJECT_ROOT / "DCB_Semantic_Layer" / "example_queries.sql"
 _schema_ddl_cache: str | None = None
+_example_queries_cache: str | None = None
 
 
 def load_schema_ddl() -> str:
@@ -15,6 +17,21 @@ def load_schema_ddl() -> str:
     if _schema_ddl_cache is None:
         _schema_ddl_cache = Path(_SCHEMA_SQL_PATH).read_text(encoding="utf-8")
     return _schema_ddl_cache
+
+
+def load_example_queries() -> str:
+    """DCB_Semantic_Layer/example_queries.sql's 10 pre-verified NL->SQL pairs.
+    semantic_layer.json's own `_purpose` field and HANDOFF.md say this is
+    meant to be loaded straight into the chatbot's prompt -- an early build
+    of this app never actually did that, which a live eval run caught: a
+    question about DC/MNR installations got an all-NULL result because the
+    LLM didn't know to COALESCE the pre-2018-19 combined column with the
+    post-2018-19 split columns, a pattern only demonstrated here (query #8).
+    ~4KB, small enough to include in full rather than prune."""
+    global _example_queries_cache
+    if _example_queries_cache is None:
+        _example_queries_cache = Path(_EXAMPLE_QUERIES_PATH).read_text(encoding="utf-8")
+    return _example_queries_cache
 
 
 SYSTEM_INSTRUCTIONS = """\
@@ -42,6 +59,12 @@ Hard rules (violating any of these makes the answer wrong, not just \
 imperfect):
 - Read-only. SELECT / WITH...SELECT only. Never INSERT/UPDATE/DELETE/DROP/etc.
 - fiscal_year is a TEXT column like '2015-16' — never compare it as a number.
+- The `sql` field and the `answer_template` field use DIFFERENT substitution \
+mechanisms — do not mix them up. `sql` must be complete, executable SQL with \
+every value already baked in as a literal (e.g. WHERE fiscal_year = '2024-25') \
+— NEVER write a curly-brace token like {fiscal_year} inside `sql`, that is not \
+valid SQL and will match nothing. Curly-brace {placeholder} tokens belong ONLY \
+in `answer_template`, filled in afterward from your SQL's own column aliases.
 """
 
 
@@ -52,12 +75,22 @@ def build_prompt(question: str, schema_ddl: str, pruned_semantic_layer: dict, en
         "```sql\n" + schema_ddl + "\n```\n",
         "\n## Business semantic layer (glossary, grounding rules, worked patterns)\n",
         "```json\n" + json.dumps(pruned_semantic_layer, indent=2) + "\n```\n",
+        "\n## Pre-verified worked example NL question -> SQL pairs — follow these "
+        "patterns where relevant (e.g. the COALESCE pattern in example #8 for "
+        "DC/MNR installations, which differ in column layout before vs after "
+        "FY2018-19 — summing only one side without COALESCE silently returns "
+        "NULL for whichever years use the other layout)\n",
+        "```sql\n" + load_example_queries() + "\n```\n",
     ]
     if entities:
         parts.append(
-            "\n## Entities already extracted from the question (reuse these exact "
-            "values in SQL literals and in answer_template placeholders — do not "
-            "re-derive or reformat them)\n"
+            "\n## Entities already extracted from the question (a convenience, "
+            "NOT necessarily exhaustive — reuse these exact spellings in SQL "
+            "literals and answer_template placeholders when they apply, but the "
+            "question may still name additional values (another tariff code, "
+            "year, or sub-division) not listed here; read those directly from "
+            "the question text yourself rather than treating this list as the "
+            "only entities you're allowed to use)\n"
             + json.dumps(entities, indent=2)
             + "\n"
         )
