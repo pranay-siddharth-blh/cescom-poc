@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCB Assistant — CESCOM</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23003a70'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23f5a623'/%3E%3C/svg%3E">
+<style>
+  /* Layout shape (sidebar + main chat + composer, bubbles, suggestion
+     chips, status indicator, response timer, collapsible detail sections)
+     follows the same pattern as this project's sibling BESCOM chat UI --
+     rewritten from scratch here for this app's own backend (different SSE
+     event shape: status/sql/answer_chunk/done, see app/main.py) and its
+     own CESCOM branding, not copied. */
+  :root{
+    --navy-dark:#00203f; --navy:#003a70; --navy-2:#0056a3; --side:#00294f;
+    --side-2:#0b3c6e; --sideln:#1d4a78; --sidetx:#c9dcef;
+    --amber:#f5a623; --amber-dark:#d98c0f;
+    --ink:#1f2937; --muted:#6b7280; --bot:#eef4fb; --user:#0056a3;
+    --line:#dbe3ee; --bg:#f4f7fb;
+    --ok:#1a7f4b; --warn:#a3620a; --err:#b42318;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);display:flex;height:100vh;overflow:hidden}
+
+  .sidebar{width:270px;flex:0 0 270px;background:var(--side);color:#fff;
+           display:flex;flex-direction:column;border-right:1px solid var(--sideln)}
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:16px}
+  .sb-brand .mark{width:38px;height:38px;border-radius:9px;flex:0 0 auto;
+                   background:linear-gradient(135deg,var(--navy),var(--navy-2));
+                   display:flex;align-items:center;justify-content:center;font-size:18px}
+  .sb-brand h1{font-size:.98rem;margin:0;font-weight:700}
+  .sb-brand .sub{font-size:.68rem;opacity:.75}
+  .newchat{margin:0 14px 10px;padding:10px;border:1px solid var(--sideln);border-radius:9px;
+           background:var(--side-2);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;
+           display:flex;align-items:center;gap:8px;justify-content:center}
+  .newchat:hover{background:#134a80}
+  .sb-section{padding:10px 16px 4px;font-size:.66rem;letter-spacing:.6px;text-transform:uppercase;
+              color:var(--sidetx);opacity:.75}
+  .quick{display:flex;flex-direction:column;gap:4px;padding:0 10px}
+  .quick button{text-align:left;background:transparent;border:none;color:#dce7f5;font-size:.8rem;
+                padding:8px 10px;border-radius:7px;cursor:pointer;line-height:1.3}
+  .quick button:hover{background:var(--side-2)}
+  .sb-foot{margin-top:auto;border-top:1px solid var(--sideln);padding:12px 16px;font-size:.72rem;color:var(--sidetx)}
+  .sb-foot .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;
+                vertical-align:middle;background:#888}
+
+  .chatwrap{flex:1;display:flex;flex-direction:column;min-width:0}
+  header{background:var(--navy);color:#fff;padding:12px 22px;min-height:60px;
+         display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--amber)}
+  .burger{display:none;background:rgba(255,255,255,.14);border:none;color:#fff;
+          width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer}
+  header .mark{width:34px;height:34px;border-radius:8px;
+               background:linear-gradient(135deg,var(--navy-2),var(--navy));
+               display:flex;align-items:center;justify-content:center;font-size:16px}
+  header h2{font-size:1rem;margin:0;font-weight:700}
+  header .sub{font-size:.72rem;opacity:.85}
+
+  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;
+       max-width:900px;width:100%;margin:0 auto}
+  .hint{color:var(--muted);font-size:.82rem;text-align:center;margin:6px 0}
+
+  .msg{display:flex;gap:10px;max-width:88%;animation:msgIn .2s ease both}
+  @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg .av{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:flex;
+           align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+  .bubble{padding:11px 15px;border-radius:14px;line-height:1.55;font-size:.92rem;
+          white-space:pre-wrap;box-shadow:0 1px 3px rgba(0,42,80,.1)}
+  .bot{align-self:flex-start}.bot .av{background:var(--navy-2)}
+  .bot .bubble{background:var(--bot);border:1px solid var(--line);border-top-left-radius:4px}
+  .user{align-self:flex-end;flex-direction:row-reverse}.user .av{background:#334155}
+  .user .bubble{background:var(--user);color:#fff;border-top-right-radius:4px}
+  .bubble.waiting{color:var(--muted);font-style:italic}
+  .bubble.err{background:#fdf1f0;border:1px solid #f0c9c4;color:var(--err)}
+  .bubble.notanswerable{background:#fff8ec;border:1px solid #f2d9a8}
+
+  .meta{margin-top:9px;font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-weight:600}
+  .pill.time{color:var(--navy-2)}
+  .pill.nf{color:var(--warn);border-color:#f0dca0;background:#fff8ec}
+  .pill.trunc{color:var(--warn);border-color:#f0dca0}
+  .pill.breakdown{font-weight:500;color:var(--muted);font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  .sqlbox{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+  .sqlbox > summary{cursor:pointer;padding:8px 12px;font-size:.76rem;font-weight:700;
+                     color:var(--navy-2);list-style:none}
+  .sqlbox > summary::-webkit-details-marker{display:none}
+  .sqlbox > summary::before{content:"▸ ";color:var(--muted)}
+  .sqlbox[open] > summary::before{content:"▾ "}
+  .sqlbox pre{margin:0;padding:10px 12px;border-top:1px solid var(--line);
+              font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.74rem;
+              color:#0b2a4a;white-space:pre-wrap;word-break:break-word;background:#f7faff}
+
+  footer{border-top:1px solid var(--line);background:#fff;padding:12px 16px}
+  .composer{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px}
+  #box{flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:.95rem;
+       outline:none;font-family:inherit}
+  #box:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(0,86,163,.14)}
+  #send{background:linear-gradient(135deg,var(--amber),var(--amber-dark));color:#1f2937;
+        border:none;border-radius:10px;padding:0 22px;height:42px;font-weight:700;cursor:pointer}
+  #send:hover{filter:brightness(1.06)}
+  #send:disabled{opacity:.5;cursor:default}
+
+  .backdrop{display:none}
+  @media(max-width:760px){
+    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .2s}
+    body.side-open .sidebar{transform:translateX(0)}
+    .burger{display:flex}
+    body.side-open .backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20}
+  }
+</style>
+</head>
+<body>
+  <div class="backdrop" id="backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="mark">⚡</div>
+      <div><h1>DCB Assistant</h1><div class="sub">CESCOM · Holenarasipura Division</div></div>
+    </div>
+    <button class="newchat" id="newchat">＋ New chat</button>
+
+    <div class="sb-section">Try asking</div>
+    <div class="quick">
+      <button data-q="What was the collection efficiency in Arkalgud in 2024-25?">📊 Collection efficiency, one sub-division</button>
+      <button data-q="Which tariff category generated the most demand in 2023-24?">🏆 Top tariff category by demand</button>
+      <button data-q="How much outstanding balance does Konanur currently carry?">💰 Outstanding arrears</button>
+      <button data-q="Which sub-division has the best collection efficiency in the most recent year?">🥇 Best-performing sub-division</button>
+      <button data-q="What was the total demand for tariff code ZZ-99 in 2024-25?">❓ A tariff code that doesn't exist</button>
+    </div>
+
+    <div class="sb-foot">
+      <div id="statusRow"><span class="dot" id="statusDot"></span><span id="statusText">API: checking…</span></div>
+    </div>
+  </aside>
+
+  <div class="chatwrap">
+    <header>
+      <button class="burger" id="burger">☰</button>
+      <div class="mark">⚡</div>
+      <div>
+        <h2>DCB Assistant</h2>
+        <div class="sub">DCB NL2SQL Chatbot · CESCOM Holenarasipura Division</div>
+      </div>
+    </header>
+
+    <main id="chat">
+      <div class="hint">Ask a question about Demand, Collection &amp; Balance figures for Holenarasipura
+        Division. Answers are generated from a real SQL query against the star-schema database —
+        the generated SQL and response timing are shown with every answer.</div>
+    </main>
+
+    <footer>
+      <div class="composer">
+        <input id="box" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
+        <button id="send">Send</button>
+      </div>
+    </footer>
+  </div>
+
+<script>
+const chat = document.getElementById('chat');
+const box  = document.getElementById('box');
+const sendBtn = document.getElementById('send');
+
+function addBubble(text, who){
+  const m = document.createElement('div'); m.className = 'msg ' + who;
+  const av = document.createElement('div'); av.className = 'av'; av.textContent = who === 'bot' ? 'AI' : 'U';
+  const b = document.createElement('div'); b.className = 'bubble';
+  b.textContent = text;
+  m.appendChild(av); m.appendChild(b); chat.appendChild(m);
+  chat.scrollTop = chat.scrollHeight;
+  return b;
+}
+
+function renderMeta(bubbleEl, doneEv, sqlText, clientSecs){
+  const meta = document.createElement('div'); meta.className = 'meta';
+
+  const timeP = document.createElement('span'); timeP.className = 'pill time';
+  timeP.textContent = 'Responded in ' + clientSecs + 's';
+  meta.appendChild(timeP);
+
+  if (doneEv){
+    if (doneEv.answerable === false){
+      bubbleEl.classList.add('notanswerable');
+      const p = document.createElement('span'); p.className = 'pill nf';
+      p.textContent = 'not answerable from this data';
+      meta.appendChild(p);
+    }
+    if (doneEv.truncated){
+      const p = document.createElement('span'); p.className = 'pill trunc';
+      p.textContent = 'results truncated';
+      meta.appendChild(p);
+    }
+    const t = doneEv.timing_ms || {};
+    const order = ['router_ms', 'llm_ms', 'safety_ms', 'db_ms', 'fill_ms'];
+    const parts = order.filter(k => k in t).map(k => k.replace('_ms', '') + ': ' + t[k] + 'ms');
+    if (parts.length){
+      const p = document.createElement('span'); p.className = 'pill breakdown';
+      p.textContent = parts.join(' · ');
+      meta.appendChild(p);
+    }
+  }
+  bubbleEl.appendChild(meta);
+
+  if (sqlText){
+    const det = document.createElement('details'); det.className = 'sqlbox';
+    const sum = document.createElement('summary'); sum.textContent = 'Generated SQL';
+    det.appendChild(sum);
+    const pre = document.createElement('pre'); pre.textContent = sqlText;
+    det.appendChild(pre);
+    bubbleEl.appendChild(det);
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// A bit longer than this app's own DB query timeout (8s default,
+// app/config.py) plus generous headroom for the LLM call -- tonight's
+// eval measured a 922-2203ms range for llm_ms, so 30s is comfortably
+// generous, not a tight guess.
+const CLIENT_TIMEOUT_MS = 30000;
+
+// Reads the SSE stream from POST /api/ask -- real event shapes, from
+// app/main.py::ask_stream (not guessed, not the same shape as the
+// sibling BESCOM project's NDJSON /chat/stream):
+//   event: status        {"stage": "thinking"}
+//   event: sql            {"sql": "..."}                (may be "" when unanswerable)
+//   event: answer_chunk   {"text": "..."}                (one or more, in order)
+//   event: done            {"answerable": bool, "timing_ms": {...}, "truncated": bool}
+async function send(){
+  const text = box.value.trim(); if (!text) return;
+  addBubble(text, 'user'); box.value = ''; sendBtn.disabled = true;
+
+  const bot = addBubble('Thinking… 0s', 'bot');
+  bot.classList.add('waiting');
+  const t0 = performance.now();
+  const tick = setInterval(() => {
+    if (bot.classList.contains('waiting'))
+      bot.textContent = 'Thinking… ' + Math.floor((performance.now() - t0) / 1000) + 's';
+  }, 1000);
+
+  const ctrl = new AbortController();
+  const abortTimer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
+  const stop = () => { clearInterval(tick); clearTimeout(abortTimer); };
+  const stopWaiting = () => { if (bot.classList.contains('waiting')){ bot.classList.remove('waiting'); bot.textContent = ''; } };
+
+  let acc = '', sqlText = '', doneEv = null;
+
+  const processFrame = (frame) => {
+    let ev = null, data = null;
+    for (const line of frame.split('\n')){
+      if (line.startsWith('event:')) ev = line.slice(6).trim();
+      else if (line.startsWith('data:')) data = line.slice(5).trim();
+    }
+    if (!ev || data === null) return;
+    let obj; try { obj = JSON.parse(data); } catch (_e) { return; }
+    if (ev === 'sql'){
+      sqlText = obj.sql || '';
+    } else if (ev === 'answer_chunk'){
+      stopWaiting();
+      acc += obj.text;
+      bot.textContent = acc;
+      chat.scrollTop = chat.scrollHeight;
+    } else if (ev === 'done'){
+      doneEv = obj;
+    }
+  };
+
+  try {
+    const r = await fetch('/api/ask', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: text }), signal: ctrl.signal
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true){
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) >= 0){
+        const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
+        processFrame(frame);
+      }
+    }
+    buf += dec.decode();
+    if (buf.trim()) processFrame(buf);
+
+    stop();
+    stopWaiting();
+    if (!acc) bot.textContent = '(no answer text received)';
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    renderMeta(bot, doneEv, sqlText, secs);
+  } catch (e) {
+    stop();
+    stopWaiting();
+    bot.classList.add('err');
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    bot.textContent = (e && e.name === 'AbortError'
+      ? 'Request timed out after ' + secs + 's — no response from the server.'
+      : 'Request failed after ' + secs + 's: ' + e)
+      + (acc ? '\n\nPartial answer received:\n' + acc : '');
+  }
+  sendBtn.disabled = false; box.focus();
+}
+
+sendBtn.onclick = send;
+box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+document.getElementById('newchat').onclick = () => {
+  chat.innerHTML = '<div class="hint">New chat. Ask a question about the DCB figures.</div>';
+};
+document.querySelectorAll('.quick button').forEach(b => {
+  b.onclick = () => { box.value = b.dataset.q; send(); document.body.classList.remove('side-open'); };
+});
+const burger = document.getElementById('burger');
+if (burger) burger.onclick = () => document.body.classList.toggle('side-open');
+document.getElementById('backdrop').onclick = () => document.body.classList.remove('side-open');
+
+fetch('/health').then(r => r.json()).then(h => {
+  const ok = h && h.status === 'ok';
+  document.getElementById('statusDot').style.background = ok ? '#2fae66' : '#c0392b';
+  document.getElementById('statusText').textContent = ok ? 'API: connected' : 'API: unreachable';
+}).catch(() => {
+  document.getElementById('statusDot').style.background = '#c0392b';
+  document.getElementById('statusText').textContent = 'API: unreachable';
+});
+
+box.focus();
+</script>
+</body>
+</html>

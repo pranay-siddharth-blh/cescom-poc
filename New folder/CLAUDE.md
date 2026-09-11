@@ -309,6 +309,58 @@ all 10 example questions + 2 adversarial ones:**
 
 One benign SDK warning appeared on every call and is not an error: `Direct use of automatic function calling (AFC) in AsyncModels.generate_content is not recommended...` — an advisory from `google-genai` about a different, unused code path (function-calling), harmless here since this app never registers tools/functions with Gemini.
 
+### 3e. Chat UI (fixed 2026-09-12) — `GET /` was a 404, only `/docs` worked
+
+A real gap, not something built the night this app was first stood up:
+there was no frontend, only FastAPI's auto-generated `/docs` testing page.
+Added `app/static/chat.html` (a single self-contained static page — no
+Jinja2/templating dependency needed since it carries no server-rendered,
+per-request data at load time, everything comes from client-side calls to
+`/api/ask` and `/health`) and one new route,
+`GET / -> HTMLResponse(app/static/chat.html)`, in `app/main.py`. Layout
+shape (sidebar + main chat + composer, message bubbles, "Try asking"
+chips, a status indicator, a response timer, collapsible detail sections)
+follows the same pattern as the sibling BLH-BESCOM project's chat UI
+(`D:\BLH-BESCOM\src\webapp\templates\chat.html`) for a consistent house
+style — but the file is new and self-contained here, not copied, and its
+JS parses this app's own real SSE event shapes from `app/main.py::ask_stream`
+(`event: status/sql/answer_chunk/done`), not BESCOM's NDJSON shape.
+Branding is CESCOM-specific: deep navy (`#003a70`/`#0056a3`) primary with
+an amber accent (`#f5a623`), a plain emoji mark (no fabricated CESC Mysore
+logo file — none was available to reference honestly).
+
+**Real verification, through the actual rendered UI in a browser (not
+curl/`/docs`):**
+- `GET /` → `200 OK` (previously `404`) — confirmed via server log and by
+  reading the rendered page structure (sidebar, header, composer all
+  present).
+- 3 real questions sent through the UI, all correct, matching earlier
+  verified figures exactly:
+  1. *"What was the collection efficiency in Arkalgud in 2024-25?"* →
+     *"...was 93.62%."*, SQL panel expanded and showed the real generated
+     SQL, timing pills showed `llm: 1625ms` etc.
+  2. *"Show the full DCB chain for Holenarasipura in 2024-25"* →
+     *"Opening Balance is 162,003,262.47, Demand is 1,034,457,103.77,
+     Collection is 942,195,118.95, and Closing Balance is
+     254,265,247.29."* — identical to §3d's Q10 figures.
+  3. *"Which tariff category generated the most demand in 2023-24?"* →
+     *"...LT-4(a) ... with a total demand of 1,687,837,231.91."* —
+     identical to §3d's Q3 figures.
+- 1 adversarial question (*"What was the total demand for tariff code
+  ZZ-99 in 2024-25?"*) → rendered a distinct amber "not answerable from
+  this data" pill and an amber-tinted bubble, with the honest refusal
+  text *"I don't see a tariff code matching ZZ-99 in the database."* — no
+  blank state, no broken rendering, and (correctly) no "Generated SQL"
+  section since no SQL was generated for a refused question.
+- Existing endpoints re-checked unchanged after adding the new route:
+  `GET /health` → `{"status":"ok"}`; `GET /docs` → Swagger UI still
+  served; `POST /api/ask_once` → real correct answer (Konanur, 97.46%,
+  identical to every prior run).
+- `app/pipeline.py`, `app/sql_safety.py`, and `app/semantic_layer.py` were
+  **not touched** for this change — only `app/main.py` (new route) and the
+  new `app/static/chat.html` — confirmed via `git status`.
+- Locked folders re-verified untouched (SHA-256 manifest, all 28 `OK`).
+
 ## 4. Known limitations (honest, not hidden)
 
 - **Single shared SQLite connection, serialized.** Design point #3

@@ -17,9 +17,11 @@ cp ../.env.example ../.env   # .env lives at the PROJECT root, not here -- then 
 uvicorn app.main:app --reload
 ```
 
-- `POST /api/ask` — SSE streaming endpoint (the one a real UI should use).
+- `GET /` — the chat UI (`app/static/chat.html`). Open this in a browser.
+- `POST /api/ask` — SSE streaming endpoint the chat UI itself calls.
 - `POST /api/ask_once` — plain JSON, same pipeline, easier for scripts.
 - `GET /health` — liveness check.
+- `GET /docs` — FastAPI's auto-generated Swagger UI, still available unchanged.
 
 ## Run the tests
 
