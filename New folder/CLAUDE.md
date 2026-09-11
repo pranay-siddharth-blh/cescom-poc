@@ -75,7 +75,7 @@ spec, not inferred.
 | 4 | **Async throughout** — async route handlers, Gemini called via `client.aio`; the (sync) SQLite call runs in a dedicated single-worker thread pool so one slow query doesn't block the event loop. | Lets FastAPI serve other requests while one is waiting on the LLM or DB. | `app/llm.py`, `app/db.py::ReadOnlyDB.run` |
 | 5 | **SSE streaming of the final answer** to the client as it's assembled. | Perceived latency — first bytes reach the client sooner, and the structure is ready if token-level LLM streaming is added later. | `app/main.py::ask_stream` |
 | 6 | **Read-only SQL enforcement**, two independent layers: (a) a text-level allowlist (`SELECT`/`WITH` only, forbidden-keyword regex, no multi-statement `;`), (b) the SQLite connection itself opened with `mode=ro` in its URI — so even SQL that slipped past layer (a) physically cannot write. Plus a query timeout (default 8s, enforced via `Connection.interrupt()` from a watchdog thread) and a row cap (default 200, via `fetchmany(cap+1)` + truncation, not text-level `LIMIT` injection — safer against queries that already have their own `ORDER BY`/`LIMIT`/CTEs). | Defense in depth against a malformed or adversarial LLM response. | `app/sql_safety.py`, `app/db.py` |
-| 7 | **Grounding rules enforced in the prompt** — every rule from `semantic_layer.json["rules"]` is always included (never pruned): never SUM `fact_dcb` and `fact_dcb_rollups` together, don't double-count `Division_Total` against the sub-divisions, treat `fiscal_year` as text. | These are exactly the double-counting bugs the star schema's own design guards against — see `HANDOFF.md` §4.7 for why `lt_ht_total` vs `grand_total` was a real historical bug here. | `app/prompts.py::build_prompt`, `app/semantic_layer.py::prune_semantic_layer` |
+| 7 | **Grounding rules enforced in the prompt** — every rule from `semantic_layer.json["rules"]` is always included (never pruned): never SUM `fact_dcb` and `fact_dcb_rollups` together, don't double-count `Division_Total` against the sub-divisions, treat `fiscal_year` as text. **The Division_Total rule is also code-enforced**, not just prompted — see §3d "Division_Total double-counting — now code-enforced" for the real fix, added after a live eval caught the prompt-only version failing once. | These are exactly the double-counting bugs the star schema's own design guards against — see `HANDOFF.md` §4.7 for why `lt_ht_total` vs `grand_total` was a real historical bug here. | `app/prompts.py::build_prompt`, `app/semantic_layer.py::prune_semantic_layer`, `app/sql_safety.py::check_division_total_double_counting` |
 
 ### Request flow
 
@@ -343,30 +343,109 @@ One benign SDK warning appeared on every call and is not an error: `Direct use o
   queries than text-level `LIMIT` injection), but means the row cap
   bounds result size, not necessarily query cost — the wall-clock
   timeout is the real cost bound.
-- **Grounding-rule compliance (design point #7) is prompted, not
-  mechanically enforced — unlike read-only safety (design point #6),
-  which is.** `app/sql_safety.py` code-enforces SELECT-only and rejects
-  unresolved placeholders regardless of what the LLM does; there is no
-  equivalent code-level check that a generated query actually avoids
-  double-counting `Division_Total`, mixes `fact_dcb`/`fact_dcb_rollups`,
-  etc. — the app trusts the prompt's rules. This isn't hypothetical: an
-  intermediate re-run of question 3 during this session's live eval
-  (while bugs #1/#2 above were being fixed, before the final clean run)
-  generated `SELECT t.tariff_code, SUM(f.demand_total) ... GROUP BY
-  t.tariff_code` with **no `s.subdivision_name = 'Division_Total'`
-  filter at all** — silently summing that tariff code's demand across
-  every real sub-division *and* the Division_Total rollup together,
-  exactly the double-counting the semantic layer's rules exist to
-  prevent. That specific run was superseded by the final clean run
-  (§3d), which correctly included the filter, but the underlying gap is
-  real: at `temperature=0.0`, Gemini's SQL for the same question is not
-  perfectly reproducible run-to-run, and nothing here mechanically
-  catches a grounding-rule violation the way `sql_safety.py` catches an
-  unsafe statement. A production version of this app should add a
-  code-level double-counting check (e.g. flag any query that both joins
-  `dim_subdivision` without a `subdivision_type`/`subdivision_name`
-  filter *and* aggregates a metric column) rather than relying on the
-  prompt alone.
+- ~~Grounding-rule compliance (design point #7) is prompted, not
+  mechanically enforced~~ — **fixed** for the specific, observed failure
+  mode (Division_Total double-counting); see "Division_Total
+  double-counting — now code-enforced" below for the real fix and its
+  honestly-scoped remaining gaps. The broader point still holds for
+  *other* grounding rules not covered by that guard (e.g. never mixing
+  `fact_dcb`/`fact_dcb_rollups`) — those remain prompt-only, not
+  code-enforced, and would need their own equivalent guard if a future
+  live-LLM run ever demonstrates a real violation the way this one did.
+
+### Division_Total double-counting — now code-enforced (fixed 2026-09-12)
+
+The limitation above was real, not hypothetical: an intermediate re-run
+of question 3 during the first live eval generated `SELECT t.tariff_code,
+SUM(f.demand_total) ... GROUP BY t.tariff_code` with **no
+`subdivision_name`/`subdivision_type` filter at all** — silently summing
+that tariff code's demand across every real sub-division *and* the
+Division_Total rollup together. That specific run was superseded by the
+final clean run before it shipped, but nothing *code-level* would have
+stopped it if it had. Fixed the same way read-only safety already is: a
+second, deterministic, code-enforced layer underneath the prompt, not a
+replacement for it.
+
+**Design:** `app/sql_safety.py::check_division_total_double_counting()`
+(called from `validate_readonly_sql()`, so every query goes through it,
+not just ones the LLM happens to get right) triggers only when a query
+both (a) references the raw `fact_dcb` table (not the safe-by-construction
+`fact_dcb_subdivisions` view, and not the differently-grained
+`fact_dcb_rollups`/`fact_dcb_grand_totals`, which this guard is out of
+scope for) and (b) uses `SUM`/`COUNT`/`AVG`/`TOTAL`. It then checks for
+one of several whitelisted patterns that provably prevent Division_Total
+from blending with other sub-divisions in the same aggregate (a single
+`subdivision_name`/`subdivision_type` equality — safe regardless of which
+value, since `subdivision_name` is `UNIQUE`; an explicit `!=
+'Division_Total'`/`!= 'division'`; an `IN (...)` list that excludes
+`'Division_Total'`/`'division'`; a single `subdivision_id = <int>`; or
+`GROUP BY` on any subdivision-identifying column, which scopes every
+output row to one subdivision already). **It fails closed** — if it can't
+positively prove the query safe, it refuses to execute rather than
+guessing a "corrected" filter (guessing wrong would silently answer a
+*different* question just as cleanly as the bug it's fixing).
+
+**Real proof, not just a claim — `tests/double_count_guard_test.py`,
+run against the code directly (no LLM involved, by design — the whole
+point is this holds regardless of what the LLM generates):**
+- The exact SQL shape from the intermediate run that motivated this fix
+  (`dim_subdivision` joined, never filtered, `GROUP BY t.tariff_code`
+  only) → **blocked**, with the reason: *"This query aggregates fact_dcb
+  (SUM/COUNT/AVG/TOTAL) without a filter that provably excludes the
+  Division_Total rollup row..."*
+- 4 more constructed dangerous cases, all **blocked**: a bare
+  `SUM(f.demand_total)` with no subdivision reference at all; the literal
+  ask from adversarial question 2 (sum every sub-division plus
+  Division_Total) reconstructed as raw SQL; `COUNT` (not just `SUM`)
+  with no filter; `subdivision_type IN ('division', 'sub_division')` —
+  a filter that *looks* like a safety check but still includes
+  `'division'`; and two `subdivision_name = '...'` equalities combined
+  via `OR` (Division_Total OR one real sub-division) — deliberately
+  ambiguous, and the guard fails closed on it rather than trusting only
+  the first match.
+- All 7 of tonight's real safe query shapes that touch `fact_dcb`
+  (single-sub-division filter, Division_Total-only filter,
+  `subdivision_type IN (...)` excluding `'division'`, `GROUP BY
+  subdivision_name` with no `WHERE` filter, a non-aggregate query, the
+  `fact_dcb_subdivisions` view, and `fact_dcb_grand_totals`) — all still
+  **accepted**. 13/13 cases behaved as expected on this run.
+
+**Full regression after the fix — all 10 example questions + both
+adversarial re-run through the real pipeline again:** 9 of 10 example
+questions plus both adversarial questions produced results identical to
+§3d's final clean run (same SQL, same numbers, same `answerable` value).
+Question 8 (DC/MNR installations) differed slightly from §3d's number —
+this is **unrelated to this fix**: that run's SQL happened to include
+`COALESCE(f.dc_installations, 0)` twice instead of once for
+`dc_installations` and once for `dc_mnr_installations` (an independent
+LLM non-determinism quirk on a query the double-counting guard doesn't
+even inspect the columns of, only the subdivision-filter shape) — the
+same already-documented "LLM output isn't perfectly reproducible at
+`temperature=0.0`" characteristic noted above, not a regression this fix
+introduced. `tests/dry_run_no_llm.py` and `tests/pipeline_mock_test.py`
+both re-ran clean with no changes in behavior.
+
+**Locked folders:** re-verified untouched (SHA-256 manifest, all 28
+files `OK`) both before writing this guard and after the full regression
+run.
+
+**Honestly-scoped remaining gaps** (documented in the guard's own
+module-level docstring in `sql_safety.py`, not hidden): (1) it's a
+text-level heuristic, not a real SQL parser, so it doesn't understand
+boolean structure across *different* columns — a hypothetical
+`subdivision_type = 'sub_division' OR subdivision_name =
+'Division_Total'` could in principle slip through, since each column's
+filter is checked independently; no query this app's own prompt has ever
+produced combines filters with `OR` rather than `AND`, so this is a
+theoretical gap against a future LLM output shape, not an observed one.
+(2) `subdivision_id IN (...)` with raw integers is blocked outright
+rather than analyzed, since judging it safe would need a DB lookup this
+deliberately DB-free, fast text check avoids. (3) This guard is scoped to
+`fact_dcb` specifically, per what was asked — the same *category* of risk
+(mixing grains/rollup-types) could in principle exist for
+`fact_dcb_rollups` too (e.g. summing multiple `rollup_type` values
+together) and is not covered by this guard; no such failure has been
+observed in this project's testing, so it wasn't in scope for this fix.
 - **Live-LLM latency baseline: established** — see §3d. Mean **1,343.8
   ms** total per question, of which the LLM call itself is **~99.6%**
   (mean **1,338.6 ms**); every other stage (router, safety, DB, fill)

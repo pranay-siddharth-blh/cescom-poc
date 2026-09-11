@@ -24,9 +24,10 @@ uvicorn app.main:app --reload
 ## Run the tests
 
 ```bash
-python -m tests.dry_run_no_llm      # no API key needed
-python -m tests.pipeline_mock_test  # no API key needed (LLM mocked)
-python -m tests.eval_queries        # needs a real GEMINI_API_KEY in .env
+python -m tests.dry_run_no_llm            # no API key needed
+python -m tests.pipeline_mock_test        # no API key needed (LLM mocked)
+python -m tests.double_count_guard_test   # no API key needed -- code-level Division_Total guard
+python -m tests.eval_queries               # needs a real GEMINI_API_KEY in .env
 ```
 
 `tests/eval_queries.py` runs the 10 questions from
