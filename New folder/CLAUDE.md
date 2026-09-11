@@ -178,10 +178,13 @@ one stage (`llm_ms`) that will dominate real end-to-end latency.
 
 **Before this project is considered done**, run:
 ```bash
+cp .env.example .env   # from this folder (project root) -- fill in real GEMINI_API_KEY / GEMINI_MODEL
 cd dcb-ai-app
-cp .env.example .env   # fill in a real GEMINI_API_KEY
 python -m tests.eval_queries
 ```
+(`.env` lives at the project root, sibling to `dcb-ai-app/`, matching the
+sibling BLH-BESCOM project's one-`.env`-at-root convention — see
+`app/config.py`.)
 and update this section with the real, verbatim SQL/answer/timing output
 it produces (it writes `tests/eval_report.md` — paste or link that here,
 don't hand-summarize it).

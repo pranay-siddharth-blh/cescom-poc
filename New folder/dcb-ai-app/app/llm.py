@@ -24,7 +24,17 @@ def init_llm_client() -> genai.Client:
     global _client
     if not settings.gemini_api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY is not set. Copy .env.example to .env and fill it in."
+            "GEMINI_API_KEY is not set in .env (project root). Copy .env.example "
+            "to .env and fill in the real value before starting the app."
+        )
+    if not settings.gemini_model:
+        # Matching the sibling BLH-BESCOM project's convention: no guessed
+        # default when the model string is blank -- fail clearly at startup
+        # instead of silently calling an unconfirmed model.
+        raise RuntimeError(
+            "GEMINI_MODEL is not set in .env (project root). Confirm the exact "
+            "model string (e.g. from https://aistudio.google.com/apikey) and "
+            "set it before starting the app."
         )
     _client = genai.Client(api_key=settings.gemini_api_key)
     return _client

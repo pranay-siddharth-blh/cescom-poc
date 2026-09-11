@@ -8,7 +8,7 @@ handoff — this README is just how to run this one folder.
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # then fill in GEMINI_API_KEY
+cp ../.env.example ../.env   # .env lives at the PROJECT root, not here -- then fill in GEMINI_API_KEY / GEMINI_MODEL
 ```
 
 ## Run the server

@@ -22,7 +22,11 @@ SEMANTIC_LAYER_PATH = PROJECT_ROOT / "DCB_Semantic_Layer" / "semantic_layer.json
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=str(REPO_ROOT / ".env"),
+        # .env lives at the PROJECT root (sibling of DCB_Star_Schema/,
+        # DCB_Semantic_Layer/, etc.), not inside dcb-ai-app/ — matching the
+        # sibling BLH-BESCOM project's pattern of one .env at the project
+        # root. See PROJECT_ROOT/.env.example for the documented keys.
+        env_file=str(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

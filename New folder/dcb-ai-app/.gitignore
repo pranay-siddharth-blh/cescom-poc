@@ -1,5 +1,5 @@
-# Real secrets never get committed — only .env.example is tracked.
-.env
+# .env / .env.example live at the project root (../.env), not here —
+# see ../.gitignore. This file just covers Python build artifacts.
 __pycache__/
 *.pyc
 .pytest_cache/

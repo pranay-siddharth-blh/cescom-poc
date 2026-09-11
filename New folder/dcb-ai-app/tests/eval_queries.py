@@ -3,7 +3,7 @@ Runs the full pipeline (real Gemini call + real DB execution) over the 10
 example questions + 2 adversarial questions, printing verbatim results
 and per-stage latency, then writing eval_report.md next to this file.
 
-Requires a real GEMINI_API_KEY in dcb-ai-app/.env (see .env.example).
+Requires a real GEMINI_API_KEY in the project-root .env (../.env, see ../.env.example).
 Run from the dcb-ai-app/ directory:  python -m tests.eval_queries
 """
 from __future__ import annotations
@@ -24,10 +24,11 @@ from tests.questions import EXAMPLE_QUESTIONS, ADVERSARIAL_QUESTIONS
 
 
 async def main() -> None:
-    if not settings.gemini_api_key:
+    if not settings.gemini_api_key or not settings.gemini_model:
         print(
-            "GEMINI_API_KEY is not set (dcb-ai-app/.env). "
-            "Copy .env.example to .env and fill it in before running this eval."
+            "GEMINI_API_KEY and/or GEMINI_MODEL is not set in the project-root .env "
+            "(D:\\Cescom POC 2\\New folder\\.env). Copy .env.example to .env there "
+            "and fill both in before running this eval."
         )
         sys.exit(1)
 
