@@ -1,0 +1,5 @@
+# Real secrets never get committed — only .env.example is tracked.
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
