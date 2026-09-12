@@ -657,7 +657,7 @@ most recently just before this commit:
   to try a different alternative provider, there is no leftover
   scaffolding to build on — it would start from scratch, cleanly.
 
-## 8. UI redesign — built and verified (government-portal shell + conversational interaction + inline charts)
+## 8. UI redesign — built and verified (government-portal shell, conversational interaction, inline charts, three-pane layout)
 
 §7 (previous revision of this file) listed three standalone direction
 options with no decision made. **The decision made: not picking one of
@@ -720,13 +720,16 @@ High-contrast mode overrides every color variable to plain black/white.
 
 Kept the existing chat.html's bones (message bubbles, generous
 whitespace, the conversation as the primary visual object) and restyled
-to the new palette; dropped the old dark sidebar entirely (redundant
-with the light gov-portal shell, and the suggestion chips already cover
-what it did). Suggested-question chips from `example_queries.sql` kept,
-now a horizontal row above the composer. The "Generated SQL" +
-timing-breakdown panel is reframed as a collapsed-by-default "Technical
-details (SQL & timing)" disclosure for reviewers/auditors, not part of
-the default visual language.
+to the new palette. The "Generated SQL" + timing-breakdown panel is
+reframed as a collapsed-by-default "Technical details (SQL & timing)"
+disclosure for reviewers/auditors, not part of the default visual
+language.
+
+**Superseded by §8.6 below:** this subsection originally said the old
+dark sidebar was dropped entirely and the suggestion chips lived as a
+horizontal row above the composer. A later pass (§8.6) brought the
+sidebar back — purposefully this time, not empty nav — as part of a
+three-pane layout, and the chips now live there instead.
 
 ### 8.4 Inline charts — real design, not the one originally specified
 
@@ -762,10 +765,14 @@ arrays on every multi-row question (below). The final design:
   genuinely comparison-/trend-shaped questions (year-over-year, X vs Y,
   multi-row breakdowns), leaving it null for single-value answers.
 - **Frontend:** Chart.js (CDN, `cdnjs.cloudflare.com`, pinned to the real
-  published version `4.5.1` — see bug (b) below), rendered above the
-  answer text in the same bubble (Perplexity-style placement, not a
-  separate panel/tab), styled entirely in navy/gray — no Chart.js default
-  rainbow colors, red reserved for error states only per §8.2.
+  published version `4.5.1` — see bug (b) below), styled entirely in
+  navy/gray — no Chart.js default rainbow colors, red reserved for error
+  states only per §8.2. **Originally rendered above the answer text in
+  the same bubble** (Perplexity-style placement) — §8.6 later moved this
+  to a dedicated right-hand chart panel instead, larger and more
+  prominent; see §8.6 for the current placement, this subsection's own
+  "Verified results" table below is otherwise still accurate (the
+  column-reference design and its correctness guarantee didn't change).
 
 **Three real bugs found and fixed this round** (same format as §4, not
 summarized):
@@ -798,10 +805,13 @@ for every streamed answer chunk — which would silently wipe out an
 already-rendered Chart.js `<canvas>` the next time the streamed text
 updated, since a chart and the streaming text lived in the same element.
 **Found:** by design review, before it ever manifested as a visible
-break (this one never shipped broken). **Fix:** each bot bubble now has
-two independent children — a `.chart-container` and a text element —
-updated separately; `renderMeta()`'s SQL/timing disclosure appends after
-both, unaffected.
+break (this one never shipped broken). **Fix (at the time):** each bot
+bubble had two independent children — a `.chart-container` and a text
+element — updated separately. §8.6 later removed the bubble's chart
+container altogether (the chart moved to the right-hand panel), which
+sidesteps this whole class of bug rather than just fixing one instance
+of it — the bubble now holds only the text element, so there's nothing
+left for streamed text to clobber.
 
 **Verified results** — live in the browser (Playwright + real Chrome,
 real Gemini calls, no mocking), confirmed against the real query rows,
@@ -822,6 +832,75 @@ question in the same session, not an app bug; confirmed by testing Q5
 alone on a fresh page, then fixed the harness to wait for each new
 message bubble specifically.)
 
+### 8.6 Three-pane layout — sidebar (back, purposefully) + center chat + chart panel
+
+A follow-up pass moved from the single-column chat (§8.1–§8.4) to a
+three-pane layout: left sidebar, center chat, right chart panel.
+Frontend-only (`app/static/chat.html`; `app/main.py` untouched by this
+pass) — no change to what data the backend sends, no locked-folder or
+`db.py`/`sql_safety.py`/`semantic_layer.py`/`pipeline.py`/`llm.py`
+changes. Built and verified in the same four-step cadence as §8.1–§8.4.
+
+- **Left sidebar** — brought back after §8.3 dropped it, purposefully
+  this time:
+  - **Suggested questions**: the same chips from `example_queries.sql`
+    (§8.3), relocated here from the composer area. Confirmed a pure
+    relocation, not a behavior change — clicking one still
+    populates-and-submits exactly as before.
+  - **Chart history**: session-only, client-side state — a plain JS
+    array (`chartHistory`, most recent first), **not** persisted
+    anywhere (no backend storage, no `localStorage`) — gone on reload,
+    same scoping as the conversation itself. Each entry keeps a
+    reference to its own bot message bubble element, so clicking an
+    entry both redisplays that chart in the panel and scrolls
+    to/highlights (`.highlight-flash`, a brief box-shadow pulse) the
+    corresponding exchange in the center chat.
+- **Right chart panel** — replaces the inline-in-bubble chart placement
+  from §8.4. When an answer includes `chart_data`, the chart renders
+  here instead of in the message bubble — larger and more prominent than
+  a chart squeezed into a bubble ever was. The bubble itself now holds
+  only the text answer.
+  - **One shared render path, deliberately**: both the live `chart` SSE
+    event and clicking an older chart-history entry call the exact same
+    `renderChartInPanel()`. This is what makes the obvious edge case
+    "just work" rather than needing separate state-tracking: after
+    manually selecting an old chart from history, asking a brand-new
+    chart-bearing question still correctly switches the panel to the
+    new chart, never gets stuck on the old manual pick — verified
+    directly (asked Q2, then Q5, clicked back to Q2 in the sidebar, then
+    asked Q8 fresh: panel ended up showing Q8's bar chart, not Q2's line
+    chart). Any future chart-related feature should route through this
+    same function rather than adding a second path.
+  - A non-chart answer (e.g. Q1) deliberately leaves the panel
+    untouched — it always shows "the most recently produced chart," not
+    "a chart for the most recent message," so there's nothing to update
+    to when the latest answer has none of its own.
+- **Responsive collapse**: below a 1024px breakpoint, the sidebar and
+  chart panel become fixed-position off-canvas drawers (slide-in
+  overlays with a backdrop) instead of squeezing the center chat into a
+  sliver, opened via explicit text-labeled "Menu"/"Charts" toggle
+  buttons in the header (no icon-only controls, consistent with the
+  accessibility toolbar's own rule). Tested at actual tablet width
+  (768×1024, not a narrowed desktop window): both drawers open/close
+  correctly (confirmed via real bounding-box positions, not just
+  Playwright's `is_visible()`, which doesn't account for the
+  off-canvas `transform: translateX()` — sidebar sits at `x:-280`,
+  chart panel at `x:768` i.e. just past the viewport edge, when
+  collapsed), the chat remains full-width and usable, a chart-bearing
+  question renders correctly inside the opened Charts drawer, and both
+  the chart history and suggestion chips work correctly from inside the
+  opened Menu drawer (including submitting a question directly from a
+  chip while the drawer is open).
+- **Palette, real logos, accessibility toolbar, and the "Technical
+  details" disclosure are unchanged** — this was a layout/information-
+  architecture change, not a re-theme.
+
+No new bugs were found or fixed during this pass — unlike §8.4's three,
+this one shipped clean through all four steps. Full regression
+(`dry_run_no_llm`, `pipeline_mock_test`, `double_count_guard_test`)
+re-confirmed unaffected, as expected for a frontend-only change with no
+backend contract change.
+
 ### 8.5 What's actually still open
 
 - **Sourcing an official, non-third-party CESC logo file.** The
@@ -829,10 +908,22 @@ message bubble specifically.)
   POC," per its own in-code comment, but was cropped from a third-party
   source, not the `.gov.in` domain. Swap it if an official file is ever
   supplied.
+- **"New chat" doesn't reset the chart panel or chart history** (§8.6).
+  Clicking "+ New chat" clears the visible conversation, but the
+  sidebar's chart-history list and the right-hand chart panel both keep
+  showing whatever was there before — a history entry's bubble
+  reference becomes a detached DOM node (clicking it is harmless, just a
+  no-op scroll/highlight), and the panel keeps the last real chart in
+  view even though it no longer corresponds to anything on screen.
+  Noticed during §8.6's build, not fixed — out of that pass's explicit
+  scope (chip relocation, chart history, right-panel wiring, responsive
+  collapse), not asked for, and "New chat"'s intended chart-related
+  semantics weren't specified. A real gap for whoever picks this up
+  next, not hidden.
 - **Everything else originally discussed in this section — the real
   CESCOM logo and Chart.js visualization — is done, not just planned.**
-  Removed from this list; see §8.1/§8.4 above for what was actually built
-  and how it was verified.
+  Removed from this list; see §8.1/§8.4/§8.6 above for what was actually
+  built and how it was verified.
 
 ---
 
