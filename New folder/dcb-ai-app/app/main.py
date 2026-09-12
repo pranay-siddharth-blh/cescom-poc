@@ -5,17 +5,21 @@ FastAPI app. Two endpoints share app.pipeline.answer_question:
   - POST /api/ask_once  — plain JSON, same pipeline, for scripts/evals
                            where SSE parsing would just add friction.
   - GET  /health         — liveness check.
-  - GET  /               — the chat UI (app/static/chat.html), a static
+  - GET  /chat           — the chat UI (app/static/chat.html), a static
                             page that talks to /api/ask itself; no server-
                             side templating needed since it carries no
                             per-request data at load time.
 
 Also a small, separate login-gated dashboard (app/static/login.html +
 dashboard.html), backed by app.auth's signed-cookie session and
-app.dashboard_data's read-only summary queries. Deliberately NOT wired
-into the chat pipeline above or into /api/ask*'s auth (there is none) --
-the dashboard is additive, same as the rest of this app's history of
-additive-only changes (see CLAUDE.md).
+app.dashboard_data's read-only summary queries. The chat pipeline itself
+(/api/ask*) is still NOT gated by this login -- by design, kept
+additive/separate (see CLAUDE.md) -- only the landing flow changed: by
+request, GET / is now the entry point into the login+dashboard flow
+(login page first if not signed in, straight to the dashboard if
+already signed in) rather than straight to the chat UI. The chat UI
+moved to its own GET /chat path so it's still reachable, just no longer
+what opens by default.
 
 Persistent connections (design point #3): the DB connection and the LLM
 client are both created once in `lifespan`, stored on `app.state`, and
@@ -65,9 +69,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DCB NL2SQL Chatbot", lifespan=lifespan)
 
-# Serves app/static/* under /static (the header logos; chat.html itself is
-# still served by the GET / route below, read directly as text, not through
-# this mount, so that route's behavior is unchanged).
+# Serves app/static/* under /static (the header logos; chat.html/login.html/
+# dashboard.html themselves are served by their own routes below, read
+# directly as text, not through this mount, so those routes' behavior is
+# unchanged).
 app.mount("/static", StaticFiles(directory=_CHAT_HTML_PATH.parent), name="static")
 
 
@@ -76,16 +81,26 @@ async def health():
     return {"status": "ok"}
 
 
-@app.get("/", response_class=HTMLResponse)
-async def chat_ui():
-    return _CHAT_HTML_PATH.read_text(encoding="utf-8")
-
-
 def _current_user(request: Request) -> str | None:
     """None means 'not logged in' -- see app.auth.verify_session_token,
     which never raises, so a missing/garbled/expired cookie all collapse
     to this same None rather than a 500."""
     return verify_session_token(request.cookies.get(COOKIE_NAME))
+
+
+@app.get("/")
+async def root(request: Request):
+    """The app's entry point, by request: login page first if not signed
+    in, straight to the dashboard if already signed in -- never straight
+    to the chat UI anymore (that's GET /chat now)."""
+    if not _current_user(request):
+        return RedirectResponse(url="/login")
+    return RedirectResponse(url="/dashboard")
+
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_ui():
+    return _CHAT_HTML_PATH.read_text(encoding="utf-8")
 
 
 @app.get("/login", response_class=HTMLResponse)

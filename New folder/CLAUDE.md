@@ -192,10 +192,16 @@ differs.
 
 ### Routes (current, in `app/main.py`)
 
-- `GET /` — the chat UI (`app/static/chat.html`).
+- `GET /` — **the app's entry point, by request (§9.6):** redirects to
+  `/login` if not signed in, or straight to `/dashboard` if already
+  signed in. No longer serves the chat UI directly.
+- `GET /chat` — the chat UI (`app/static/chat.html`), moved here from
+  `GET /` in §9.6 so it's still reachable, just no longer what opens by
+  default. Still fully unauthenticated, same as always.
 - `GET /static/*` — static assets (the two header logo files, §8.1), via a
-  `StaticFiles` mount added in §8; `chat.html` itself is still served by
-  `GET /` above, read directly as text, not through this mount.
+  `StaticFiles` mount added in §8; `chat.html`/`login.html`/`dashboard.html`
+  are still served by their own routes, read directly as text, not
+  through this mount.
 - `POST /api/ask` — SSE streaming endpoint the chat UI calls. Events:
   `status`, `sql`, `chart` (`chart_data` or `null`, §8.4), `answer_chunk`
   (one or more), `done`.
@@ -203,8 +209,9 @@ differs.
 - `GET /health` — liveness check, returns `{"status":"ok"}`.
 - `GET /docs` — FastAPI's auto-generated Swagger UI (unaffected by any of the above).
 - `GET /login`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
-  `GET /dashboard`, `GET /api/dashboard_summary` — the login-gated
-  dashboard added in §9. Entirely separate from the chat pipeline above.
+  `GET /dashboard`, `GET /api/dashboard_summary` — the dashboard added in
+  §9 (its own login flow now also the app's landing flow, per §9.6;
+  `/api/ask*` above remain unauthenticated regardless).
 
 ---
 
@@ -229,8 +236,11 @@ cp ../.env.example ../.env
 ```bash
 uvicorn app.main:app --reload
 ```
-Then open `http://127.0.0.1:8000/` in a browser for the chat UI, or
-`http://127.0.0.1:8000/docs` for the Swagger testing page.
+Then open `http://127.0.0.1:8000/` in a browser — it lands on the login
+page (any username, no real password check — see §9.5), and takes you
+to the dashboard next. The chat UI is at `http://127.0.0.1:8000/chat`
+(also linked from both the dashboard and the login page); `/docs` is
+still the Swagger testing page.
 
 **Run the tests** (from inside `dcb-ai-app/`):
 ```bash
@@ -1211,6 +1221,40 @@ type anything into the login form — there is no access control left on
 it at all, only a cookie that proves a session was created, not that
 whoever created it was supposed to. Fine for a solo-laptop POC; revisit
 before this is ever exposed anywhere another person could reach it.
+
+### 9.6 Landing flow flipped: `GET /` now opens login → dashboard, not the chat UI
+
+**By explicit request** ("first thing should get open is the login
+page, after login next has to be the dashboard"). Before this, `GET /`
+served the chat UI directly and `/dashboard` was a separate, secondary
+surface reachable only by navigating there. Now:
+
+- `GET /` — checks the session cookie and redirects: to `/login` if not
+  signed in, straight to `/dashboard` if already signed in. Serves
+  nothing of its own anymore, just routes.
+- `GET /chat` — the chat UI, moved here from `GET /` so it's still fully
+  reachable, just no longer the default landing page. Still completely
+  unauthenticated — this change is scoped to the *landing flow only*, it
+  does **not** gate the chat pipeline behind login. If that's also
+  wanted, it hasn't been asked for yet and isn't done.
+- Every internal link that used to point at `/` meaning "the chat" was
+  updated to `/chat`: `login.html`'s "← Ask a question instead",
+  `dashboard.html`'s "Ask DCB AI" nav link, its "Ask a question"/"Ask
+  now" buttons, and its sidebar promo's "Open chat" link. The
+  login→dashboard redirect on successful sign-in (`login.html`'s own
+  JS) already pointed at `/dashboard` before this change — that half of
+  the request was already true, only the "`/` opens login first" half
+  was new.
+
+**Verified live:** a fresh (no cookie) request to `/` redirects to
+`/login`; logging in redirects to `/dashboard` with real data; a
+follow-up request to `/` with the now-valid session cookie redirects
+straight to `/dashboard`, skipping login, as intended; `/chat` still
+serves the full chat UI unauthenticated; all four updated cross-links
+resolve to `/chat`, not a dead `/`. Full non-LLM regression
+(`dry_run_no_llm`, `pipeline_mock_test`, `double_count_guard_test`)
+re-confirmed unaffected — this is a routing change, not a chat-pipeline
+change.
 
 ---
 
