@@ -16,6 +16,7 @@ reused for every request — never re-opened per request.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -32,6 +33,14 @@ from app.semantic_layer import build_router_index
 from app.config import settings
 
 _CHAT_HTML_PATH = Path(__file__).resolve().parent / "static" / "chat.html"
+
+# Pure UX pacing for the typewriter/reveal effect on streamed answer text --
+# purely a delivery-speed knob, not a change to how the answer is generated
+# (see ask_stream below: status/sql/chart/done are never delayed, only
+# answer_chunk). Tuned by feel: word-by-word at 20ms/word reads as a smooth
+# type-out for a short answer and doesn't drag out a long multi-row listing
+# into several seconds.
+ANSWER_CHUNK_DELAY_SECONDS = 0.02
 
 
 @asynccontextmanager
@@ -101,11 +110,16 @@ async def ask_stream(req: AskRequest):
         # progressively (see CLAUDE.md on why this isn't token-level LLM
         # streaming — Gemini's structured-output mode returns the whole
         # JSON object at once, so what we stream here is the deterministic
-        # template-fill output, in small pieces, over SSE).
+        # template-fill output, in small pieces, over SSE). Word-by-word,
+        # paced with a small sleep between chunks, is what actually makes
+        # this look/feel like typing rather than one paste -- the delay is
+        # UX pacing only, applied here (not before this point), so it never
+        # delays status/sql/chart, only the answer text itself.
         words = result.answer.split(" ")
-        chunk = 6
+        chunk = 1
         for i in range(0, len(words), chunk):
             yield _sse("answer_chunk", {"text": " ".join(words[i : i + chunk]) + " "})
+            await asyncio.sleep(ANSWER_CHUNK_DELAY_SECONDS)
         yield _sse(
             "done",
             {
