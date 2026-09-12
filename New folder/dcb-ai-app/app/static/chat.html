@@ -3,163 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DCB Assistant — CESCOM</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23003a70'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23f5a623'/%3E%3C/svg%3E">
+<title>DCB Assistant — CESC, Mysore</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231a2f5c'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
 <style>
-  /* Layout shape (sidebar + main chat + composer, bubbles, suggestion
-     chips, status indicator, response timer, collapsible detail sections)
-     follows the same pattern as this project's sibling BESCOM chat UI --
-     rewritten from scratch here for this app's own backend (different SSE
-     event shape: status/sql/answer_chunk/done, see app/main.py) and its
-     own CESCOM branding, not copied. */
+  /*
+    Shell/chrome: government-portal style (light theme, two-logo header
+    bar, explicit text-labelled accessibility toolbar), matching the
+    layout convention of cescmysore.karnataka.gov.in.
+    Interior: conversational chat (bubbles, generous whitespace, the
+    conversation as the primary object), Perplexity/Claude.ai-style --
+    this part carries over the bones of the previous chat.html revision,
+    restyled to the new palette.
+
+    Palette sampled from the two provided logo files (not the old
+    navy/amber placeholder scheme):
+      --navy  #1a2f5c -- from the CESC mark's blue disc
+      --red   #c0202c -- from the CESC wordmark's red lettering
+    Both checked for WCAG AA contrast against white/light backgrounds
+    before use (navy ~13:1, red ~6:1 -- both clear AA passes for text;
+    red is used ONLY as a sparing accent -- error states, the "not
+    answerable" pill -- never decoratively, per design brief).
+  */
   :root{
-    --navy-dark:#00203f; --navy:#003a70; --navy-2:#0056a3; --side:#00294f;
-    --side-2:#0b3c6e; --sideln:#1d4a78; --sidetx:#c9dcef;
-    --amber:#f5a623; --amber-dark:#d98c0f;
-    --ink:#1f2937; --muted:#6b7280; --bot:#eef4fb; --user:#0056a3;
-    --line:#dbe3ee; --bg:#f4f7fb;
-    --ok:#1a7f4b; --warn:#a3620a; --err:#b42318;
+    --font-scale: 1;
+    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
+    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
+    --bg:#f6f7f9; --surface:#ffffff;
+    --ink:#1c2430; --muted:#4b5563; --border:#d7dce4;
+    --user-bubble:#1a2f5c; --bot-bubble:#eef1f6;
+    --warn:#8a5a00; --warn-bg:#fff6e6; --warn-border:#f0dca0;
+    --ok-dot:#2f9e58; --err-dot:#c0202c;
+  }
+  /* High-contrast override: plain black/white, no gradients, thicker
+     borders. Toggled by the "High contrast" button in the a11y toolbar. */
+  body.hc{
+    --navy:#000000; --navy-deep:#000000; --navy-soft:#ffffff;
+    --red:#a4000c; --red-soft:#ffffff; --red-border:#000000;
+    --bg:#ffffff; --surface:#ffffff;
+    --ink:#000000; --muted:#000000; --border:#000000;
+    --user-bubble:#000000; --bot-bubble:#ffffff;
+    --warn:#000000; --warn-bg:#ffffff; --warn-border:#000000;
+    --ok-dot:#000000; --err-dot:#a4000c;
   }
   *{box-sizing:border-box}
+  html{font-size:calc(16px * var(--font-scale));}
   html,body{height:100%}
   body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
-       background:var(--bg);color:var(--ink);display:flex;height:100vh;overflow:hidden}
+       background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  body.hc *{box-shadow:none !important;background-image:none !important}
+  body.hc .bubble, body.hc .sqlbox, body.hc .pill, body.hc #box, body.hc .chip{border-width:2px !important}
 
-  .sidebar{width:270px;flex:0 0 270px;background:var(--side);color:#fff;
-           display:flex;flex-direction:column;border-right:1px solid var(--sideln)}
-  .sb-brand{display:flex;align-items:center;gap:10px;padding:16px}
-  .sb-brand .mark{width:38px;height:38px;border-radius:9px;flex:0 0 auto;
-                   background:linear-gradient(135deg,var(--navy),var(--navy-2));
-                   display:flex;align-items:center;justify-content:center;font-size:18px}
-  .sb-brand h1{font-size:.98rem;margin:0;font-weight:700}
-  .sb-brand .sub{font-size:.68rem;opacity:.75}
-  .newchat{margin:0 14px 10px;padding:10px;border:1px solid var(--sideln);border-radius:9px;
-           background:var(--side-2);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;
-           display:flex;align-items:center;gap:8px;justify-content:center}
-  .newchat:hover{background:#134a80}
-  .sb-section{padding:10px 16px 4px;font-size:.66rem;letter-spacing:.6px;text-transform:uppercase;
-              color:var(--sidetx);opacity:.75}
-  .quick{display:flex;flex-direction:column;gap:4px;padding:0 10px}
-  .quick button{text-align:left;background:transparent;border:none;color:#dce7f5;font-size:.8rem;
-                padding:8px 10px;border-radius:7px;cursor:pointer;line-height:1.3}
-  .quick button:hover{background:var(--side-2)}
-  .sb-foot{margin-top:auto;border-top:1px solid var(--sideln);padding:12px 16px;font-size:.72rem;color:var(--sidetx)}
-  .sb-foot .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;
-                vertical-align:middle;background:#888}
+  /* ---------- Government header ---------- */
+  .gov-header{flex:0 0 auto;background:var(--surface);border-bottom:1px solid var(--border)}
+  .gov-topbar{display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap;
+              border-bottom:1px solid var(--border)}
+  .gov-brand{display:flex;align-items:center;gap:12px;flex:1;min-width:260px}
+  .gov-brand img{height:52px;width:auto;flex:0 0 auto}
+  .gov-titles{line-height:1.3}
+  .gov-line1{font-size:.72rem;color:var(--muted);font-weight:600;letter-spacing:.2px}
+  .gov-line2{font-size:.86rem;color:var(--navy);font-weight:700}
 
-  .chatwrap{flex:1;display:flex;flex-direction:column;min-width:0}
-  header{background:var(--navy);color:#fff;padding:12px 22px;min-height:60px;
-         display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--amber)}
-  .burger{display:none;background:rgba(255,255,255,.14);border:none;color:#fff;
-          width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer}
-  header .mark{width:34px;height:34px;border-radius:8px;
-               background:linear-gradient(135deg,var(--navy-2),var(--navy));
-               display:flex;align-items:center;justify-content:center;font-size:16px}
-  header h2{font-size:1rem;margin:0;font-weight:700}
-  header .sub{font-size:.72rem;opacity:.85}
+  .a11y-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-left:auto}
+  .a11y-group{display:flex;align-items:center;gap:4px}
+  .a11y-label{font-size:.68rem;color:var(--muted);margin-right:4px;font-weight:600}
+  .a11y-toolbar button{background:var(--surface);border:1px solid var(--border);color:var(--ink);
+                        font-size:.78rem;font-weight:700;padding:5px 9px;border-radius:6px;cursor:pointer}
+  .a11y-toolbar button:hover{background:var(--navy-soft)}
+  .a11y-toolbar button:focus-visible{outline:3px solid var(--navy);outline-offset:1px}
+  .a11y-toolbar button[aria-pressed="true"], .lang-btn.active{
+    background:var(--navy);color:#fff;border-color:var(--navy)}
+  #fontReset{min-width:30px}
 
-  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;
-       max-width:900px;width:100%;margin:0 auto}
-  .hint{color:var(--muted);font-size:.82rem;text-align:center;margin:6px 0}
+  .app-titlebar{display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:wrap}
+  .app-title{font-size:1rem;font-weight:700;color:var(--navy)}
+  .app-title .app-sub{display:block;font-size:.74rem;font-weight:500;color:var(--muted);margin-top:1px}
+  .app-actions{margin-left:auto;display:flex;align-items:center;gap:14px}
+  #statusRow{font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999}
+  #newchat{background:var(--surface);border:1px solid var(--border);color:var(--navy);
+           font-size:.8rem;font-weight:700;padding:7px 13px;border-radius:7px;cursor:pointer}
+  #newchat:hover{background:var(--navy-soft)}
+
+  /* ---------- Conversation area ---------- */
+  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;
+       max-width:820px;width:100%;margin:0 auto}
+  .hint{color:var(--muted);font-size:.85rem;text-align:center;margin:10px 0;line-height:1.5}
 
   .msg{display:flex;gap:10px;max-width:88%;animation:msgIn .2s ease both}
   @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .msg .av{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:flex;
            align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
-  .bubble{padding:11px 15px;border-radius:14px;line-height:1.55;font-size:.92rem;
-          white-space:pre-wrap;box-shadow:0 1px 3px rgba(0,42,80,.1)}
-  .bot{align-self:flex-start}.bot .av{background:var(--navy-2)}
-  .bot .bubble{background:var(--bot);border:1px solid var(--line);border-top-left-radius:4px}
-  .user{align-self:flex-end;flex-direction:row-reverse}.user .av{background:#334155}
-  .user .bubble{background:var(--user);color:#fff;border-top-right-radius:4px}
+  .bubble{padding:12px 16px;border-radius:14px;line-height:1.6;font-size:.94rem;
+          white-space:pre-wrap;box-shadow:0 1px 3px rgba(26,47,92,.08)}
+  .bot{align-self:flex-start}.bot .av{background:var(--navy)}
+  .bot .bubble{background:var(--bot-bubble);border:1px solid var(--border);border-top-left-radius:4px}
+  .user{align-self:flex-end;flex-direction:row-reverse}.user .av{background:#5b6472}
+  .user .bubble{background:var(--user-bubble);color:#fff;border-top-right-radius:4px}
   .bubble.waiting{color:var(--muted);font-style:italic}
-  .bubble.err{background:#fdf1f0;border:1px solid #f0c9c4;color:var(--err)}
-  .bubble.notanswerable{background:#fff8ec;border:1px solid #f2d9a8}
+  .bubble.err{background:var(--red-soft);border:1px solid var(--red-border);color:var(--red)}
+  .bubble.notanswerable{background:var(--warn-bg);border:1px solid var(--warn-border)}
 
   .meta{margin-top:9px;font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .pill{background:#fff;border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-weight:600}
-  .pill.time{color:var(--navy-2)}
-  .pill.nf{color:var(--warn);border-color:#f0dca0;background:#fff8ec}
-  .pill.trunc{color:var(--warn);border-color:#f0dca0}
-  .pill.breakdown{font-weight:500;color:var(--muted);font-family:"JetBrains Mono",ui-monospace,monospace}
+  .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-weight:600}
+  .pill.time{color:var(--navy)}
+  .pill.nf{color:var(--red);border-color:var(--red-border);background:var(--red-soft)}
+  .pill.trunc{color:var(--warn);border-color:var(--warn-border);background:var(--warn-bg)}
 
-  .sqlbox{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+  /* Reframed as an opt-in disclosure for reviewers/auditors, not part of
+     the default conversational visual language -- collapsed by default,
+     holds both the SQL and the per-stage timing breakdown together. */
+  .sqlbox{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
   .sqlbox > summary{cursor:pointer;padding:8px 12px;font-size:.76rem;font-weight:700;
-                     color:var(--navy-2);list-style:none}
+                     color:var(--navy);list-style:none}
   .sqlbox > summary::-webkit-details-marker{display:none}
   .sqlbox > summary::before{content:"▸ ";color:var(--muted)}
   .sqlbox[open] > summary::before{content:"▾ "}
-  .sqlbox pre{margin:0;padding:10px 12px;border-top:1px solid var(--line);
+  .sqlbox .detail-body{padding:0 12px 10px}
+  .sqlbox pre{margin:8px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
               font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.74rem;
-              color:#0b2a4a;white-space:pre-wrap;word-break:break-word;background:#f7faff}
+              color:var(--navy-deep);white-space:pre-wrap;word-break:break-word;background:var(--navy-soft)}
+  .sqlbox .timing{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.72rem;color:var(--muted)}
 
-  footer{border-top:1px solid var(--line);background:#fff;padding:12px 16px}
-  .composer{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px}
-  #box{flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:.95rem;
-       outline:none;font-family:inherit}
-  #box:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(0,86,163,.14)}
-  #send{background:linear-gradient(135deg,var(--amber),var(--amber-dark));color:#1f2937;
-        border:none;border-radius:10px;padding:0 22px;height:42px;font-weight:700;cursor:pointer}
-  #send:hover{filter:brightness(1.06)}
+  /* Inline chart, rendered above the answer text within the same bot
+     bubble (Perplexity-style placement, not a separate panel/tab). Hidden
+     (via [hidden]) until a real chart_data payload actually arrives. */
+  .chart-container{margin-bottom:10px;background:var(--surface);border:1px solid var(--border);
+                    border-radius:10px;padding:10px;height:220px}
+  .chart-container canvas{width:100% !important;height:100% !important}
+
+  /* ---------- Suggestion chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 10px;max-width:820px;width:100%;margin:0 auto}
+  .chip{background:var(--surface);border:1px solid var(--border);color:var(--navy);
+        font-size:.78rem;font-weight:600;padding:7px 12px;border-radius:20px;cursor:pointer;text-align:left}
+  .chip:hover{background:var(--navy-soft)}
+
+  /* ---------- Composer ---------- */
+  footer{border-top:1px solid var(--border);background:var(--surface);padding:12px 16px;flex:0 0 auto}
+  .composer{max-width:820px;margin:0 auto;display:flex;align-items:center;gap:8px}
+  #box{flex:1;border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:.95rem;
+       outline:none;font-family:inherit;background:var(--surface);color:var(--ink)}
+  #box:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,47,92,.14)}
+  #send{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:0 22px;height:42px;
+        font-weight:700;cursor:pointer}
+  #send:hover{background:var(--navy-deep)}
   #send:disabled{opacity:.5;cursor:default}
 
-  .backdrop{display:none}
-  @media(max-width:760px){
-    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .2s}
-    body.side-open .sidebar{transform:translateX(0)}
-    .burger{display:flex}
-    body.side-open .backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20}
+  @media(max-width:640px){
+    .gov-brand img{height:38px}
+    .gov-line2{font-size:.78rem}
+    .a11y-toolbar{width:100%;justify-content:flex-start}
+    .app-actions{margin-left:0}
   }
 </style>
 </head>
 <body>
-  <div class="backdrop" id="backdrop"></div>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sb-brand">
-      <div class="mark">⚡</div>
-      <div><h1>DCB Assistant</h1><div class="sub">CESCOM · Holenarasipura Division</div></div>
-    </div>
-    <button class="newchat" id="newchat">＋ New chat</button>
-
-    <div class="sb-section">Try asking</div>
-    <div class="quick">
-      <button data-q="What was the collection efficiency in Arkalgud in 2024-25?">📊 Collection efficiency, one sub-division</button>
-      <button data-q="Which tariff category generated the most demand in 2023-24?">🏆 Top tariff category by demand</button>
-      <button data-q="How much outstanding balance does Konanur currently carry?">💰 Outstanding arrears</button>
-      <button data-q="Which sub-division has the best collection efficiency in the most recent year?">🥇 Best-performing sub-division</button>
-      <button data-q="What was the total demand for tariff code ZZ-99 in 2024-25?">❓ A tariff code that doesn't exist</button>
-    </div>
-
-    <div class="sb-foot">
-      <div id="statusRow"><span class="dot" id="statusDot"></span><span id="statusText">API: checking…</span></div>
-    </div>
-  </aside>
-
-  <div class="chatwrap">
-    <header>
-      <button class="burger" id="burger">☰</button>
-      <div class="mark">⚡</div>
-      <div>
-        <h2>DCB Assistant</h2>
-        <div class="sub">DCB NL2SQL Chatbot · CESCOM Holenarasipura Division</div>
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysore</div>
+        </div>
+        <!-- cesc_logo_reference.png was cropped from a third-party source,
+             not pulled from the cescmysore.karnataka.gov.in domain itself.
+             Good enough to ship with for this POC; swap for an official
+             CESC-supplied file if one is sourced later. -->
+        <img src="/static/cesc_logo_reference.png" alt="CESC, Mysore department mark">
       </div>
-    </header>
-
-    <main id="chat">
-      <div class="hint">Ask a question about Demand, Collection &amp; Balance figures for Holenarasipura
-        Division. Answers are generated from a real SQL query against the star-schema database —
-        the generated SQL and response timing are shown with every answer.</div>
-    </main>
-
-    <footer>
-      <div class="composer">
-        <input id="box" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
-        <button id="send">Send</button>
+      <div class="a11y-toolbar" role="group" aria-label="Accessibility settings">
+        <div class="a11y-group" aria-label="Text size">
+          <span class="a11y-label" data-i18n="textSize">Text size</span>
+          <button type="button" id="fontDec" aria-label="Decrease text size">A−</button>
+          <button type="button" id="fontReset" aria-label="Reset text size">A</button>
+          <button type="button" id="fontInc" aria-label="Increase text size">A+</button>
+        </div>
+        <button type="button" id="contrastToggle" aria-pressed="false" data-i18n="highContrast">High contrast</button>
+        <div class="a11y-group" aria-label="Language">
+          <button type="button" id="langEn" class="lang-btn active" data-lang="en">English</button>
+          <button type="button" id="langKn" class="lang-btn" data-lang="kn">ಕನ್ನಡ</button>
+        </div>
       </div>
-    </footer>
+    </div>
+    <div class="app-titlebar">
+      <div class="app-title">
+        <span data-i18n="appTitle">DCB Assistant</span>
+        <span class="app-sub" data-i18n="appSub">Demand, Collection &amp; Balance · Holenarasipura Division</span>
+      </div>
+      <div class="app-actions">
+        <div id="statusRow"><span class="dot" id="statusDot"></span><span id="statusText">API: checking…</span></div>
+        <button id="newchat" data-i18n="newChat">+ New chat</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="chat">
+    <div class="hint" data-i18n="hint">Ask a question about Demand, Collection &amp; Balance figures for Holenarasipura
+      Division. Answers are generated from a real SQL query against the star-schema database —
+      the generated SQL and response timing are available under "Technical details" with every answer.</div>
+  </main>
+
+  <div class="chips" id="chips">
+    <button class="chip" data-q="What was the collection efficiency in Arkalgud in 2024-25?" data-i18n="chip1">Collection efficiency, one sub-division</button>
+    <button class="chip" data-q="Which tariff category generated the most demand in 2023-24?" data-i18n="chip2">Top tariff category by demand</button>
+    <button class="chip" data-q="How much outstanding balance does Konanur currently carry?" data-i18n="chip3">Outstanding arrears</button>
+    <button class="chip" data-q="Which sub-division has the best collection efficiency in the most recent year?" data-i18n="chip4">Best-performing sub-division</button>
+    <button class="chip" data-q="What was the total demand for tariff code ZZ-99 in 2024-25?" data-i18n="chip5">A tariff code that doesn't exist</button>
   </div>
 
+  <footer>
+    <div class="composer">
+      <input id="box" data-i18n-placeholder="boxPlaceholder" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
+      <button id="send" data-i18n="send">Send</button>
+    </div>
+  </footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <script>
 const chat = document.getElementById('chat');
 const box  = document.getElementById('box');
@@ -179,41 +238,101 @@ function renderMeta(bubbleEl, doneEv, sqlText, clientSecs){
   const meta = document.createElement('div'); meta.className = 'meta';
 
   const timeP = document.createElement('span'); timeP.className = 'pill time';
-  timeP.textContent = 'Responded in ' + clientSecs + 's';
+  timeP.textContent = t('respondedIn', {s: clientSecs});
   meta.appendChild(timeP);
 
   if (doneEv){
     if (doneEv.answerable === false){
       bubbleEl.classList.add('notanswerable');
       const p = document.createElement('span'); p.className = 'pill nf';
-      p.textContent = 'not answerable from this data';
+      p.textContent = t('notAnswerable');
       meta.appendChild(p);
     }
     if (doneEv.truncated){
       const p = document.createElement('span'); p.className = 'pill trunc';
-      p.textContent = 'results truncated';
-      meta.appendChild(p);
-    }
-    const t = doneEv.timing_ms || {};
-    const order = ['router_ms', 'llm_ms', 'safety_ms', 'db_ms', 'fill_ms'];
-    const parts = order.filter(k => k in t).map(k => k.replace('_ms', '') + ': ' + t[k] + 'ms');
-    if (parts.length){
-      const p = document.createElement('span'); p.className = 'pill breakdown';
-      p.textContent = parts.join(' · ');
+      p.textContent = t('resultsTruncated');
       meta.appendChild(p);
     }
   }
   bubbleEl.appendChild(meta);
 
-  if (sqlText){
+  // Opt-in technical disclosure for reviewers/auditors: SQL + per-stage
+  // timing breakdown, collapsed by default, not part of the default
+  // conversational visual language.
+  if (sqlText || (doneEv && doneEv.timing_ms)){
     const det = document.createElement('details'); det.className = 'sqlbox';
-    const sum = document.createElement('summary'); sum.textContent = 'Generated SQL';
+    const sum = document.createElement('summary'); sum.textContent = t('technicalDetails');
     det.appendChild(sum);
-    const pre = document.createElement('pre'); pre.textContent = sqlText;
-    det.appendChild(pre);
+    const body = document.createElement('div'); body.className = 'detail-body';
+    if (doneEv && doneEv.timing_ms){
+      const t2 = doneEv.timing_ms || {};
+      const order = ['router_ms', 'llm_ms', 'safety_ms', 'db_ms', 'fill_ms'];
+      const parts = order.filter(k => k in t2).map(k => k.replace('_ms', '') + ': ' + t2[k] + 'ms');
+      if (parts.length){
+        const tp = document.createElement('div'); tp.className = 'timing';
+        tp.textContent = parts.join(' · ');
+        body.appendChild(tp);
+      }
+    }
+    if (sqlText){
+      const pre = document.createElement('pre'); pre.textContent = sqlText;
+      body.appendChild(pre);
+    }
+    det.appendChild(body);
     bubbleEl.appendChild(det);
   }
   chat.scrollTop = chat.scrollHeight;
+}
+
+// Renders chart_data (already REAL data by the time it reaches the
+// frontend -- built deterministically in app/pipeline.py::_build_chart_data
+// from the actual query result, never authored by the LLM; see
+// app/models.py::ChartSpec's docstring) into `container`, above the answer
+// text. Styled entirely from this page's navy/red/gray palette -- no
+// Chart.js default rainbow colors.
+function renderChart(container, chartData){
+  if (!chartData || !Array.isArray(chartData.values) || !chartData.values.length) return;
+  container.innerHTML = '';
+  container.hidden = false;
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+
+  const hc = document.body.classList.contains('hc');
+  const navy = hc ? '#000000' : '#1a2f5c';
+  const gridColor = hc ? '#000000' : '#e3e7ee';
+  const textColor = hc ? '#000000' : '#4b5563';
+  const isBar = chartData.type === 'bar';
+
+  new Chart(canvas.getContext('2d'), {
+    type: isBar ? 'bar' : 'line',
+    data: {
+      labels: chartData.labels,
+      datasets: [{
+        label: chartData.series_label || '',
+        data: chartData.values,
+        backgroundColor: isBar ? navy : 'rgba(26,47,92,0.12)',
+        borderColor: navy,
+        borderWidth: 2,
+        pointBackgroundColor: navy,
+        pointRadius: isBar ? 0 : 3,
+        fill: !isBar,
+        tension: 0.25,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: !!chartData.series_label, labels: { color: textColor } },
+        tooltip: { backgroundColor: navy, titleColor: '#fff', bodyColor: '#fff' },
+      },
+      scales: {
+        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true },
+      },
+    },
+  });
 }
 
 // A bit longer than this app's own DB query timeout (8s default,
@@ -227,24 +346,38 @@ const CLIENT_TIMEOUT_MS = 30000;
 // sibling BESCOM project's NDJSON /chat/stream):
 //   event: status        {"stage": "thinking"}
 //   event: sql            {"sql": "..."}                (may be "" when unanswerable)
+//   event: chart           {"chart_data": {...} | null}  (real data, see renderChart)
 //   event: answer_chunk   {"text": "..."}                (one or more, in order)
 //   event: done            {"answerable": bool, "timing_ms": {...}, "truncated": bool}
 async function send(){
   const text = box.value.trim(); if (!text) return;
   addBubble(text, 'user'); box.value = ''; sendBtn.disabled = true;
 
-  const bot = addBubble('Thinking… 0s', 'bot');
+  // The bot bubble holds three independent children -- a chart container
+  // (hidden until/unless a real chart_data payload arrives), the answer
+  // text, then (later) the meta/technical-details block appended by
+  // renderMeta -- rather than setting the bubble's own textContent
+  // directly, which would wipe out the chart every time the text updates.
+  const bot = addBubble('', 'bot');
+  const chartContainer = document.createElement('div');
+  chartContainer.className = 'chart-container';
+  chartContainer.hidden = true;
+  const textEl = document.createElement('div');
+  textEl.textContent = t('thinking', {s: 0});
+  bot.appendChild(chartContainer);
+  bot.appendChild(textEl);
+
   bot.classList.add('waiting');
   const t0 = performance.now();
   const tick = setInterval(() => {
     if (bot.classList.contains('waiting'))
-      bot.textContent = 'Thinking… ' + Math.floor((performance.now() - t0) / 1000) + 's';
+      textEl.textContent = t('thinking', {s: Math.floor((performance.now() - t0) / 1000)});
   }, 1000);
 
   const ctrl = new AbortController();
   const abortTimer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
   const stop = () => { clearInterval(tick); clearTimeout(abortTimer); };
-  const stopWaiting = () => { if (bot.classList.contains('waiting')){ bot.classList.remove('waiting'); bot.textContent = ''; } };
+  const stopWaiting = () => { if (bot.classList.contains('waiting')){ bot.classList.remove('waiting'); textEl.textContent = ''; } };
 
   let acc = '', sqlText = '', doneEv = null;
 
@@ -258,10 +391,14 @@ async function send(){
     let obj; try { obj = JSON.parse(data); } catch (_e) { return; }
     if (ev === 'sql'){
       sqlText = obj.sql || '';
+    } else if (ev === 'chart'){
+      // Render as soon as this event lands -- the answer text is still
+      // streaming in via answer_chunk after this, no reason to wait for it.
+      if (obj.chart_data) renderChart(chartContainer, obj.chart_data);
     } else if (ev === 'answer_chunk'){
       stopWaiting();
       acc += obj.text;
-      bot.textContent = acc;
+      textEl.textContent = acc;
       chat.scrollTop = chat.scrollHeight;
     } else if (ev === 'done'){
       doneEv = obj;
@@ -292,7 +429,7 @@ async function send(){
 
     stop();
     stopWaiting();
-    if (!acc) bot.textContent = '(no answer text received)';
+    if (!acc) textEl.textContent = t('noAnswerText');
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
     renderMeta(bot, doneEv, sqlText, secs);
   } catch (e) {
@@ -300,10 +437,10 @@ async function send(){
     stopWaiting();
     bot.classList.add('err');
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
-    bot.textContent = (e && e.name === 'AbortError'
-      ? 'Request timed out after ' + secs + 's — no response from the server.'
-      : 'Request failed after ' + secs + 's: ' + e)
-      + (acc ? '\n\nPartial answer received:\n' + acc : '');
+    textEl.textContent = (e && e.name === 'AbortError'
+      ? t('timedOut', {s: secs})
+      : t('requestFailed', {s: secs, e: e}))
+      + (acc ? '\n\n' + t('partialAnswer') + '\n' + acc : '');
   }
   sendBtn.disabled = false; box.focus();
 }
@@ -311,25 +448,157 @@ async function send(){
 sendBtn.onclick = send;
 box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 document.getElementById('newchat').onclick = () => {
-  chat.innerHTML = '<div class="hint">New chat. Ask a question about the DCB figures.</div>';
+  chat.innerHTML = '';
+  const hint = document.createElement('div'); hint.className = 'hint';
+  hint.textContent = t('newChatHint');
+  chat.appendChild(hint);
 };
-document.querySelectorAll('.quick button').forEach(b => {
-  b.onclick = () => { box.value = b.dataset.q; send(); document.body.classList.remove('side-open'); };
+document.querySelectorAll('.chip').forEach(b => {
+  b.onclick = () => { box.value = b.dataset.q; send(); };
 });
-const burger = document.getElementById('burger');
-if (burger) burger.onclick = () => document.body.classList.toggle('side-open');
-document.getElementById('backdrop').onclick = () => document.body.classList.remove('side-open');
 
+// Tracked separately from the DOM (rather than a static data-i18n
+// attribute) because this text reflects live health-check state, not a
+// fixed label -- a language switch must re-render whatever the current
+// status actually is, not reset it back to "checking".
+let apiStatus = 'checking';
+function renderStatus(){
+  const key = apiStatus === 'connected' ? 'apiConnected' : apiStatus === 'unreachable' ? 'apiUnreachable' : 'apiChecking';
+  document.getElementById('statusText').textContent = t(key);
+}
 fetch('/health').then(r => r.json()).then(h => {
   const ok = h && h.status === 'ok';
-  document.getElementById('statusDot').style.background = ok ? '#2fae66' : '#c0392b';
-  document.getElementById('statusText').textContent = ok ? 'API: connected' : 'API: unreachable';
+  apiStatus = ok ? 'connected' : 'unreachable';
+  document.getElementById('statusDot').style.background = ok ? '#2f9e58' : '#c0202c';
+  renderStatus();
 }).catch(() => {
-  document.getElementById('statusDot').style.background = '#c0392b';
-  document.getElementById('statusText').textContent = 'API: unreachable';
+  apiStatus = 'unreachable';
+  document.getElementById('statusDot').style.background = '#c0202c';
+  renderStatus();
 });
 
 box.focus();
+
+// ---------------------------------------------------------------------
+// Accessibility toolbar: font-size stepper, high-contrast toggle,
+// EN/KN language toggle.
+//
+// SCOPE NOTE (language toggle): this is a small static UI-chrome string
+// table only -- it swaps labels, buttons, and headers between English
+// and Kannada. It does NOT translate the chatbot's own generated
+// answers, the generated SQL, or the user's typed question -- those
+// always stay in English (the LLM prompt/semantic layer/DB are English-
+// only). This is intentionally partial, not full i18n; don't mistake it
+// for one later.
+// ---------------------------------------------------------------------
+const I18N = {
+  en: {
+    govLine1: 'Government of Karnataka',
+    govLine2: 'Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysore',
+    textSize: 'Text size',
+    highContrast: 'High contrast',
+    appTitle: 'DCB Assistant',
+    appSub: 'Demand, Collection & Balance · Holenarasipura Division',
+    apiChecking: 'API: checking…',
+    apiConnected: 'API: connected',
+    apiUnreachable: 'API: unreachable',
+    newChat: '+ New chat',
+    hint: 'Ask a question about Demand, Collection & Balance figures for Holenarasipura Division. Answers are generated from a real SQL query against the star-schema database — the generated SQL and response timing are available under "Technical details" with every answer.',
+    newChatHint: 'New chat. Ask a question about the DCB figures.',
+    chip1: 'Collection efficiency, one sub-division',
+    chip2: 'Top tariff category by demand',
+    chip3: 'Outstanding arrears',
+    chip4: 'Best-performing sub-division',
+    chip5: "A tariff code that doesn't exist",
+    boxPlaceholder: 'Ask about demand, collection, balance, tariffs, sub-divisions…',
+    send: 'Send',
+    thinking: (v) => 'Thinking… ' + v.s + 's',
+    respondedIn: (v) => 'Responded in ' + v.s + 's',
+    notAnswerable: 'not answerable from this data',
+    resultsTruncated: 'results truncated',
+    technicalDetails: 'Technical details (SQL & timing)',
+    noAnswerText: '(no answer text received)',
+    timedOut: (v) => 'Request timed out after ' + v.s + 's — no response from the server.',
+    requestFailed: (v) => 'Request failed after ' + v.s + 's: ' + v.e,
+    partialAnswer: 'Partial answer received:',
+  },
+  kn: {
+    govLine1: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+    govLine2: 'ಚಾಮುಂಡೇಶ್ವರಿ ವಿದ್ಯುತ್ ಸರಬರಾಜು ನಿಗಮ ನಿಯಮಿತ (ಸಿಇಎಸ್‌ಸಿ), ಮೈಸೂರು',
+    textSize: 'ಅಕ್ಷರ ಗಾತ್ರ',
+    highContrast: 'ಹೆಚ್ಚಿನ ವ್ಯತ್ಯಾಸ',
+    appTitle: 'ಡಿಸಿಬಿ ಸಹಾಯಕ',
+    appSub: 'ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ ಮತ್ತು ಬಾಕಿ · ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗ',
+    apiChecking: 'API: ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
+    apiConnected: 'API: ಸಂಪರ್ಕಿಸಲಾಗಿದೆ',
+    apiUnreachable: 'API: ತಲುಪಲಾಗುತ್ತಿಲ್ಲ',
+    newChat: '+ ಹೊಸ ಚಾಟ್',
+    hint: 'ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ ಮತ್ತು ಬಾಕಿ ಅಂಕಿಅಂಶಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ. ಉತ್ತರಗಳು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಿಂದ ಉತ್ಪತ್ತಿಯಾಗುತ್ತವೆ — "Technical details" ಅಡಿಯಲ್ಲಿ ಪ್ರತಿ ಉತ್ತರಕ್ಕೂ SQL ಮತ್ತು ಸಮಯ ಲಭ್ಯವಿದೆ.',
+    newChatHint: 'ಹೊಸ ಚಾಟ್. DCB ಅಂಕಿಅಂಶಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ.',
+    chip1: 'ಸಂಗ್ರಹಣೆ ದಕ್ಷತೆ, ಒಂದು ಉಪ-ವಿಭಾಗ',
+    chip2: 'ಬೇಡಿಕೆಯಿಂದ ಅಗ್ರ ಸುಂಕ ವರ್ಗ',
+    chip3: 'ಬಾಕಿ ಉಳಿದ ಮೊತ್ತ',
+    chip4: 'ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನದ ಉಪ-ವಿಭಾಗ',
+    chip5: 'ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲದ ಸುಂಕ ಸಂಕೇತ',
+    boxPlaceholder: 'ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ, ಬಾಕಿ, ಸುಂಕ, ಉಪ-ವಿಭಾಗಗಳ ಬಗ್ಗೆ ಕೇಳಿ…',
+    send: 'ಕಳುಹಿಸಿ',
+    thinking: (v) => 'ಯೋಚಿಸುತ್ತಿದೆ… ' + v.s + 'ಸೆ',
+    respondedIn: (v) => v.s + 'ಸೆ ನಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸಲಾಗಿದೆ',
+    notAnswerable: 'ಈ ಡೇಟಾದಿಂದ ಉತ್ತರಿಸಲಾಗುವುದಿಲ್ಲ',
+    resultsTruncated: 'ಫಲಿತಾಂಶಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತಗೊಳಿಸಲಾಗಿದೆ',
+    technicalDetails: 'ತಾಂತ್ರಿಕ ವಿವರಗಳು (SQL ಮತ್ತು ಸಮಯ)',
+    noAnswerText: '(ಯಾವುದೇ ಉತ್ತರ ಪಠ್ಯ ಸ್ವೀಕರಿಸಲಾಗಿಲ್ಲ)',
+    timedOut: (v) => v.s + 'ಸೆ ನಂತರ ವಿನಂತಿ ಸಮಯ ಮೀರಿದೆ — ಸರ್ವರ್‌ನಿಂದ ಪ್ರತಿಕ್ರಿಯೆ ಇಲ್ಲ.',
+    requestFailed: (v) => v.s + 'ಸೆ ನಂತರ ವಿನಂತಿ ವಿಫಲವಾಗಿದೆ: ' + v.e,
+    partialAnswer: 'ಭಾಗಶಃ ಉತ್ತರ ಸ್ವೀಕರಿಸಲಾಗಿದೆ:',
+  },
+};
+let currentLang = 'en';
+function t(key, vars){
+  const entry = I18N[currentLang][key];
+  if (typeof entry === 'function') return entry(vars || {});
+  return entry;
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  renderStatus();
+  document.documentElement.lang = currentLang;
+}
+document.getElementById('langEn').onclick = () => {
+  currentLang = 'en'; applyI18n();
+  document.getElementById('langEn').classList.add('active');
+  document.getElementById('langKn').classList.remove('active');
+};
+document.getElementById('langKn').onclick = () => {
+  currentLang = 'kn'; applyI18n();
+  document.getElementById('langKn').classList.add('active');
+  document.getElementById('langEn').classList.remove('active');
+};
+
+// Font-size stepper: adjusts --font-scale on the root element. Because
+// nearly all text sizing in this page is expressed in rem, this single
+// custom property scales the whole page's typography (and anything
+// padded/sized in rem) together, not just one element.
+let fontScale = 1;
+const FONT_MIN = 0.8, FONT_MAX = 1.4, FONT_STEP = 0.1;
+function setFontScale(v){
+  fontScale = Math.min(FONT_MAX, Math.max(FONT_MIN, v));
+  document.documentElement.style.setProperty('--font-scale', fontScale.toFixed(2));
+}
+document.getElementById('fontDec').onclick = () => setFontScale(fontScale - FONT_STEP);
+document.getElementById('fontInc').onclick = () => setFontScale(fontScale + FONT_STEP);
+document.getElementById('fontReset').onclick = () => setFontScale(1);
+
+const contrastBtn = document.getElementById('contrastToggle');
+contrastBtn.onclick = () => {
+  const on = document.body.classList.toggle('hc');
+  contrastBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+};
 </script>
 </body>
 </html>

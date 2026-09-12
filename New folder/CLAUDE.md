@@ -137,7 +137,10 @@ New folder/
     │   ├── semantic_layer.py             # entity extraction + prompt pruning
     │   ├── sql_safety.py                 # read-only allowlist + double-count guard
     │   └── static/
-    │       └── chat.html                 # the chat UI (GET /)
+    │       ├── chat.html                 # the chat UI (GET /) -- gov-portal shell,
+    │       │                             # conversational interaction, inline charts (§8)
+    │       ├── cesc_logo_reference.png   # CESC dept mark -- third-party crop, see §8.5
+    │       └── cescom_official_logo.png  # Karnataka state emblem
     └── tests/
         ├── __init__.py
         ├── questions.py                  # the 10 + 2 eval questions, shared source
@@ -155,7 +158,7 @@ alt-provider detour and was deleted when it was reverted — see §5.6.)
 
 | # | Decision | Why | Where |
 |---|---|---|---|
-| 1 | **One LLM call per question**, returning SQL + an answer template with `{placeholder}` tokens together as one structured JSON object (Gemini's native `response_schema` mode, not prompt-engineered JSON). The template is filled in Python from the query result + pre-extracted entities — **no second LLM call** ever phrases the final answer. | Removes a full network round-trip from every question — the single biggest lever against a slow/mediocre LLM API "feeling" slow. | `app/models.py` (`LLMQueryPlan`), `app/llm.py`, `app/pipeline.py::_fill_template` |
+| 1 | **One LLM call per question**, returning SQL + an answer template with `{placeholder}` tokens, together as one structured JSON object (Gemini's native `response_schema` mode, not prompt-engineered JSON). The template is filled in Python from the query result + pre-extracted entities — **no second LLM call** ever phrases the final answer. As of §8.4, an optional `chart_data` (`ChartSpec`) joins the same single call — the LLM names *which of its own SELECT columns* to plot, never literal numbers, for exactly this reason: an earlier design that asked for literal chart values broke this same invariant and produced fabricated/empty charts on live eval. | Removes a full network round-trip from every question — the single biggest lever against a slow/mediocre LLM API "feeling" slow. | `app/models.py` (`LLMQueryPlan`, `ChartSpec`, `ChartData`), `app/llm.py`, `app/pipeline.py::_fill_template`, `_build_chart_data` |
 | 2 | **Semantic-layer pruning** — a deterministic keyword/entity router (subdivision names + fiscal years loaded from the DB at startup, tariff codes and glossary terms matched against the question text) selects only the relevant subset of `semantic_layer.json` before it goes in the prompt. `rules`, `common_metrics`, `joins`, and every table's schema are always kept (small, load-bearing for correctness); `glossary` and `tariff_code_glossary` are pruned. No LLM/embeddings in the router itself — it's sub-millisecond (measured mean: 0.00ms over 12 questions). | Keeps the prompt lean as the semantic layer grows, without becoming its own latency source. | `app/semantic_layer.py` |
 | 3 | **Persistent connections** — the SQLite connection and the Gemini client are both created once in FastAPI's `lifespan` and reused for every request; never re-opened per request. | Avoids repeated connection/handshake overhead on every question. | `app/db.py::init_db`, `app/llm.py::init_llm_client`, `app/main.py::lifespan` |
 | 4 | **Async throughout** — async route handlers, Gemini called via `client.aio`; the (sync) SQLite call runs in a dedicated single-worker thread pool so one slow query doesn't block the event loop. | Lets FastAPI serve other requests while one is waiting on the LLM or DB. | `app/llm.py`, `app/db.py::ReadOnlyDB.run` |
@@ -186,7 +189,12 @@ differs.
 ### Routes (current, in `app/main.py`)
 
 - `GET /` — the chat UI (`app/static/chat.html`).
-- `POST /api/ask` — SSE streaming endpoint the chat UI calls.
+- `GET /static/*` — static assets (the two header logo files, §8.1), via a
+  `StaticFiles` mount added in §8; `chat.html` itself is still served by
+  `GET /` above, read directly as text, not through this mount.
+- `POST /api/ask` — SSE streaming endpoint the chat UI calls. Events:
+  `status`, `sql`, `chart` (`chart_data` or `null`, §8.4), `answer_chunk`
+  (one or more), `done`.
 - `POST /api/ask_once` — plain JSON, same pipeline, easier for scripts/evals.
 - `GET /health` — liveness check, returns `{"status":"ok"}`.
 - `GET /docs` — FastAPI's auto-generated Swagger UI (unaffected by any of the above).
@@ -320,6 +328,38 @@ used before the whole feature was reverted: two `field_validator(mode="before")`
 methods that returned the literal defaults (`True` / `120.0`) directly
 on a blank string. **This entire code path no longer exists** — see §5.6.
 
+### 4.7 — DC/MNR COALESCE pattern (bug 4.3's root cause) recurring far more often than assumed
+**Found:** during the UI-redesign session's step-4 final regression, a
+live `eval_queries.py` run returned Q8 (DC/MNR installations by
+sub-division) with Holenarasipura = **23,578** instead of the
+long-verified **11,806**. Re-running the identical question 6 times in a
+row to characterize it (rather than assume a one-off): **2/6 correct,
+4/6 wrong** — a 67% failure rate, not a rare fluke. **Root cause:** even
+with `DCB_Semantic_Layer/example_queries.sql`'s worked COALESCE pattern
+loaded unpruned into every prompt (bug 4.3's original fix), the LLM does
+not reliably copy the exact three-column sum verbatim once the question's
+own SQL shape differs even slightly from the worked example (this
+session's Q8 grouped by sub-division only, filtered to one fiscal year,
+vs. the worked example's all-years shape) — on the wrong runs, the
+generated SQL summed `dc_installations` twice
+(`COALESCE(f.dc_installations, 0) + COALESCE(f.mnr_installations, 0) +
+COALESCE(f.dc_installations, 0)`) and silently dropped
+`dc_mnr_installations` entirely, roughly doubling the true figure. This
+is the same underlying risk bug 4.3 first identified, recurring at a much
+higher rate than "no live-LLM run has yet demonstrated a real violation"
+(this file's own prior wording) suggested. **Fix:**
+`DCB_Semantic_Layer/example_queries.sql` is inside a locked folder (§0)
+and cannot be edited, so the fix went into `app/prompts.py`'s
+`SYSTEM_INSTRUCTIONS` instead — a new explicit hard rule naming all three
+columns exactly, warning specifically against repeating one column while
+omitting another, and citing the measured 4/6 failure rate as a concrete
+reason to double-check before finalizing. **Re-verified: 12/12 correct**
+across two more batches of 6 runs each after the fix, up from 2/6 before
+— full regression (`dry_run_no_llm`, `pipeline_mock_test`,
+`double_count_guard_test`, all 10 + 2 adversarial via `eval_queries`) also
+re-confirmed clean afterward, so the new hard rule didn't shift any other
+question's behavior.
+
 ---
 
 ## 5. Verification history (real, verbatim results — condensed but complete)
@@ -359,7 +399,9 @@ correct without a real API key:
 - `POST /api/ask_once` → `200`, `answerable: true`, template placeholder
   filled with the **real** DB value (93.62%, matching §5.2).
 - `POST /api/ask` (SSE) → real event stream: `event: status`,
-  `event: sql`, `event: answer_chunk` (×2), `event: done` with `timing_ms`.
+  `event: sql`, `event: chart` (`chart_data: null` for this non-chart
+  question — see §8.4), `event: answer_chunk` (×2), `event: done` with
+  `timing_ms`.
 - Safety-net proof: mocked LLM plan with `sql: "DELETE FROM fact_dcb"` →
   `200` with `answerable: false`, *"Sorry, the generated query didn't
   pass the read-only safety check."* — never reached the DB.
@@ -524,23 +566,54 @@ is exactly the gap the planned UI redesign (§7) is meant to address.
 
 ## 6. Final regression at this handoff (real, run just before this commit)
 
+This handoff is the UI redesign (§8): government-portal shell +
+conversational interaction + inline charts, plus the bug 4.7 fix it
+surfaced. Full regression re-run after every change in this round,
+most recently just before this commit:
+
 - `python -m tests.dry_run_no_llm` — pass, all assertions correct
   (93.62% / LT-4(a) / Konanur 97.46% all reconfirmed).
 - `python -m tests.pipeline_mock_test` — pass, SSE stream + safety-net
-  proof both correct.
+  proof both correct. The stream now includes the `chart` event
+  (§8.4) — `chart_data: null` for this non-chart question, correctly.
 - `python -m tests.double_count_guard_test` — pass, **13/13 cases**
-  correct.
+  correct. Unaffected by this round's changes (`sql_safety.py` untouched).
 - `python -m tests.eval_queries` (live Gemini, all 10 + 2 adversarial) —
-  pass. Mean total latency **1,352.8 ms** (min 1,078 / max 1,516 ms),
-  consistent with the established ~1,343.8 ms baseline. Q1 = 93.62%,
-  Q7 = Konanur 97.46%, both adversarial refusals correct, all other
-  figures identical in substance to §5.4.
-- SHA-256 manifest re-check of all 4 locked folders (28 tracked files):
-  **all `OK`**, zero mismatches.
+  pass. Mean total latency **1,495.4 ms** (min 1,140.8 / max 1,981.2 ms) —
+  a modest, expected increase from the longer prompt (chart_data
+  instructions + the new DC/MNR hard rule), not a regression; still
+  consistent with the original ~1,343.8 ms baseline's order of magnitude.
+  Q1 = 93.62%, Q7 = Konanur 97.46%, Q8 = Holenarasipura 11,806 (bug 4.7,
+  fixed and re-verified — see below), both adversarial refusals correct,
+  Q2/Q5/Q8/Q9's `chart_data` all present with real values matching their
+  own rows exactly, all other figures identical in substance to §5.4.
+- **Bug 4.7 fix, verified with real numbers, not assumed:** before the
+  `app/prompts.py` fix, 6 consecutive live runs of Q8 measured **2/6
+  correct, 4/6 wrong**. After the fix, **18/18 correct** across three
+  more batches of 6 (including one batch re-run after trimming the fix's
+  wording — see below) — zero wrong since.
+- **Prompt-hygiene check on the bug 4.7 fix itself:** the first version
+  of the new hard rule in `app/prompts.py` baked the measured "4 of 6"
+  failure-rate statistic directly into `SYSTEM_INSTRUCTIONS`, meaning it
+  would have been sent to Gemini on every single live request going
+  forward — a historical finding, not a durable instruction. Caught
+  before this handoff; trimmed to keep only the durable instruction
+  (name all three columns explicitly, always COALESCE them) in the live
+  prompt, with the measured rate now living only in bug 4.7's entry
+  above. Re-verified correct (6/6) after trimming, and the full non-LLM
+  suite re-confirmed unaffected.
+- Locked-folder check (§0 ritual), immediately before this commit:
+  `git status --short` — nothing under `New folder/DCB_*`; `git diff`
+  against the baseline commit (`8f2596d`) for all 4 folders — empty;
+  independent check via git's own blob object IDs (not raw `sha256sum`,
+  which gives false-positive mismatches on this machine from Windows
+  `core.autocrlf` line-ending normalization on checkout — confirmed as a
+  normalization artifact, not real content drift, then re-checked the
+  correct way): **28/28 `OK`, zero real mismatches**.
 - `.env` confirmed **not tracked** by git (`git ls-files` — no match);
   `.env.example` confirmed to contain only placeholder values.
-- `git status` (from `D:\Cescom POC 2\`) — clean working tree at commit
-  time.
+- `git status` (from the repo root) — clean of anything unexpected at
+  commit time (only this round's real changes staged).
 
 ---
 
@@ -584,46 +657,182 @@ is exactly the gap the planned UI redesign (§7) is meant to address.
   to try a different alternative provider, there is no leftover
   scaffolding to build on — it would start from scratch, cleanly.
 
-## 8. NOT started yet — planned next work
+## 8. UI redesign — built and verified (government-portal shell + conversational interaction + inline charts)
 
-**UI redesign — discussed, zero code written.** The current chat UI
-(§5.7) works and is fully verified, but is a first pass, not a final
-design. A follow-up conversation (informal, not tracked in this file's
-own session history) discussed direction but reached no decision and
-produced no code:
+§7 (previous revision of this file) listed three standalone direction
+options with no decision made. **The decision made: not picking one of
+the three — combining two, by role.** Government-portal style governs
+the shell/chrome (header, branding, accessibility toolbar); the
+conversational/Perplexity-style pattern governs the interaction itself
+(bubbles, chips, inline charts). The "data-terminal/Linear-style"
+direction was not used. All of the below is real, built, and verified —
+not a plan.
 
-- **Three UI direction options were discussed, by name, with no decision
-  made yet:**
-  1. **"Data-terminal / Linear-style"** — a dense, keyboard-forward,
-     dark-mode-first aesthetic (in the spirit of Linear's app UI):
-     monospace/technical typography, minimal chrome, information density
-     over whitespace.
-  2. **"Conversational / Perplexity-style"** — a lighter, more
-     approachable chat-first layout closer to Perplexity's answer-engine
-     UI: prominent citations/sources styling, generous whitespace, the
-     conversation as the primary visual object.
-  3. **"Government-portal style"** — a more formal, institutional look
-     appropriate to a state electricity board's public-facing tool:
-     conservative typography and color use, explicit labeling over
-     minimalism, optimized for trust/legibility over visual flair.
-- **Also discussed:** removing the sidebar icons from the current
-  layout, and sourcing/using a real CESCOM logo instead of the current
-  placeholder emoji mark (no real logo file has been supplied or found
-  on this machine as of this handoff).
-- **Also discussed:** adding chart/visualization support (a **Chart.js**
-  -based approach was the one discussed) specifically for
-  comparison-shaped questions and multi-row results (e.g. Q2/Q5/Q9 in
-  §5.4, which currently fall back to the generic numbered-list template
-  described in §7) — rendering an actual bar/line chart instead of a
-  text listing for that class of question.
+### 8.1 Shell/chrome — government-portal style
 
-**None of this has been designed further, scoped into tasks, or started
-in code.** Whoever picks this up next should treat all of the above as
-raw discussion notes to make a real decision from — not a spec to
-implement literally — and should update this section (and this file's
-verification sections) with real, verified progress once work begins,
-per this file's own standing rule against undocumented or unverified
-"done" claims.
+`app/static/chat.html`'s header now matches the layout convention of
+`cescmysore.karnataka.gov.in`: two logos side by side (Karnataka state
+emblem + the CESC department mark) with department title text between
+them, an explicit-text-labeled accessibility toolbar (no icon-only
+controls anywhere), and a light theme throughout.
+
+- **Logos:** `cescom_official_logo.png` (Karnataka state emblem) and
+  `cesc_logo_reference.png` (CESC, Mysore's circular department mark),
+  both placed in `app/static/`. `cesc_logo_reference.png` was cropped
+  from a third-party source, not pulled from the `.gov.in` domain itself
+  — flagged in a code comment directly above its `<img>` tag in
+  `chat.html`, so this isn't mistaken for an official file later; swap it
+  for one if an official source is ever found. **Still genuinely open**
+  — see §8.5.
+- **Static file serving:** `app/main.py` previously had no
+  `StaticFiles` mount at all (only `GET /` reading `chat.html`'s text
+  directly) — added `app.mount("/static", StaticFiles(...))`, additive
+  only, the existing routes are untouched.
+- **Accessibility toolbar**, matching what the real CESC site has:
+  - Font-size stepper (A− / A / A+) — adjusts a `--font-scale` CSS
+    custom property on `:root`; because nearly all text sizing on the
+    page is expressed in `rem`, this one property scales the page's
+    typography together.
+  - High-contrast toggle — swaps the palette (below) for plain
+    black/white with thicker borders and no gradients/shadows, via a
+    `body.hc` class.
+  - EN/Kannada language toggle — **scoped honestly, by design**: it
+    swaps UI chrome text only (labels, buttons, headers) via a small
+    static string table (`I18N` in `chat.html`). It does **not** attempt
+    to translate the chatbot's own generated answers, the generated SQL,
+    or the user's typed question — those stay in English (the LLM
+    prompt/semantic layer/DB are English-only). A code comment directly
+    above the `I18N` table says so explicitly, so this isn't mistaken
+    for full i18n later.
+
+### 8.2 Palette — sampled from the real logo files, not the old placeholder
+
+Old navy(`#003a70`/`#0056a3`)+amber(`#f5a623`) scheme replaced entirely.
+New: **navy `#1a2f5c`** (primary, sampled from the CESC mark's blue
+disc) on a white/very-light-gray background, **red `#c0202c`** (from the
+wordmark) used *only* as a sparing accent — error states, the "not
+answerable" pill — never decoratively. **WCAG contrast, computed
+directly, not assumed:** navy-on-white ≈ 13.1:1 (AAA), red-on-white ≈
+6.0:1 (AA, both normal and large text) — both comfortably clear passes.
+High-contrast mode overrides every color variable to plain black/white.
+
+### 8.3 Conversational interaction pattern
+
+Kept the existing chat.html's bones (message bubbles, generous
+whitespace, the conversation as the primary visual object) and restyled
+to the new palette; dropped the old dark sidebar entirely (redundant
+with the light gov-portal shell, and the suggestion chips already cover
+what it did). Suggested-question chips from `example_queries.sql` kept,
+now a horizontal row above the composer. The "Generated SQL" +
+timing-breakdown panel is reframed as a collapsed-by-default "Technical
+details (SQL & timing)" disclosure for reviewers/auditors, not part of
+the default visual language.
+
+### 8.4 Inline charts — real design, not the one originally specified
+
+**The `chart_data` feature works, but not with the exact literal shape
+first specified** (`{"type", "labels": [...], "values": [...],
+"series_label"}` authored directly by the LLM) — that shape was tried
+and, on live-eval testing, produced either fabricated numbers or empty
+arrays on every multi-row question (below). The final design:
+
+- **`app/models.py`:** `LLMQueryPlan.chart_data` is a `ChartSpec` — the
+  LLM names `type` ("bar"/"line"), `label_column`, `value_column` (two
+  of its own SELECT's column aliases), and `series_label`. It is a
+  **reference to columns, not literal data** — mirroring
+  `answer_template`'s `{placeholder}` mechanism (design point #1): the
+  LLM produces this in the same single call as `sql`, before the query
+  has run, so it cannot know real result values any more than
+  `answer_template` can.
+- **`app/pipeline.py::_build_chart_data()`** builds the real `ChartData`
+  (the original `{type, labels, values, series_label}` shape — this part
+  of the spec is unchanged, it's what reaches the frontend) deterministically
+  from the actual query result after it runs. Fails closed to `None` — no
+  chart, not a guess — if `label_column`/`value_column` don't match a real
+  column, or `value_column` isn't numeric.
+- **Why:** a live-eval run with the original literal-array design showed,
+  on every multi-row question tested: Q2 got `values=[120000.0, 122000.0,
+  ...]` — fabricated, not matching the real rows
+  (`159149.0, 166060.0, ...`) at all; Q5, Q8, Q9 all got
+  `labels=[] values=[]` — empty. The one-LLM-call architecture (design
+  point #1) exists specifically so the model is never trusted to author
+  real numbers; the original `chart_data` design broke that invariant,
+  the column-reference redesign restores it.
+- **`app/prompts.py`** tells the model to populate `chart_data` only for
+  genuinely comparison-/trend-shaped questions (year-over-year, X vs Y,
+  multi-row breakdowns), leaving it null for single-value answers.
+- **Frontend:** Chart.js (CDN, `cdnjs.cloudflare.com`, pinned to the real
+  published version `4.5.1` — see bug (b) below), rendered above the
+  answer text in the same bubble (Perplexity-style placement, not a
+  separate panel/tab), styled entirely in navy/gray — no Chart.js default
+  rainbow colors, red reserved for error states only per §8.2.
+
+**Three real bugs found and fixed this round** (same format as §4, not
+summarized):
+
+**(a) SSE `chart` event never emitted.** `app/pipeline.py` computed
+`chart_data` correctly, and `AskResponse` (used by `POST /api/ask_once`)
+carried it — but `app/main.py::ask_stream` (the SSE endpoint the live
+chat UI actually calls) only ever emitted `status`/`sql`/`answer_chunk`/
+`done` events; `chart_data` never reached the frontend no matter what
+Chart.js code got written. **Found:** by inspection, before any frontend
+code was written. **Fix:** added `yield _sse("chart", {"chart_data":
+result.chart_data.model_dump() if result.chart_data else None})` right
+after the `sql` event. Confirmed via a live `curl` SSE call for Q2,
+showing the real event with real labels/values, before writing any
+frontend code.
+
+**(b) Wrong Chart.js CDN version → `Chart is not defined`.** The first
+CDN URL used a guessed version string (`4.4.4`) that doesn't exist on
+cdnjs (404); Chrome's Opaque Response Blocking silently discarded the
+failed script load with no clear error until `Chart(...)` was called and
+threw `ReferenceError: Chart is not defined`. **Found:** via a Playwright
+console-error capture on the first in-browser test (`chart_data` arrived
+correctly over SSE; the failure was purely a missing global). **Fix:**
+queried cdnjs's own API for real published versions and pinned to
+`4.5.1`, confirmed `200` before using it.
+
+**(c) Bubble `textContent` overwriting the chart.** The existing
+bot-message rendering set `.textContent` directly on the bubble element
+for every streamed answer chunk — which would silently wipe out an
+already-rendered Chart.js `<canvas>` the next time the streamed text
+updated, since a chart and the streaming text lived in the same element.
+**Found:** by design review, before it ever manifested as a visible
+break (this one never shipped broken). **Fix:** each bot bubble now has
+two independent children — a `.chart-container` and a text element —
+updated separately; `renderMeta()`'s SQL/timing disclosure appends after
+both, unaffected.
+
+**Verified results** — live in the browser (Playwright + real Chrome,
+real Gemini calls, no mocking), confirmed against the real query rows,
+not just "a chart appeared":
+
+| Q | Chart type rendered | Values match real SQL rows? |
+|---|---|---|
+| Q1 (single value) | *(none — correctly no chart)* | n/a |
+| Q2 (installations trend) | line | ✅ exact match |
+| Q5 (LT-1 vs HT-2 demand) | bar | ✅ exact match |
+| Q8 (DC/MNR by sub-division) | bar | ✅ exact match |
+| Q9 (misc. revenue trend) | line | ✅ exact match |
+
+Zero console errors across all five. (A first pass of this same browser
+test showed false negatives for Q5/Q8/Q9/Q1 — traced to the *test
+harness* matching stale "Responded in" text left over from an earlier
+question in the same session, not an app bug; confirmed by testing Q5
+alone on a fresh page, then fixed the harness to wait for each new
+message bubble specifically.)
+
+### 8.5 What's actually still open
+
+- **Sourcing an official, non-third-party CESC logo file.** The
+  currently-shipped `cesc_logo_reference.png` is "good enough for this
+  POC," per its own in-code comment, but was cropped from a third-party
+  source, not the `.gov.in` domain. Swap it if an official file is ever
+  supplied.
+- **Everything else originally discussed in this section — the real
+  CESCOM logo and Chart.js visualization — is done, not just planned.**
+  Removed from this list; see §8.1/§8.4 above for what was actually built
+  and how it was verified.
 
 ---
 

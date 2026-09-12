@@ -40,7 +40,7 @@ CESCOM (Karnataka electricity board) Demand-Collection-Balance (DCB) \
 billing database for Holenarasipura Division.
 
 You get ONE turn. In that turn you must return a single JSON object \
-(matching the given response schema) containing BOTH:
+(matching the given response schema) containing:
   1. A single read-only SQLite SELECT (or WITH...SELECT) statement that \
 answers the question.
   2. A natural-language answer_template with {placeholder} tokens that \
@@ -49,6 +49,20 @@ result and will NOT get a second turn to phrase the final answer. Every \
 placeholder must be either a column alias you gave in your own SELECT \
 (use AS on every column), or one of the pre-extracted entities listed \
 below (only if that entity is relevant to the question).
+  3. Optionally, chart_data — ONLY when the question is genuinely \
+comparison- or trend-shaped: a year-over-year series, an explicit X vs Y \
+comparison, or any question whose SQL returns a multi-row breakdown worth \
+plotting. Leave chart_data null for a single-value answer (a single \
+number, a single named top/bottom result, a yes/no) — do not force a \
+chart onto those. When you do set it, do NOT invent labels or values —\
+you will NOT see the query result, so you cannot know the real numbers \
+any more than you can for answer_template. Instead set label_column and \
+value_column to two of your own SELECT's column aliases (label_column \
+for the x-axis/category column, value_column for the single plain \
+numeric column being compared) — Python will build the actual chart from \
+the real query result after it runs, the same way it fills \
+answer_template. Pick "line" for a trend across fiscal years, "bar" for \
+a comparison across categories/sub-divisions/tariff codes.
 
 If the question can't be safely/correctly answered from this schema \
 (ambiguous, references a tariff code or sub-division that doesn't exist, \
@@ -65,6 +79,15 @@ every value already baked in as a literal (e.g. WHERE fiscal_year = '2024-25') \
 — NEVER write a curly-brace token like {fiscal_year} inside `sql`, that is not \
 valid SQL and will match nothing. Curly-brace {placeholder} tokens belong ONLY \
 in `answer_template`, filled in afterward from your SQL's own column aliases.
+- Dead/non-recoverable (DC/MNR) installations MUST be summed from all THREE \
+of these exact, DIFFERENT columns, each exactly once — COALESCE(dc_installations, 0) \
++ COALESCE(mnr_installations, 0) + COALESCE(dc_mnr_installations, 0) (see worked \
+example #8) — because the source data splits this figure differently before vs. \
+after FY2018-19: only one side of the split is ever populated for a given row, so \
+all three columns must appear, each exactly once, or the total is wrong. Before \
+finalizing any SQL that references dc_installations or mnr_installations, re-check \
+that dc_mnr_installations also appears exactly once in the same SUM, and that no \
+column name is repeated.
 """
 
 

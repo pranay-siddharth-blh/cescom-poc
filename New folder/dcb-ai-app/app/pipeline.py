@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from app.db import ReadOnlyDB
 from app.llm import generate_query_plan
-from app.models import LLMQueryPlan
+from app.models import ChartData, ChartSpec, LLMQueryPlan
 from app.prompts import build_prompt, load_schema_ddl
 from app.semantic_layer import RouterIndex, extract_entities, prune_semantic_layer
 from app.sql_safety import UnsafeSQLError, validate_readonly_sql
@@ -42,6 +42,7 @@ class PipelineResult:
     entities: dict = field(default_factory=dict)
     timing_ms: dict = field(default_factory=dict)
     error: str = ""
+    chart_data: ChartData | None = None
 
 
 def _format_value(value) -> str:
@@ -97,6 +98,37 @@ def _fill_template(template: str, columns: list[str], rows: list[tuple], entitie
         lines.append(f"{i + 1}. " + ", ".join(parts))
     suffix = f" (showing {min(cap, len(rows))} of {len(rows)} rows)" if len(rows) > cap or len(rows) > 1 else ""
     return "Results:" + suffix + "\n" + "\n".join(lines)
+
+
+def _build_chart_data(spec: ChartSpec | None, columns: list[str], rows: list[tuple]) -> ChartData | None:
+    """Builds the real ChartData from the actual query result, given only
+    the LLM's column-alias references (spec) — never trusts LLM-authored
+    numbers (see ChartSpec's docstring for why). Fails closed to no chart
+    (None) rather than guess or render partial/garbage data: a missing
+    column reference, a non-numeric value_column, or zero usable rows all
+    fall through to None here."""
+    if spec is None or not rows:
+        return None
+    if spec.label_column not in columns or spec.value_column not in columns:
+        return None
+    label_idx = columns.index(spec.label_column)
+    value_idx = columns.index(spec.value_column)
+
+    labels: list[str] = []
+    values: list[float] = []
+    for row in rows:
+        val = row[value_idx]
+        if val is None:
+            continue  # skip rows with no numeric value rather than mis-plot a zero
+        try:
+            values.append(float(val))
+        except (TypeError, ValueError):
+            return None  # value_column isn't actually numeric -- don't guess
+        labels.append(str(row[label_idx]))
+
+    if not values:
+        return None
+    return ChartData(type=spec.type, labels=labels, values=values, series_label=spec.series_label)
 
 
 async def answer_question(
@@ -158,6 +190,11 @@ async def answer_question(
     result.columns = query_result.columns
     result.rows = query_result.rows
     result.truncated = query_result.truncated
+    # Built deterministically from the real query result -- see
+    # _build_chart_data's docstring for why this can't just pass plan.chart_data
+    # through unchanged (that field is now a ChartSpec, a column reference,
+    # not real data).
+    result.chart_data = _build_chart_data(plan.chart_data, query_result.columns, query_result.rows)
 
     t0 = time.monotonic()
     result.answer = _fill_template(plan.answer_template, query_result.columns, query_result.rows, entities)

@@ -62,6 +62,7 @@ async def main() -> None:
         print(f"  columns: {result.columns}")
         print(f"  rows: {result.rows}")
         print(f"  answer: {result.answer}")
+        print(f"  chart_data: {result.chart_data}")
         if result.error:
             print(f"  ERROR: {result.error}")
         print(f"  timing_ms: {result.timing_ms}  total_ms: {total_ms}")
@@ -72,6 +73,7 @@ async def main() -> None:
         report_lines.append(f"- **columns**: {result.columns}")
         report_lines.append(f"- **rows**: {result.rows}")
         report_lines.append(f"- **answer**: {result.answer}")
+        report_lines.append(f"- **chart_data**: {result.chart_data}")
         if result.error:
             report_lines.append(f"- **error**: {result.error}")
         report_lines.append(f"- **timing_ms**: {result.timing_ms}  (total: {total_ms} ms)\n")

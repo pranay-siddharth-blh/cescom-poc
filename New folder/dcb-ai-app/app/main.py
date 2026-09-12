@@ -22,6 +22,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.db import get_db, init_db, shutdown_db
 from app.llm import init_llm_client
@@ -43,6 +44,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DCB NL2SQL Chatbot", lifespan=lifespan)
+
+# Serves app/static/* under /static (the header logos; chat.html itself is
+# still served by the GET / route below, read directly as text, not through
+# this mount, so that route's behavior is unchanged).
+app.mount("/static", StaticFiles(directory=_CHAT_HTML_PATH.parent), name="static")
 
 
 @app.get("/health")
@@ -75,6 +81,7 @@ async def _run(question: str) -> AskResponse:
         clarification_message=result.clarification_message,
         entities=result.entities,
         timing_ms=result.timing_ms,
+        chart_data=result.chart_data,
     )
 
 
@@ -89,6 +96,7 @@ async def ask_stream(req: AskRequest):
         yield _sse("status", {"stage": "thinking"})
         result = await _run(req.question)
         yield _sse("sql", {"sql": result.sql})
+        yield _sse("chart", {"chart_data": result.chart_data.model_dump() if result.chart_data else None})
         # Chunk the already-assembled answer so the client can render it
         # progressively (see CLAUDE.md on why this isn't token-level LLM
         # streaming — Gemini's structured-output mode returns the whole
