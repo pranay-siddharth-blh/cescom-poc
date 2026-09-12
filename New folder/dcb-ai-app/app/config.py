@@ -37,13 +37,12 @@ class Settings(BaseSettings):
     dcb_query_timeout_seconds: float = 8.0
     dcb_max_rows: int = 200
 
-    # Dashboard login gate (see app/auth.py's docstring for exactly how
-    # limited this is -- one shared login, signed cookie, no user table).
-    # These three defaults are fine for running the POC on one laptop but
-    # MUST be overridden in .env before the app is ever reachable by
-    # anyone else.
-    dashboard_username: str = "admin"
-    dashboard_password: str = "changeme"
+    # Dashboard session-cookie signing key (see app/auth.py's docstring).
+    # /api/login no longer checks a username/password at all -- any
+    # non-blank username is accepted, by request -- but the session
+    # cookie it hands out is still HMAC-signed with this secret, so a
+    # visitor can't forge/tamper with one. Override in .env before this
+    # app is ever reachable by anyone but you.
     session_secret: str = "dev-secret-change-me-in-env"
 
     @property

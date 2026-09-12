@@ -95,20 +95,26 @@ async def login_page():
 
 @app.post("/api/login")
 async def login(req: LoginRequest):
-    # Plain equality, not hmac.compare_digest -- see app/auth.py's
-    # docstring: this is a POC single-shared-login gate, not a system
-    # being hardened against timing attacks on its own username/password.
-    if req.username == settings.dashboard_username and req.password == settings.dashboard_password:
-        response = JSONResponse({"ok": True})
-        response.set_cookie(
-            COOKIE_NAME,
-            create_session_token(req.username),
-            httponly=True,
-            samesite="lax",
-            max_age=SESSION_MAX_AGE_SECONDS,
-        )
-        return response
-    return JSONResponse({"ok": False, "error": "Invalid username or password."}, status_code=401)
+    # No credential check at all -- any non-blank username is accepted,
+    # password isn't checked. Per the project owner's explicit request,
+    # this is deliberately an open gate now, not a login: see
+    # app/auth.py's docstring for why that's fine for this POC (a signed
+    # session cookie still exists so /dashboard isn't wide open to
+    # anyone with no cookie at all, but anyone who visits /login can get
+    # one). Only requirement is a non-blank username, since it becomes
+    # the session's display name.
+    username = req.username.strip()
+    if not username:
+        return JSONResponse({"ok": False, "error": "Enter a username."}, status_code=401)
+    response = JSONResponse({"ok": True})
+    response.set_cookie(
+        COOKIE_NAME,
+        create_session_token(username),
+        httponly=True,
+        samesite="lax",
+        max_age=SESSION_MAX_AGE_SECONDS,
+    )
+    return response
 
 
 @app.post("/api/logout")

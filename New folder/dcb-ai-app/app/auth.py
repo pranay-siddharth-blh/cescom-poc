@@ -9,11 +9,16 @@ per-user rows.
 
 This is NOT a general-purpose auth system, and is documented as a known
 POC limitation (matching this project's honest-about-limitations
-convention, CLAUDE.md §7): one shared username/password
-(app.config.settings.dashboard_username/password), one signed cookie,
-no password hashing, no rate limiting, no CSRF token, no per-user
-accounts. Swap for real per-user accounts + hashed passwords before this
-app ever handles more than one shared operator login.
+convention, CLAUDE.md §7). Originally a single shared username/password;
+**by explicit request, `/api/login` (app/main.py) no longer checks a
+password at all -- any non-blank username is accepted.** The signed
+cookie this module hands out still can't be forged or tampered with
+(HMAC over `app.config.settings.session_secret`), but it no longer means
+anything about who's holding it -- treat `/dashboard` as effectively
+public to anyone who can reach this app's URL. No password hashing, no
+rate limiting, no CSRF token, no per-user accounts. Swap for real
+per-user accounts + hashed passwords before this app ever needs to keep
+anyone out.
 """
 from __future__ import annotations
 

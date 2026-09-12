@@ -1005,11 +1005,12 @@ Entirely additive: no existing route, file, or behavior changed except
 ### 9.1 New files
 
 - `app/auth.py` — signed-cookie session (stdlib `hmac`/`hashlib`/`base64`
-  only, no new dependency). One shared username/password
-  (`settings.dashboard_username`/`dashboard_password`), one cookie, no
-  user table, no password hashing, no CSRF token, no rate limiting.
-  **This is a POC gate, not real auth** — see its own docstring before
-  this app is ever reachable by anyone but one person on one laptop.
+  only, no new dependency). **Originally one shared username/password;
+  by explicit request, the password check was removed entirely — see
+  the update below this subsection.** No user table, no password
+  hashing, no CSRF token, no rate limiting regardless. **This is a POC
+  gate, not real auth** — see its own docstring before this app is ever
+  reachable by anyone but one person on one laptop.
 - `app/dashboard_data.py` — the dashboard's only DB access: fixed,
   hand-written aggregate queries via `app.db.ReadOnlyDB.run` (the same
   one persistent connection everything else uses — no second connection
@@ -1089,12 +1090,60 @@ this file (§5, §6): live-verified, not just evidenced.
 
 ### 9.4 Known limitations (in addition to §7 and §8.5)
 
-- Single shared login, not per-user accounts — see `app/auth.py`.
+- **Login is now an open gate, not a real check — see §9.5.** The
+  bullet below is what was true when this dashboard first shipped; it
+  no longer is.
+- ~~Single shared login, not per-user accounts — see `app/auth.py`.~~
+  Superseded by §9.5: there's no login *check* left at all now.
 - The dashboard has no auto-refresh; "↻ Refresh data" (and the floating
   button) re-fetch on click only.
 - `/api/ask*` remain fully unauthenticated — logging into the dashboard
   does not gate the chat endpoints, by design (kept additive/separate),
   but worth knowing if that's ever expected to change together.
+
+### 9.5 Login gate opened up: the password check was removed, by explicit request
+
+**Found:** the project owner tried the dashboard and got "Invalid
+username or password" — the default POC credentials (`admin`/`changeme`)
+were never communicated anywhere the owner would see them before hitting
+the login form, so the rejection, while functioning exactly as designed,
+looked like a bug. Confirmed those defaults still worked
+(`curl /api/login` with `admin`/`changeme` → `{"ok":true}`) before
+concluding it wasn't an actual credential/config problem.
+
+**Change, on explicit request ("remove that and allow whatever i type in
+user name and password"):** `POST /api/login` (`app/main.py`) no longer
+compares against any stored credential at all. It accepts **any
+non-blank username** and does not look at the password field's value —
+the HTML form still requires one be typed (`required` on the input),
+but the server ignores it. `Settings.dashboard_username`/
+`dashboard_password` (`app/config.py`) are removed as now-unused config,
+along with their `.env.example` entries — matching this project's own
+convention of not leaving dead settings behind (see §5.6's alt-provider
+revert for the precedent). `Settings.session_secret` stays: the session
+cookie handed out is still HMAC-signed and still can't be forged or
+tampered with, it just no longer certifies *who* is holding it.
+`app/auth.py`'s docstring and `login.html`'s on-page hint were both
+updated to say this plainly, not leave the old "one shared account"
+framing standing after it stopped being true.
+
+**Verified live:** `curl /api/login` with a made-up username/password
+(`whoever` / `literally anything`) → `{"ok":true}`; blank username →
+correctly rejected (`{"ok":false,"error":"Enter a username."}`, not a
+silent accept). Full Playwright click-through through the real login
+form with a made-up username (`sourav` / `whatever123`) → lands on
+`/dashboard`, real data loads, and the topbar correctly displays
+`sourav` as the signed-in name, proving the typed username actually
+flows through to the session, not just accepted-and-ignored. Zero
+console errors. Full non-LLM regression (`dry_run_no_llm`,
+`pipeline_mock_test`, `double_count_guard_test`) re-confirmed unaffected.
+
+**What this means in plain terms, so it isn't buried:** `/dashboard` is
+now reachable by anyone who can reach this app's URL and is willing to
+type anything into the login form — there is no access control left on
+it at all, only a cookie that proves a session was created, not that
+whoever created it was supposed to. Fine for a solo-laptop POC; revisit
+before this is ever exposed anywhere another person could reach it.
 
 ---
 
