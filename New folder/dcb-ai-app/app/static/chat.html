@@ -86,15 +86,18 @@
   #newchat:hover{background:var(--navy-soft)}
 
   /* Text-labeled (not icon-only, per this app's own accessibility rule)
-     drawer toggles -- hidden by default, shown only under the tablet/mobile
-     breakpoint below, where the sidebar and chart panel become overlays. */
+     drawer toggle -- hidden by default, shown only under the tablet/mobile
+     breakpoint below, where the sidebar becomes an overlay. */
   .drawer-toggle{display:none;background:var(--surface);border:1px solid var(--border);color:var(--navy);
                  font-size:.78rem;font-weight:700;padding:7px 12px;border-radius:7px;cursor:pointer}
   .drawer-toggle:hover{background:var(--navy-soft)}
 
-  /* ---------- Three-column shell: sidebar / center chat / chart panel ---------- */
+  /* ---------- Shell: sidebar / center chat ---------- */
+  /* A dedicated right-hand chart panel existed briefly (see git history /
+     CLAUDE.md) -- removed by request in favor of charts rendered inline
+     in the conversation again, same placement as the original design. */
   .app-shell{flex:1;display:flex;min-height:0;overflow:hidden}
-  .sidebar, .chart-panel{flex:0 0 auto;background:var(--surface);overflow-y:auto;padding:18px 16px}
+  .sidebar{flex:0 0 auto;background:var(--surface);overflow-y:auto;padding:18px 16px}
   .sidebar{width:260px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:22px}
 
   /* Reciprocal cross-link to the summary dashboard (§9) -- that page's
@@ -111,32 +114,22 @@
   .sidebar-promo a{display:inline-block;margin-top:4px;background:#fff;color:var(--navy-deep);
                     font-size:.72rem;font-weight:700;padding:6px 10px;border-radius:7px;
                     text-decoration:none;text-align:center}
-  .chart-panel{width:340px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
   .sidebar-section{display:flex;flex-direction:column;gap:8px}
-  .sidebar-heading, .chart-panel-heading{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
+  .sidebar-heading{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
                      color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
   .sidebar-heading svg{width:14px;height:14px;stroke:var(--muted);fill:none;flex:0 0 auto}
-  .chart-panel-heading{font-size:.8rem;text-transform:none;letter-spacing:0;color:var(--navy)}
-  .sidebar-placeholder, .chart-panel-empty{font-size:.82rem;color:var(--muted);line-height:1.5}
-  .sidebar-placeholder{font-style:italic}
-  /* The chart panel's body fills whatever vertical space the panel has --
-     larger and more prominent than a chart squeezed into a chat bubble
-     (the old inline placement). Only ever holds ONE chart at a time: the
-     most recently produced one, or one picked from sidebar chart history. */
-  .chart-panel-body{flex:1;display:flex;flex-direction:column;min-height:0}
+  .sidebar-placeholder{font-size:.82rem;color:var(--muted);line-height:1.5;font-style:italic}
   .center-col{flex:1;display:flex;flex-direction:column;min-width:0}
 
   .drawer-backdrop{display:none}
 
   @media(max-width:1024px){
     .drawer-toggle{display:inline-flex;align-items:center}
-    .sidebar, .chart-panel{position:fixed;top:0;bottom:0;width:280px;z-index:40;
-                            transition:transform .2s ease;box-shadow:0 0 24px rgba(16,32,63,.18)}
-    .sidebar{left:0;transform:translateX(-100%)}
-    .chart-panel{right:0;transform:translateX(100%)}
+    .sidebar{position:fixed;top:0;bottom:0;left:0;width:280px;z-index:40;
+             transition:transform .2s ease;box-shadow:0 0 24px rgba(16,32,63,.18);
+             transform:translateX(-100%)}
     body.sidebar-open .sidebar{transform:translateX(0)}
-    body.chart-open .chart-panel{transform:translateX(0)}
-    body.sidebar-open .drawer-backdrop, body.chart-open .drawer-backdrop{
+    body.sidebar-open .drawer-backdrop{
       display:block;position:fixed;inset:0;background:rgba(16,32,63,.35);z-index:30}
   }
 
@@ -197,13 +190,11 @@
               color:var(--navy-deep);white-space:pre-wrap;word-break:break-word;background:var(--navy-soft)}
   .sqlbox .timing{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.72rem;color:var(--muted)}
 
-  /* Chart container: lives in the right-hand chart panel (.panel modifier),
-     not inline in the message bubble -- moved there so it can be larger
-     and more prominent than a chart squeezed into a bubble ever was. */
-  .chart-container{background:var(--surface);border:1px solid var(--border);
+  /* Inline chart, rendered above the answer text within the same bot
+     bubble. Hidden (via [hidden]) until a real chart_data payload arrives. */
+  .chart-container{margin-bottom:10px;background:var(--surface);border:1px solid var(--border);
                     border-radius:10px;padding:10px;height:220px}
   .chart-container canvas{width:100% !important;height:100% !important}
-  .chart-container.panel{flex:1;height:auto;min-height:280px}
 
   /* ---------- Suggestion chips (in the sidebar, since step 3) ---------- */
   .chips{display:flex;flex-direction:column;gap:6px}
@@ -301,7 +292,6 @@
         <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menuToggle">Menu</button>
         <div id="statusRow"><span class="dot" id="statusDot"></span><span id="statusText">API: checking…</span></div>
         <button id="newchat" data-i18n="newChat">+ New chat</button>
-        <button type="button" class="drawer-toggle" id="chartToggle" data-i18n="chartToggle">Charts</button>
       </div>
     </div>
   </header>
@@ -360,13 +350,6 @@
         <div class="composer-caption" data-i18n="composerCaption">Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.</div>
       </footer>
     </div>
-
-    <aside class="chart-panel" id="chartPanel">
-      <div class="chart-panel-heading" data-i18n="chartPanelTitle">Chart</div>
-      <div class="chart-panel-body" id="chartPanelBody">
-        <div class="chart-panel-empty" id="chartPanelEmptyMsg" data-i18n="chartPanelEmpty">No chart for this answer yet — ask a comparison or trend question (e.g. "Compare LT-1 vs HT-2 demand across all years").</div>
-      </div>
-    </aside>
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
@@ -529,26 +512,6 @@ function renderChart(container, chartData){
   });
 }
 
-const chartPanelBody = document.getElementById('chartPanelBody');
-
-// Renders the most recent chart-bearing answer into the right-hand chart
-// panel (replacing whatever was there before), larger and more prominent
-// than a chart squeezed into a chat bubble ever was -- the message bubble
-// itself now holds only the text answer. A non-chart answer (chart_data
-// null) deliberately leaves the panel untouched: it always shows "the most
-// recently produced chart", not "a chart for the most recent message" --
-// there's nothing to update to when the latest answer has no chart of its
-// own, and clearing it back to the empty state on every text-only question
-// would be more confusing than leaving the last real chart in view.
-function renderChartInPanel(chartData){
-  if (!chartData) return;
-  chartPanelBody.innerHTML = '';
-  const container = document.createElement('div');
-  container.className = 'chart-container panel';
-  chartPanelBody.appendChild(container);
-  renderChart(container, chartData);
-}
-
 // ---------------------------------------------------------------------
 // Chart history: session-only, client-side state -- a plain JS array,
 // most recent first. NOT persisted anywhere (no backend storage, no
@@ -606,22 +569,17 @@ function addChartHistoryEntry(question, chartData, bubbleEl){
   renderChartHistoryList();
 }
 
-// Redisplays an older chart in the panel and highlights the exchange it
-// came from. A NEW chart-bearing question afterward still goes through
-// renderChartInPanel from the live 'chart' SSE handler below, exactly
-// like any other answer -- so it always overrides whatever was manually
-// selected here, never gets "stuck" on an old pick.
+// The chart itself already lives permanently in its own message bubble
+// (rendered inline, see send() below) -- clicking a history entry just
+// needs to scroll to and highlight that exchange, not redraw anything.
 function selectChartHistoryEntry(idx){
   const entry = chartHistory[idx];
-  if (!entry) return;
-  renderChartInPanel(entry.chartData);
-  if (entry.bubbleEl){
-    entry.bubbleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    entry.bubbleEl.classList.remove('highlight-flash');
-    void entry.bubbleEl.offsetWidth; // restart the animation if clicked again
-    entry.bubbleEl.classList.add('highlight-flash');
-    setTimeout(() => entry.bubbleEl.classList.remove('highlight-flash'), 1500);
-  }
+  if (!entry || !entry.bubbleEl) return;
+  entry.bubbleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  entry.bubbleEl.classList.remove('highlight-flash');
+  void entry.bubbleEl.offsetWidth; // restart the animation if clicked again
+  entry.bubbleEl.classList.add('highlight-flash');
+  setTimeout(() => entry.bubbleEl.classList.remove('highlight-flash'), 1500);
 }
 
 // A bit longer than this app's own DB query timeout (8s default,
@@ -635,10 +593,10 @@ const CLIENT_TIMEOUT_MS = 30000;
 // sibling BESCOM project's NDJSON /chat/stream):
 //   event: status        {"stage": "thinking"}
 //   event: sql            {"sql": "..."}                (may be "" when unanswerable)
-//   event: chart           {"chart_data": {...} | null}  (real data -- rendered
-//                                                          in the right-hand
-//                                                          chart panel, not
-//                                                          inline; see renderChartInPanel)
+//   event: chart           {"chart_data": {...} | null}  (real data, rendered
+//                                                          inline in this
+//                                                          message's own
+//                                                          bubble; see renderChart)
 //   event: answer_chunk   {"text": "..."}                (one or more, in order)
 //   event: done            {"answerable": bool, "timing_ms": {...}, "truncated": bool}
 async function send(){
@@ -647,13 +605,18 @@ async function send(){
   if (welcome) welcome.remove();
   addBubble(text, 'user'); box.value = ''; sendBtn.disabled = true;
 
-  // The bot bubble holds only the text answer, then (later) the
-  // meta/technical-details block appended by renderMeta -- any chart_data
-  // for this answer goes to the chart panel instead (renderChartInPanel),
-  // not into the bubble.
+  // The bot bubble holds three independent children -- a chart container
+  // (hidden until/unless a real chart_data payload arrives), the answer
+  // text, then (later) the meta/technical-details block appended by
+  // renderMeta -- rather than setting the bubble's own textContent
+  // directly, which would wipe out the chart every time the text updates.
   const bot = addBubble('', 'bot');
+  const chartContainer = document.createElement('div');
+  chartContainer.className = 'chart-container';
+  chartContainer.hidden = true;
   const textEl = document.createElement('div');
   textEl.textContent = t('thinking', {s: 0});
+  bot.appendChild(chartContainer);
   bot.appendChild(textEl);
 
   bot.classList.add('waiting');
@@ -683,9 +646,8 @@ async function send(){
     } else if (ev === 'chart'){
       // Render as soon as this event lands -- the answer text is still
       // streaming in via answer_chunk after this, no reason to wait for it.
-      // Goes to the chart panel (renderChartInPanel), not inline in the bubble.
       if (obj.chart_data){
-        renderChartInPanel(obj.chart_data);
+        renderChart(chartContainer, obj.chart_data);
         addChartHistoryEntry(text, obj.chart_data, bot);
       }
     } else if (ev === 'answer_chunk'){
@@ -792,15 +754,12 @@ const I18N = {
     apiUnreachable: 'API: unreachable',
     newChat: '+ New chat',
     menuToggle: 'Menu',
-    chartToggle: 'Charts',
     sidebarSuggested: 'Suggested questions',
     sidebarComingSoon: 'Coming in the next pass of this build.',
     sidebarChartHistory: 'Chart history',
     sidebarNoCharts: 'No charts yet this session.',
     historyChartBar: 'Bar chart',
     historyChartLine: 'Line chart',
-    chartPanelTitle: 'Chart',
-    chartPanelEmpty: 'No chart for this answer yet — ask a comparison or trend question (e.g. "Compare LT-1 vs HT-2 demand across all years").',
     welcomeTitle: 'Welcome to DCB Assistant',
     welcomeSub: 'Ask a question in plain English — it becomes a real SQL query against the star-schema database, and you get the actual figures back, not a guess.',
     historySearchPlaceholder: 'Search past charts…',
@@ -837,15 +796,12 @@ const I18N = {
     apiUnreachable: 'API: ತಲುಪಲಾಗುತ್ತಿಲ್ಲ',
     newChat: '+ ಹೊಸ ಚಾಟ್',
     menuToggle: 'ಮೆನು',
-    chartToggle: 'ಚಾರ್ಟ್‌ಗಳು',
     sidebarSuggested: 'ಸೂಚಿತ ಪ್ರಶ್ನೆಗಳು',
     sidebarComingSoon: 'ಈ ನಿರ್ಮಾಣದ ಮುಂದಿನ ಹಂತದಲ್ಲಿ ಬರಲಿದೆ.',
     sidebarChartHistory: 'ಚಾರ್ಟ್ ಇತಿಹಾಸ',
     sidebarNoCharts: 'ಈ ಅಧಿವೇಶನದಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಚಾರ್ಟ್‌ಗಳಿಲ್ಲ.',
     historyChartBar: 'ಬಾರ್ ಚಾರ್ಟ್',
     historyChartLine: 'ಲೈನ್ ಚಾರ್ಟ್',
-    chartPanelTitle: 'ಚಾರ್ಟ್',
-    chartPanelEmpty: 'ಈ ಉತ್ತರಕ್ಕೆ ಇನ್ನೂ ಚಾರ್ಟ್ ಇಲ್ಲ — ಹೋಲಿಕೆ ಅಥವಾ ಪ್ರವೃತ್ತಿ ಪ್ರಶ್ನೆ ಕೇಳಿ (ಉದಾ. "LT-1 ಮತ್ತು HT-2 ಬೇಡಿಕೆಯನ್ನು ಎಲ್ಲಾ ವರ್ಷಗಳಲ್ಲಿ ಹೋಲಿಸಿ").',
     welcomeTitle: 'DCB ಸಹಾಯಕಕ್ಕೆ ಸ್ವಾಗತ',
     welcomeSub: 'ಸರಳ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಕೇಳಿ — ಇದು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಾಗಿ ಪರಿವರ್ತನೆಗೊಂಡು ನಿಜವಾದ ಅಂಕಿಅಂಶಗಳನ್ನು ನೀಡುತ್ತದೆ.',
     historySearchPlaceholder: 'ಹಿಂದಿನ ಚಾರ್ಟ್‌ಗಳನ್ನು ಹುಡುಕಿ…',
@@ -920,21 +876,14 @@ contrastBtn.onclick = () => {
 };
 
 // ---------------------------------------------------------------------
-// Tablet/mobile drawer toggles for the sidebar and chart panel (shell
-// layout, §"UI layout redesign"). Only visible under the CSS breakpoint
-// where those two panels become fixed-position overlays instead of
-// permanent columns; each toggle closes the other drawer, since only one
-// overlay makes sense open at a time on a narrow screen.
+// Tablet/mobile drawer toggle for the sidebar. Only visible under the
+// CSS breakpoint where it becomes a fixed-position overlay instead of a
+// permanent column.
 document.getElementById('sidebarToggle').onclick = () => {
-  document.body.classList.remove('chart-open');
   document.body.classList.toggle('sidebar-open');
 };
-document.getElementById('chartToggle').onclick = () => {
-  document.body.classList.remove('sidebar-open');
-  document.body.classList.toggle('chart-open');
-};
 document.getElementById('drawerBackdrop').onclick = () => {
-  document.body.classList.remove('sidebar-open', 'chart-open');
+  document.body.classList.remove('sidebar-open');
 };
 
 renderWelcomeScreen();

@@ -1011,6 +1011,49 @@ and the welcome screen) each populate chart history and render a real
 chart in the panel; zero console errors; non-LLM regression re-confirmed
 unaffected.
 
+### 8.8 Right-hand chart panel removed, by request — charts moved back inline
+
+**§8.6's three-pane layout (sidebar / center chat / right chart panel) no
+longer exists.** By explicit request ("remove that [right part] and show
+the graphical representation in the chat only"), the dedicated chart
+panel is gone; charts render inline again, above the answer text within
+their own message bubble — the same placement §8.4 originally shipped,
+before §8.6 moved it to the panel. This app is back to a two-pane layout:
+sidebar (suggested questions, chart history, dashboard promo — all
+unchanged) + center chat, now given the full width the panel used to
+share.
+
+- **What changed:** `renderChartInPanel()` and `#chartPanelBody` are
+  gone. `send()` restores the pre-§8.6 pattern: each bot message bubble
+  gets its own `.chart-container` div (created hidden, shown only if
+  `chart_data` arrives), rendered via the same `renderChart()` both
+  versions always shared. The `#chartToggle` ("Charts") header button and
+  its drawer/backdrop wiring are removed — only the sidebar's "Menu"
+  drawer remains at narrow widths, confirmed via bounding-box position
+  (collapsed `x:-280`, open `x:0`) same as before.
+- **Chart history's role changed along with it:** since each past chart
+  now lives permanently in its own message bubble (not swapped in and
+  out of one shared panel), clicking a history entry no longer needs to
+  redraw anything — `selectChartHistoryEntry()` now only scrolls to and
+  highlights (`.highlight-flash`) the exchange it came from. Simpler than
+  §8.6's version, and the "asking a new chart-bearing question after
+  clicking an old history entry" edge case §8.6 had to reason about
+  doesn't exist anymore either — there's no shared "current chart" state
+  left to get stuck.
+- **Unused CSS/i18n removed alongside it:** `.chart-panel*` rules, the
+  `.chart-container.panel` size modifier, and the `chartToggle`/
+  `chartPanelTitle`/`chartPanelEmpty` string-table entries (both
+  languages) — not left behind as dead code.
+
+**Verified live:** a chart-bearing question renders its chart inside that
+message's own bubble (confirmed via `.chart-container canvas` scoped to
+that specific `.msg.bot`, not just present somewhere on the page); a
+non-chart question's bubble has no chart container at all; clicking a
+chart-history entry scrolls to and highlights the right bubble; the
+sidebar drawer still collapses/opens correctly at real tablet width
+(768px) with the "Charts" button confirmed gone. Zero console errors.
+Full non-LLM regression re-confirmed unaffected — frontend-only change.
+
 ---
 
 ## 9. Dashboard + login gate — built and live-verified (see §9.3)
