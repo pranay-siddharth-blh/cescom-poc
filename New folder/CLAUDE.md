@@ -932,6 +932,61 @@ backend contract change.
   Removed from this list; see §8.1/§8.4/§8.6 above for what was actually
   built and how it was verified.
 
+### 8.7 Chat UI polish — welcome screen, composer, sidebar (reference: a supplied "Script" AI-chat screenshot)
+
+A further pass restyled three specific pieces of `chat.html`, taking
+cues from a reference screenshot of an unrelated AI-chat product
+("Script") the project owner supplied — only the parts that actually
+fit a DB Q&A tool were carried over; generic AI-assistant features from
+that reference (voice message, image generation, avatar creation) were
+**not** added, since faking controls with no real behavior behind them
+would violate this project's own honest-UI convention.
+
+- **Welcome screen**: the plain one-line hint text is replaced by a
+  centered heading + subtext + a 2-column grid of 5 clickable suggestion
+  cards (icon + label, same underlying questions as the sidebar chips) —
+  shown before the first message and again after "+ New chat"
+  (`renderWelcomeScreen()`), removed the instant the first question is
+  actually sent.
+- **Composer**: input + send button now read as one unified rounded
+  pill (`.composer-box`) instead of two separately-bordered controls,
+  plus a short caption below it echoing the disclosure the old hint text
+  carried ("Answers come from a real SQL query… see Technical details").
+- **Sidebar polish**: small icons next to the "Suggested questions" /
+  "Chart history" section headings (icon+text, never icon-only, per this
+  app's own accessibility rule); a **real** search box above the chart-
+  history list that filters it by question text — not decorative,
+  mirrors the exact search-filter convention `app/static/dashboard.html`
+  (§9) already uses over its own sub-division/tariff lists; and a new
+  promo card pinned to the bottom of the sidebar cross-linking to
+  `/dashboard`, the reciprocal direction of the link dashboard.html's own
+  sidebar promo already provides back to the chat UI.
+
+**One real bug found and fixed:** the initial `renderWelcomeScreen()`
+call was placed right after the chip-wiring code, but `I18N` (used by
+`t()`, which the welcome screen calls to render its text) is declared
+with `const` much further down the same script — a classic temporal-
+dead-zone bug, thrown as `Cannot access 'I18N' before initialization`
+and caught immediately by a live console-error check before any further
+testing. **Fix:** moved the initial call to the true end of the script,
+after every other top-level declaration; `renderWelcomeScreen` itself is
+a hoisted function declaration, so defining it earlier in the file was
+never the problem, only the misplaced *call*.
+
+**Verified live** (Playwright + real Chrome): welcome screen renders
+with all 5 cards, zero console errors after the fix; clicking a card
+submits the question and removes the welcome screen; "+ New chat"
+brings it back; the chart-history search filter correctly narrows a
+2-entry list to 1 when searching a substring of one question; the
+sidebar promo card's link resolves to `/dashboard`; the EN/Kannada
+toggle correctly translates the new welcome/composer/sidebar strings
+while leaving chart data untouched; high-contrast mode applies the
+existing 2px-border treatment to all the new elements; the mobile
+sidebar drawer (§8.6) still renders the new search box and promo card
+correctly at real tablet width. Full non-LLM regression
+(`dry_run_no_llm`, `pipeline_mock_test`, `double_count_guard_test`)
+re-confirmed unaffected — frontend-only change, `app/main.py` untouched.
+
 ---
 
 ## 9. Dashboard + login gate — built and live-verified (see §9.3)

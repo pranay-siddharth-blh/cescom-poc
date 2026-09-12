@@ -51,7 +51,8 @@
   body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
        background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100vh;overflow:hidden}
   body.hc *{box-shadow:none !important;background-image:none !important}
-  body.hc .bubble, body.hc .sqlbox, body.hc .pill, body.hc #box, body.hc .chip{border-width:2px !important}
+  body.hc .bubble, body.hc .sqlbox, body.hc .pill, body.hc #box, body.hc .chip,
+  body.hc .welcome-card, body.hc .history-item, body.hc .composer-box, body.hc .sidebar-search{border-width:2px !important}
 
   /* ---------- Government header ---------- */
   .gov-header{flex:0 0 auto;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -95,10 +96,26 @@
   .app-shell{flex:1;display:flex;min-height:0;overflow:hidden}
   .sidebar, .chart-panel{flex:0 0 auto;background:var(--surface);overflow-y:auto;padding:18px 16px}
   .sidebar{width:260px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:22px}
+
+  /* Reciprocal cross-link to the summary dashboard (§9) -- that page's
+     own sidebar already links back here ("Open chat"); this is the other
+     direction, styled to match its promo card. Pinned to the bottom of
+     the sidebar via margin-top:auto, same convention dashboard.html uses. */
+  .sidebar-promo{margin-top:auto;background:var(--navy-deep);color:#fff;border-radius:12px;
+                 padding:14px;display:flex;flex-direction:column;gap:6px}
+  .sidebar-promo-icon{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.14);
+                       display:flex;align-items:center;justify-content:center}
+  .sidebar-promo-icon svg{width:16px;height:16px;stroke:#fff;fill:none}
+  .sidebar-promo h4{margin:2px 0 0;font-size:.82rem;font-weight:700}
+  .sidebar-promo p{margin:0;font-size:.7rem;line-height:1.4;color:rgba(255,255,255,.78)}
+  .sidebar-promo a{display:inline-block;margin-top:4px;background:#fff;color:var(--navy-deep);
+                    font-size:.72rem;font-weight:700;padding:6px 10px;border-radius:7px;
+                    text-decoration:none;text-align:center}
   .chart-panel{width:340px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
   .sidebar-section{display:flex;flex-direction:column;gap:8px}
   .sidebar-heading, .chart-panel-heading{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
-                     color:var(--muted);font-weight:700}
+                     color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+  .sidebar-heading svg{width:14px;height:14px;stroke:var(--muted);fill:none;flex:0 0 auto}
   .chart-panel-heading{font-size:.8rem;text-transform:none;letter-spacing:0;color:var(--navy)}
   .sidebar-placeholder, .chart-panel-empty{font-size:.82rem;color:var(--muted);line-height:1.5}
   .sidebar-placeholder{font-style:italic}
@@ -126,7 +143,24 @@
   /* ---------- Conversation area ---------- */
   main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;
        max-width:820px;width:100%;margin:0 auto}
-  .hint{color:var(--muted);font-size:.85rem;text-align:center;margin:10px 0;line-height:1.5}
+
+  /* Welcome screen -- shown only before the first message (and again
+     after "+ New chat"), replaced by the conversation once a question is
+     sent. Script-style: a heading + subtext + a grid of clickable
+     suggestion cards, instead of a plain line of hint text. */
+  .welcome{margin:auto 0;padding:20px 8px;text-align:center;display:flex;flex-direction:column;
+           align-items:center;gap:6px}
+  .welcome h2{margin:0;font-size:1.4rem;color:var(--navy);font-weight:800}
+  .welcome p{margin:0 0 18px;font-size:.86rem;color:var(--muted);max-width:520px;line-height:1.5}
+  .welcome-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+  .welcome-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+                padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+                text-align:left;font-size:.84rem;font-weight:600;color:var(--ink)}
+  .welcome-card:hover{background:var(--navy-soft);border-color:var(--navy)}
+  .welcome-card-icon{width:32px;height:32px;border-radius:9px;background:var(--navy-soft);color:var(--navy);
+                      display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .welcome-card-icon svg{width:16px;height:16px;stroke:var(--navy);fill:none}
+  @media(max-width:560px){ .welcome-cards{grid-template-columns:1fr} }
 
   .msg{display:flex;gap:10px;max-width:88%;animation:msgIn .2s ease both}
   @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -178,6 +212,15 @@
         text-align:left;width:100%}
   .chip:hover{background:var(--navy-soft)}
 
+  /* Real client-side filter over the chart-history list, mirroring the
+     same search-box convention app/static/dashboard.html already uses
+     over its own sub-division/tariff lists -- not decorative. */
+  .sidebar-search{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);
+                   border-radius:8px;padding:6px 9px;margin-bottom:2px}
+  .sidebar-search svg{width:14px;height:14px;stroke:var(--muted);fill:none;flex:0 0 auto}
+  .sidebar-search input{border:none;background:none;outline:none;font-size:.78rem;width:100%;
+                         color:var(--ink);font-family:inherit}
+
   /* ---------- Chart history (sidebar) ---------- */
   .chart-history-list{display:flex;flex-direction:column;gap:6px}
   .history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;
@@ -197,14 +240,20 @@
 
   /* ---------- Composer ---------- */
   footer{border-top:1px solid var(--border);background:var(--surface);padding:12px 16px;flex:0 0 auto}
-  .composer{max-width:820px;margin:0 auto;display:flex;align-items:center;gap:8px}
-  #box{flex:1;border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:.95rem;
-       outline:none;font-family:inherit;background:var(--surface);color:var(--ink)}
-  #box:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,47,92,.14)}
-  #send{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:0 22px;height:42px;
+  .composer{max-width:820px;margin:0 auto}
+  /* One unified pill (Script-style) instead of two separately-bordered
+     controls -- same input/send behavior, just the outer border/focus
+     ring now lives on the wrapper so input+button read as one control. */
+  .composer-box{display:flex;align-items:center;gap:6px;border:1px solid var(--border);
+                border-radius:24px;padding:5px 6px 5px 16px;background:var(--surface)}
+  .composer-box:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,47,92,.14)}
+  #box{flex:1;border:none;padding:8px 0;font-size:.95rem;outline:none;font-family:inherit;
+       background:none;color:var(--ink)}
+  #send{background:var(--navy);color:#fff;border:none;border-radius:20px;padding:0 20px;height:38px;
         font-weight:700;cursor:pointer}
   #send:hover{background:var(--navy-deep)}
   #send:disabled{opacity:.5;cursor:default}
+  .composer-caption{max-width:820px;margin:8px auto 0;text-align:center;font-size:.7rem;color:var(--muted)}
 
   @media(max-width:640px){
     .gov-brand img{height:38px}
@@ -262,7 +311,10 @@
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-section">
-        <div class="sidebar-heading" data-i18n="sidebarSuggested">Suggested questions</div>
+        <div class="sidebar-heading">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.5 8.7 8.7 0 0 1-3.8-.8L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.9 3a8.5 8.5 0 0 1 8.1 8.5z"/></svg>
+          <span data-i18n="sidebarSuggested">Suggested questions</span>
+        </div>
         <div class="chips" id="chips">
           <button class="chip" data-q="What was the collection efficiency in Arkalgud in 2024-25?" data-i18n="chip1">Collection efficiency, one sub-division</button>
           <button class="chip" data-q="Which tariff category generated the most demand in 2023-24?" data-i18n="chip2">Top tariff category by demand</button>
@@ -272,25 +324,40 @@
         </div>
       </div>
       <div class="sidebar-section">
-        <div class="sidebar-heading" data-i18n="sidebarChartHistory">Chart history</div>
+        <div class="sidebar-heading">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
+          <span data-i18n="sidebarChartHistory">Chart history</span>
+        </div>
+        <div class="sidebar-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="historySearch" data-i18n-placeholder="historySearchPlaceholder" placeholder="Search past charts…" autocomplete="off">
+        </div>
         <div class="chart-history-list" id="chartHistoryList">
           <div class="sidebar-placeholder" id="chartHistoryEmptyMsg" data-i18n="sidebarNoCharts">No charts yet this session.</div>
         </div>
       </div>
+
+      <div class="sidebar-promo">
+        <div class="sidebar-promo-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </div>
+        <h4 data-i18n="sidebarPromoTitle">Want the bigger picture?</h4>
+        <p data-i18n="sidebarPromoSub">See KPIs, trends, and top sub-divisions on the summary dashboard.</p>
+        <a href="/dashboard" data-i18n="sidebarPromoLink">Open dashboard</a>
+      </div>
     </aside>
 
     <div class="center-col">
-      <main id="chat">
-        <div class="hint" data-i18n="hint">Ask a question about Demand, Collection &amp; Balance figures for Holenarasipura
-          Division. Answers are generated from a real SQL query against the star-schema database —
-          the generated SQL and response timing are available under "Technical details" with every answer.</div>
-      </main>
+      <main id="chat"></main>
 
       <footer>
         <div class="composer">
-          <input id="box" data-i18n-placeholder="boxPlaceholder" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
-          <button id="send" data-i18n="send">Send</button>
+          <div class="composer-box">
+            <input id="box" data-i18n-placeholder="boxPlaceholder" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
+            <button id="send" data-i18n="send">Send</button>
+          </div>
         </div>
+        <div class="composer-caption" data-i18n="composerCaption">Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.</div>
       </footer>
     </div>
 
@@ -307,6 +374,42 @@
 const chat = document.getElementById('chat');
 const box  = document.getElementById('box');
 const sendBtn = document.getElementById('send');
+
+// Welcome screen: shown before the first message (and again after
+// "+ New chat"), replaced by the conversation once a question is sent
+// (see send() below, which removes #welcomeScreen on the first call).
+// Icons are purely decorative alongside their own text label -- never
+// icon-only, consistent with this app's accessibility-toolbar rule.
+const WELCOME_CARDS = [
+  { q: 'What was the collection efficiency in Arkalgud in 2024-25?', i18n: 'chip1',
+    icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' },
+  { q: 'Which tariff category generated the most demand in 2023-24?', i18n: 'chip2',
+    icon: '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/>' },
+  { q: 'How much outstanding balance does Konanur currently carry?', i18n: 'chip3',
+    icon: '<path d="M2 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/>' },
+  { q: 'Which sub-division has the best collection efficiency in the most recent year?', i18n: 'chip4',
+    icon: '<path d="m12 2 2.9 6.6L22 9.3l-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l7.1-.7Z"/>' },
+  { q: "What was the total demand for tariff code ZZ-99 in 2024-25?", i18n: 'chip5',
+    icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.2 1.9-2.5 3.5"/><path d="M12 17h.01"/>' },
+];
+
+function renderWelcomeScreen(){
+  chat.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className = 'welcome'; wrap.id = 'welcomeScreen';
+  const h2 = document.createElement('h2'); h2.dataset.i18n = 'welcomeTitle'; h2.textContent = t('welcomeTitle');
+  const p = document.createElement('p'); p.dataset.i18n = 'welcomeSub'; p.textContent = t('welcomeSub');
+  const cards = document.createElement('div'); cards.className = 'welcome-cards';
+  WELCOME_CARDS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'welcome-card'; btn.dataset.q = c.q;
+    btn.innerHTML = `<span class="welcome-card-icon"><svg viewBox="0 0 24 24">${c.icon}</svg></span>`
+      + `<span data-i18n="${c.i18n}">${t(c.i18n)}</span>`;
+    btn.onclick = () => { box.value = c.q; send(); };
+    cards.appendChild(btn);
+  });
+  wrap.appendChild(h2); wrap.appendChild(p); wrap.appendChild(cards);
+  chat.appendChild(wrap);
+}
 
 function addBubble(text, who){
   const m = document.createElement('div'); m.className = 'msg ' + who;
@@ -471,7 +574,25 @@ function renderChartHistoryList(){
     btn.onclick = () => selectChartHistoryEntry(idx);
     chartHistoryList.appendChild(btn);
   });
+  applyHistorySearchFilter();
 }
+
+// Real client-side filter over the rendered history-item buttons --
+// mirrors the same search-box convention app/static/dashboard.html
+// already uses over its own sub-division/tariff lists. Re-applied after
+// every re-render (a new chart arriving, or a language switch) so the
+// current search term keeps working, not just at the moment it's typed.
+let historySearchQuery = '';
+function applyHistorySearchFilter(){
+  const q = historySearchQuery.trim().toLowerCase();
+  chartHistoryList.querySelectorAll('.history-item').forEach(item => {
+    item.style.display = (!q || item.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
+document.getElementById('historySearch').addEventListener('input', (e) => {
+  historySearchQuery = e.target.value;
+  applyHistorySearchFilter();
+});
 
 function addChartHistoryEntry(question, chartData, bubbleEl){
   chartHistory.unshift({ question, chartData, bubbleEl });
@@ -515,6 +636,8 @@ const CLIENT_TIMEOUT_MS = 30000;
 //   event: done            {"answerable": bool, "timing_ms": {...}, "truncated": bool}
 async function send(){
   const text = box.value.trim(); if (!text) return;
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
   addBubble(text, 'user'); box.value = ''; sendBtn.disabled = true;
 
   // The bot bubble holds only the text answer, then (later) the
@@ -610,12 +733,7 @@ async function send(){
 
 sendBtn.onclick = send;
 box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
-document.getElementById('newchat').onclick = () => {
-  chat.innerHTML = '';
-  const hint = document.createElement('div'); hint.className = 'hint';
-  hint.textContent = t('newChatHint');
-  chat.appendChild(hint);
-};
+document.getElementById('newchat').onclick = () => { renderWelcomeScreen(); box.focus(); };
 document.querySelectorAll('.chip').forEach(b => {
   b.onclick = () => { box.value = b.dataset.q; send(); };
 });
@@ -676,8 +794,13 @@ const I18N = {
     historyChartLine: 'Line chart',
     chartPanelTitle: 'Chart',
     chartPanelEmpty: 'No chart for this answer yet — ask a comparison or trend question (e.g. "Compare LT-1 vs HT-2 demand across all years").',
-    hint: 'Ask a question about Demand, Collection & Balance figures for Holenarasipura Division. Answers are generated from a real SQL query against the star-schema database — the generated SQL and response timing are available under "Technical details" with every answer.',
-    newChatHint: 'New chat. Ask a question about the DCB figures.',
+    welcomeTitle: 'Welcome to DCB Assistant',
+    welcomeSub: 'Ask a question in plain English — it becomes a real SQL query against the star-schema database, and you get the actual figures back, not a guess.',
+    historySearchPlaceholder: 'Search past charts…',
+    sidebarPromoTitle: 'Want the bigger picture?',
+    sidebarPromoSub: 'See KPIs, trends, and top sub-divisions on the summary dashboard.',
+    sidebarPromoLink: 'Open dashboard',
+    composerCaption: 'Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.',
     chip1: 'Collection efficiency, one sub-division',
     chip2: 'Top tariff category by demand',
     chip3: 'Outstanding arrears',
@@ -716,8 +839,13 @@ const I18N = {
     historyChartLine: 'ಲೈನ್ ಚಾರ್ಟ್',
     chartPanelTitle: 'ಚಾರ್ಟ್',
     chartPanelEmpty: 'ಈ ಉತ್ತರಕ್ಕೆ ಇನ್ನೂ ಚಾರ್ಟ್ ಇಲ್ಲ — ಹೋಲಿಕೆ ಅಥವಾ ಪ್ರವೃತ್ತಿ ಪ್ರಶ್ನೆ ಕೇಳಿ (ಉದಾ. "LT-1 ಮತ್ತು HT-2 ಬೇಡಿಕೆಯನ್ನು ಎಲ್ಲಾ ವರ್ಷಗಳಲ್ಲಿ ಹೋಲಿಸಿ").',
-    hint: 'ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ ಮತ್ತು ಬಾಕಿ ಅಂಕಿಅಂಶಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ. ಉತ್ತರಗಳು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಿಂದ ಉತ್ಪತ್ತಿಯಾಗುತ್ತವೆ — "Technical details" ಅಡಿಯಲ್ಲಿ ಪ್ರತಿ ಉತ್ತರಕ್ಕೂ SQL ಮತ್ತು ಸಮಯ ಲಭ್ಯವಿದೆ.',
-    newChatHint: 'ಹೊಸ ಚಾಟ್. DCB ಅಂಕಿಅಂಶಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ.',
+    welcomeTitle: 'DCB ಸಹಾಯಕಕ್ಕೆ ಸ್ವಾಗತ',
+    welcomeSub: 'ಸರಳ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಕೇಳಿ — ಇದು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಾಗಿ ಪರಿವರ್ತನೆಗೊಂಡು ನಿಜವಾದ ಅಂಕಿಅಂಶಗಳನ್ನು ನೀಡುತ್ತದೆ.',
+    historySearchPlaceholder: 'ಹಿಂದಿನ ಚಾರ್ಟ್‌ಗಳನ್ನು ಹುಡುಕಿ…',
+    sidebarPromoTitle: 'ಸಂಪೂರ್ಣ ಚಿತ್ರಣ ಬೇಕೇ?',
+    sidebarPromoSub: 'ಸಾರಾಂಶ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ KPI, ಪ್ರವೃತ್ತಿಗಳು ಮತ್ತು ಅಗ್ರ ಉಪ-ವಿಭಾಗಗಳನ್ನು ನೋಡಿ.',
+    sidebarPromoLink: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ',
+    composerCaption: 'ಉತ್ತರಗಳು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಿಂದ ಬರುತ್ತವೆ — ಪ್ರತಿ ಉತ್ತರದ ಅಡಿಯಲ್ಲಿ "Technical details" ನೋಡಿ.',
     chip1: 'ಸಂಗ್ರಹಣೆ ದಕ್ಷತೆ, ಒಂದು ಉಪ-ವಿಭಾಗ',
     chip2: 'ಬೇಡಿಕೆಯಿಂದ ಅಗ್ರ ಸುಂಕ ವರ್ಗ',
     chip3: 'ಬಾಕಿ ಉಳಿದ ಮೊತ್ತ',
@@ -801,6 +929,8 @@ document.getElementById('chartToggle').onclick = () => {
 document.getElementById('drawerBackdrop').onclick = () => {
   document.body.classList.remove('sidebar-open', 'chart-open');
 };
+
+renderWelcomeScreen();
 </script>
 </body>
 </html>
