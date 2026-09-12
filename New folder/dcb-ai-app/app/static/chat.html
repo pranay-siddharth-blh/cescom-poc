@@ -52,7 +52,7 @@
        background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100vh;overflow:hidden}
   body.hc *{box-shadow:none !important;background-image:none !important}
   body.hc .bubble, body.hc .sqlbox, body.hc .pill, body.hc #box, body.hc .chip,
-  body.hc .welcome-card, body.hc .history-item, body.hc .composer-box, body.hc .sidebar-search{border-width:2px !important}
+  body.hc .welcome-card, body.hc .composer-box{border-width:2px !important}
 
   /* ---------- Government header ---------- */
   .gov-header{flex:0 0 auto;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -203,32 +203,6 @@
         text-align:left;width:100%}
   .chip:hover{background:var(--navy-soft)}
 
-  /* Real client-side filter over the chart-history list, mirroring the
-     same search-box convention app/static/dashboard.html already uses
-     over its own sub-division/tariff lists -- not decorative. */
-  .sidebar-search{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);
-                   border-radius:8px;padding:6px 9px;margin-bottom:2px}
-  .sidebar-search svg{width:14px;height:14px;stroke:var(--muted);fill:none;flex:0 0 auto}
-  .sidebar-search input{border:none;background:none;outline:none;font-size:.78rem;width:100%;
-                         color:var(--ink);font-family:inherit}
-
-  /* ---------- Chart history (sidebar) ---------- */
-  .chart-history-list{display:flex;flex-direction:column;gap:6px}
-  .history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-                padding:8px 10px;text-align:left;cursor:pointer;width:100%;
-                display:flex;flex-direction:column;gap:2px;font-family:inherit}
-  .history-item:hover{background:var(--navy-soft)}
-  .history-item .history-q{font-size:.78rem;font-weight:600;color:var(--navy);
-                            overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
-                            -webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .history-item .history-type{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
-
-  /* Brief highlight on the message bubble a chart-history entry points
-     back to, so it's clear which past exchange the panel now reflects. */
-  @keyframes historyHighlight{0%{box-shadow:0 0 0 4px rgba(26,47,92,.35)}100%{box-shadow:0 1px 3px rgba(26,47,92,.08)}}
-  .bubble.highlight-flash{animation:historyHighlight 1.4s ease}
-  body.hc .bubble.highlight-flash{animation:none;outline:3px solid var(--navy)}
-
   /* ---------- Composer ---------- */
   footer{border-top:1px solid var(--border);background:var(--surface);padding:12px 16px;flex:0 0 auto}
   .composer{max-width:820px;margin:0 auto}
@@ -313,19 +287,6 @@
           <button class="chip" data-q="What was the total demand for tariff code ZZ-99 in 2024-25?" data-i18n="chip5">A tariff code that doesn't exist</button>
         </div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-heading">
-          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
-          <span data-i18n="sidebarChartHistory">Chart history</span>
-        </div>
-        <div class="sidebar-search">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="historySearch" data-i18n-placeholder="historySearchPlaceholder" placeholder="Search past charts…" autocomplete="off">
-        </div>
-        <div class="chart-history-list" id="chartHistoryList">
-          <div class="sidebar-placeholder" id="chartHistoryEmptyMsg" data-i18n="sidebarNoCharts">No charts yet this session.</div>
-        </div>
-      </div>
 
       <div class="sidebar-promo">
         <div class="sidebar-promo-icon">
@@ -367,9 +328,8 @@ const sendBtn = document.getElementById('send');
 // ones this project's own eval set -- CLAUDE.md's Q5 and Q2 -- confirmed
 // actually produce chart_data). Before this, all 5 suggestions were
 // single-value or adversarial questions, so nothing a user could click
-// from the welcome screen or sidebar ever exercised the chart panel or
-// chart history at all -- the feature worked, but nothing discoverable
-// ever demonstrated it. See CLAUDE.md's chart-history troubleshooting note.
+// from the welcome screen or sidebar ever rendered a chart at all -- the
+// feature worked, but nothing discoverable ever demonstrated it.
 const WELCOME_CARDS = [
   { q: 'What was the collection efficiency in Arkalgud in 2024-25?', i18n: 'chip1',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' },
@@ -512,76 +472,6 @@ function renderChart(container, chartData){
   });
 }
 
-// ---------------------------------------------------------------------
-// Chart history: session-only, client-side state -- a plain JS array,
-// most recent first. NOT persisted anywhere (no backend storage, no
-// localStorage) -- gone on reload, same as the conversation itself. Each
-// entry keeps a reference to its own bot message bubble element so
-// clicking a history entry can scroll to/highlight that exchange, not
-// just redraw its chart.
-// ---------------------------------------------------------------------
-const chartHistoryList = document.getElementById('chartHistoryList');
-let chartHistory = [];
-
-function renderChartHistoryList(){
-  chartHistoryList.innerHTML = '';
-  if (!chartHistory.length){
-    const p = document.createElement('div');
-    p.className = 'sidebar-placeholder';
-    p.id = 'chartHistoryEmptyMsg';
-    p.textContent = t('sidebarNoCharts');
-    chartHistoryList.appendChild(p);
-    return;
-  }
-  chartHistory.forEach((entry, idx) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'history-item';
-    const qEl = document.createElement('div'); qEl.className = 'history-q'; qEl.textContent = entry.question;
-    const typeEl = document.createElement('div'); typeEl.className = 'history-type';
-    typeEl.textContent = entry.chartData.type === 'bar' ? t('historyChartBar') : t('historyChartLine');
-    btn.appendChild(qEl); btn.appendChild(typeEl);
-    btn.onclick = () => selectChartHistoryEntry(idx);
-    chartHistoryList.appendChild(btn);
-  });
-  applyHistorySearchFilter();
-}
-
-// Real client-side filter over the rendered history-item buttons --
-// mirrors the same search-box convention app/static/dashboard.html
-// already uses over its own sub-division/tariff lists. Re-applied after
-// every re-render (a new chart arriving, or a language switch) so the
-// current search term keeps working, not just at the moment it's typed.
-let historySearchQuery = '';
-function applyHistorySearchFilter(){
-  const q = historySearchQuery.trim().toLowerCase();
-  chartHistoryList.querySelectorAll('.history-item').forEach(item => {
-    item.style.display = (!q || item.textContent.toLowerCase().includes(q)) ? '' : 'none';
-  });
-}
-document.getElementById('historySearch').addEventListener('input', (e) => {
-  historySearchQuery = e.target.value;
-  applyHistorySearchFilter();
-});
-
-function addChartHistoryEntry(question, chartData, bubbleEl){
-  chartHistory.unshift({ question, chartData, bubbleEl });
-  renderChartHistoryList();
-}
-
-// The chart itself already lives permanently in its own message bubble
-// (rendered inline, see send() below) -- clicking a history entry just
-// needs to scroll to and highlight that exchange, not redraw anything.
-function selectChartHistoryEntry(idx){
-  const entry = chartHistory[idx];
-  if (!entry || !entry.bubbleEl) return;
-  entry.bubbleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  entry.bubbleEl.classList.remove('highlight-flash');
-  void entry.bubbleEl.offsetWidth; // restart the animation if clicked again
-  entry.bubbleEl.classList.add('highlight-flash');
-  setTimeout(() => entry.bubbleEl.classList.remove('highlight-flash'), 1500);
-}
-
 // A bit longer than this app's own DB query timeout (8s default,
 // app/config.py) plus generous headroom for the LLM call -- tonight's
 // eval measured a 922-2203ms range for llm_ms, so 30s is comfortably
@@ -646,10 +536,7 @@ async function send(){
     } else if (ev === 'chart'){
       // Render as soon as this event lands -- the answer text is still
       // streaming in via answer_chunk after this, no reason to wait for it.
-      if (obj.chart_data){
-        renderChart(chartContainer, obj.chart_data);
-        addChartHistoryEntry(text, obj.chart_data, bot);
-      }
+      if (obj.chart_data) renderChart(chartContainer, obj.chart_data);
     } else if (ev === 'answer_chunk'){
       stopWaiting();
       acc += obj.text;
@@ -756,13 +643,8 @@ const I18N = {
     menuToggle: 'Menu',
     sidebarSuggested: 'Suggested questions',
     sidebarComingSoon: 'Coming in the next pass of this build.',
-    sidebarChartHistory: 'Chart history',
-    sidebarNoCharts: 'No charts yet this session.',
-    historyChartBar: 'Bar chart',
-    historyChartLine: 'Line chart',
     welcomeTitle: 'Welcome to DCB Assistant',
     welcomeSub: 'Ask a question in plain English — it becomes a real SQL query against the star-schema database, and you get the actual figures back, not a guess.',
-    historySearchPlaceholder: 'Search past charts…',
     sidebarPromoTitle: 'Want the bigger picture?',
     sidebarPromoSub: 'See KPIs, trends, and top sub-divisions on the summary dashboard.',
     sidebarPromoLink: 'Open dashboard',
@@ -798,13 +680,8 @@ const I18N = {
     menuToggle: 'ಮೆನು',
     sidebarSuggested: 'ಸೂಚಿತ ಪ್ರಶ್ನೆಗಳು',
     sidebarComingSoon: 'ಈ ನಿರ್ಮಾಣದ ಮುಂದಿನ ಹಂತದಲ್ಲಿ ಬರಲಿದೆ.',
-    sidebarChartHistory: 'ಚಾರ್ಟ್ ಇತಿಹಾಸ',
-    sidebarNoCharts: 'ಈ ಅಧಿವೇಶನದಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಚಾರ್ಟ್‌ಗಳಿಲ್ಲ.',
-    historyChartBar: 'ಬಾರ್ ಚಾರ್ಟ್',
-    historyChartLine: 'ಲೈನ್ ಚಾರ್ಟ್',
     welcomeTitle: 'DCB ಸಹಾಯಕಕ್ಕೆ ಸ್ವಾಗತ',
     welcomeSub: 'ಸರಳ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಕೇಳಿ — ಇದು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಾಗಿ ಪರಿವರ್ತನೆಗೊಂಡು ನಿಜವಾದ ಅಂಕಿಅಂಶಗಳನ್ನು ನೀಡುತ್ತದೆ.',
-    historySearchPlaceholder: 'ಹಿಂದಿನ ಚಾರ್ಟ್‌ಗಳನ್ನು ಹುಡುಕಿ…',
     sidebarPromoTitle: 'ಸಂಪೂರ್ಣ ಚಿತ್ರಣ ಬೇಕೇ?',
     sidebarPromoSub: 'ಸಾರಾಂಶ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ KPI, ಪ್ರವೃತ್ತಿಗಳು ಮತ್ತು ಅಗ್ರ ಉಪ-ವಿಭಾಗಗಳನ್ನು ನೋಡಿ.',
     sidebarPromoLink: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ',
@@ -841,7 +718,6 @@ function applyI18n(){
     el.placeholder = t(el.dataset.i18nPlaceholder);
   });
   renderStatus();
-  renderChartHistoryList();
   document.documentElement.lang = currentLang;
 }
 document.getElementById('langEn').onclick = () => {

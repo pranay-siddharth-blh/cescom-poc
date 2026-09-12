@@ -1064,6 +1064,37 @@ sidebar drawer still collapses/opens correctly at real tablet width
 (768px) with the "Charts" button confirmed gone. Zero console errors.
 Full non-LLM regression re-confirmed unaffected — frontend-only change.
 
+### 8.9 Chart history removed from the sidebar entirely, by request
+
+**The sidebar's "Chart history" feature (§8.6/§8.8) is gone** — no
+list of past charts, no search box over it, no click-to-scroll/
+highlight. The sidebar now holds only "Suggested questions" (chips) and
+the dashboard promo card. Inline chart rendering itself (§8.8 — each
+chart-bearing answer's chart lives in its own message bubble) is
+**unaffected**: charts still render exactly the same way, there's just
+no separate index of them anymore.
+
+- Removed: the `chartHistoryList` sidebar section (heading, search
+  input, list), `renderChartHistoryList()`, `applyHistorySearchFilter()`,
+  `addChartHistoryEntry()`, `selectChartHistoryEntry()`, the
+  `chartHistory` array and `historySearchQuery` state, the
+  `.highlight-flash` bubble animation (nothing calls it anymore), and
+  the now-unused `sidebarChartHistory`/`sidebarNoCharts`/
+  `historyChartBar`/`historyChartLine`/`historySearchPlaceholder` string-
+  table entries in both languages — not left behind as dead code.
+  `send()`'s `chart` event handler goes back to a single line
+  (`renderChart(chartContainer, obj.chart_data)`), no history bookkeeping.
+- Left alone: `renderChart()`, the per-bubble `.chart-container`, the
+  sidebar's suggested-question chips (`chip2`/`chip4` still say
+  "(chart)" and still demonstrate the feature, per §8.7's
+  discoverability fix — that fix wasn't about history, it still applies).
+
+**Verified live:** the sidebar has no "Chart history" heading or list at
+all; a chart-bearing question's chart still renders correctly inside its
+own message bubble exactly as before; zero console errors on load or
+after asking. Full non-LLM regression re-confirmed unaffected —
+frontend-only change.
+
 ---
 
 ## 9. Dashboard + login gate — built and live-verified (see §9.3)
