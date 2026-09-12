@@ -361,82 +361,28 @@ curl/`/docs`):**
   new `app/static/chat.html` — confirmed via `git status`.
 - Locked folders re-verified untouched (SHA-256 manifest, all 28 `OK`).
 
-### 3f. Optional second LLM provider (added 2026-09-12, for latency comparison — not wired to real credentials yet)
+### 3f. Optional second LLM provider — tried, then reverted (2026-09-12)
 
-Additive, off by default: `app/config.py` gained six new settings
-(`LLM_PROVIDER` / `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` /
-`LLM_TLS_VERIFY` / `LLM_TIMEOUT`, naming matching the sibling
-`D:\BLH-BESCOM\.env` convention exactly, plus `LLM_TIMEOUT` which is new
-here), all blank/default in `.env` right now. `app/llm.py`'s Gemini code
-is **byte-for-byte unchanged**, just renamed to
-`_generate_query_plan_gemini` and called from a new one-line dispatcher,
-`generate_query_plan()`, that routes to Gemini whenever
-`settings.alt_provider_active` is False (i.e. `LLM_PROVIDER` blank — the
-current, only-tested-in-production state) and to a new
-`_generate_query_plan_alt()` (OpenAI-compatible `/v1/chat/completions`,
-via the `openai` SDK's `AsyncOpenAI`, `response_format={"type":
-"json_object"}`, single call, same design point #1 as Gemini) otherwise.
-`LLM_PROVIDER` is a single global switch — when set, **every** request
-uses the alt provider instead of Gemini, not a per-request choice.
-
-**A real bug found and fixed while building this:** the user's own
-instruction was to leave `LLM_TLS_VERIFY=` and `LLM_TIMEOUT=` blank in
-`.env` (since they're meant to sit inert alongside the also-blank
-`LLM_PROVIDER`). Declaring them as plain `bool`/`float` pydantic fields
-meant `Settings()` tried to parse the empty string as a boolean/number
-and raised `ValidationError` **at module-import time** — which would
-have broken the entire app, Gemini included, the moment those two blank
-lines were added to `.env`. Caught by actually running
-`from app.config import settings` after adding the fields (not assumed
-safe). Fixed with two `field_validator(mode="before")` methods that
-treat a blank string as "use the default" (`True` / `120.0`,
-respectively) — first tried returning pydantic's `PydanticUndefined`
-sentinel to fall through to the field's own default automatically; that
-does **not** work in this pydantic version (confirmed: raises a
-different, `bool_type`/`float_type` error on `PydanticUndefined` itself)
-so the defaults are spelled out explicitly in the validators instead,
-with a comment to keep them in sync with the field declarations above.
-
-**Real verification (all with the real `.env`'s `LLM_PROVIDER` still
-blank — the only state that's actually been exercised so far):**
-- `from app.config import settings` — confirmed no crash post-fix;
-  `llm_tls_verify == True`, `llm_timeout == 120.0`,
-  `alt_provider_active == False`, `gemini_api_key`/`gemini_model`
-  unaffected.
-- `tests/alt_provider_config_test.py` (new) — exercises
-  `app.llm._validate_alt_provider_config()` directly, with **zero
-  network activity and zero changes to the real `.env`** (it flips
-  `settings.*` fields in memory, calls the validator, and resets them):
-  `alt_provider_active` correctly `False` with `LLM_PROVIDER` blank; 5
-  distinct misconfiguration cases (blank `LLM_API_KEY` alone — the exact
-  scenario asked for — blank `LLM_BASE_URL` alone, blank `LLM_MODEL`
-  alone, all three blank together, and an unsupported provider name)
-  each raised a clear `RuntimeError` naming exactly which field(s) are
-  missing; a fully-configured (fake) case correctly raised nothing.
-  6/6 assertions passed.
-- Full regression, `LLM_PROVIDER` blank (current real state): all 10
-  example questions + both adversarial re-run through the real pipeline
-  end to end — every answer/SQL/figure identical in substance to the
-  prior baseline (93.62% Arkalgud, LT-4(a) top tariff, Konanur 97.46%,
-  the full Holenarasipura DCB chain, both adversarial refusals) — this
-  run's mean latency **1,270.9 ms** (min 922 / max 1,484 ms), consistent
-  with the earlier 1,343.8 ms baseline (normal LLM-side run-to-run
-  variance, not a regression). `tests/dry_run_no_llm.py`,
-  `tests/pipeline_mock_test.py`, and `tests/double_count_guard_test.py`
-  all still pass unchanged.
-- Locked folders + `git status` re-confirmed: only `app/config.py`,
-  `app/llm.py`, `requirements.txt` (added `openai>=3.6`), `.env`/
-  `.env.example` (root), and the new test file changed — `app/pipeline.py`,
-  `app/sql_safety.py`, and `app/semantic_layer.py` untouched.
-
-**Not yet done, deliberately** — the user has not filled in real
-`LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL` values, and no live call to any
-alternative provider has been attempted (per explicit instruction). Once
-those are filled in, `python -m tests.eval_queries` (unchanged script —
-it already exercises whatever provider `generate_query_plan()` currently
-dispatches to) will run the same 10+2 questions through the alt provider
-and should be added here alongside the Gemini figures above for a direct
-side-by-side latency comparison.
+An alternative, OpenAI-compatible LLM provider path (`LLM_PROVIDER` /
+`LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` / `LLM_TLS_VERIFY` /
+`LLM_TIMEOUT`, matching the sibling `D:\BLH-BESCOM` convention) was
+added, fully wired end-to-end (`app/config.py` settings + `app/llm.py`
+dispatcher, `_generate_query_plan_alt()`, client init), and pointed at a
+Kompact-AI-style internal endpoint (`Qwen/Qwen2.5-Coder-7B-Instruct`).
+It was never proven to work end-to-end through this app in-session (the
+one live smoke-test attempt was interrupted before it ran); the user's
+own out-of-session testing against that endpoint found it too slow to be
+worth pursuing, so the whole addition was **reverted** the same day —
+`app/config.py`/`app/llm.py` are back to Gemini-only, the 6 env vars are
+removed from `.env`/`.env.example`, `openai` is dropped from
+`requirements.txt`, and `tests/alt_provider_config_test.py` is deleted.
+Post-revert, the full 10-question + adversarial regression was re-run
+against real Gemini and matched the established baseline exactly (93.62%
+Arkalgud, LT-4(a) top tariff, Konanur 97.46%, both refusals unchanged);
+mean latency **1,665.3 ms** this run (min 1,203 / max 3,672 ms) —
+consistent with normal Gemini-side run-to-run variance versus the
+1,343.8 ms / 1,270.9 ms earlier baselines, not a regression. Gemini
+remains the only LLM provider going forward.
 
 ## 4. Known limitations (honest, not hidden)
 

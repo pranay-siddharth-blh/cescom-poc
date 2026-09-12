@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # dcb-ai-app/app/config.py -> dcb-ai-app/ -> "New folder"/ (project root,
@@ -38,62 +37,11 @@ class Settings(BaseSettings):
     dcb_query_timeout_seconds: float = 8.0
     dcb_max_rows: int = 200
 
-    # --- Optional second LLM provider, for latency comparison against the
-    # Gemini path above -- additive, never required. Naming matches the
-    # sibling BLH-BESCOM project's .env convention (LLM_PROVIDER /
-    # LLM_BASE_URL / LLM_API_KEY / LLM_MODEL / LLM_TLS_VERIFY) plus
-    # LLM_TIMEOUT, new here. When llm_provider is blank (the default),
-    # nothing below is read or validated and app/llm.py behaves exactly as
-    # it did before this was added -- see alt_provider_active.
-    llm_provider: str = ""
-    llm_base_url: str = ""
-    llm_api_key: str = ""
-    llm_model: str = ""
-    llm_tls_verify: bool = True
-    llm_timeout: float = 120.0
-
-    @field_validator("llm_tls_verify", mode="before")
-    @classmethod
-    def _blank_tls_verify_uses_default(cls, v):
-        # A real bug caught while building this: .env intentionally leaves
-        # LLM_TLS_VERIFY= blank (per the user's own instruction, since it's
-        # meant to stay unset while LLM_PROVIDER itself is unset). Without
-        # this, pydantic tried to parse "" as a bool and raised at
-        # Settings() import time -- i.e. it would have broken the app
-        # (including the already-working Gemini path) the moment this
-        # blank line was added to .env. Tried returning PydanticUndefined
-        # first, expecting pydantic to fall through to the field default;
-        # it doesn't (confirmed: raises `bool_type` on PydanticUndefined
-        # itself) -- so the default is spelled out explicitly here instead,
-        # matching the field's own `= True` above.
-        if isinstance(v, str) and v.strip() == "":
-            return True
-        return v
-
-    @field_validator("llm_timeout", mode="before")
-    @classmethod
-    def _blank_timeout_uses_default(cls, v):
-        # Same bug, same fix, for LLM_TIMEOUT= -- see
-        # _blank_tls_verify_uses_default above. Keep in sync with the
-        # field's own `= 120.0` default.
-        if isinstance(v, str) and v.strip() == "":
-            return 120.0
-        return v
-
     @property
     def db_path(self) -> Path:
         if self.dcb_db_path:
             return Path(self.dcb_db_path)
         return DEFAULT_DB_PATH
-
-    @property
-    def alt_provider_active(self) -> bool:
-        """True iff an alternative LLM provider should be used instead of
-        Gemini for every request. Only LLM_PROVIDER being set flips this --
-        the other LLM_* fields are validated (fail loud, not guessed) in
-        app/llm.py at startup, matching the existing GEMINI_API_KEY/
-        GEMINI_MODEL pattern."""
-        return bool(self.llm_provider.strip())
 
 
 settings = Settings()

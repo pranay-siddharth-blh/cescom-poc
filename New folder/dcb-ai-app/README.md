@@ -11,11 +11,7 @@ pip install -r requirements.txt
 cp ../.env.example ../.env   # .env lives at the PROJECT root, not here -- then fill in GEMINI_API_KEY / GEMINI_MODEL
 ```
 
-Gemini is the default provider and the only one exercised so far. There's
-also an optional, off-by-default second provider (`LLM_PROVIDER=openai`
-+ `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`/`LLM_TLS_VERIFY`/`LLM_TIMEOUT`
-in `.env`) for latency comparison — see `.env.example` and CLAUDE.md §3f.
-Leave all six blank to keep current (Gemini-only) behavior.
+Gemini is the only LLM provider.
 
 ## Run the server
 
@@ -35,7 +31,6 @@ uvicorn app.main:app --reload
 python -m tests.dry_run_no_llm            # no API key needed
 python -m tests.pipeline_mock_test        # no API key needed (LLM mocked)
 python -m tests.double_count_guard_test   # no API key needed -- code-level Division_Total guard
-python -m tests.alt_provider_config_test  # no API key needed -- optional second-provider fail-loud checks
 python -m tests.eval_queries               # needs a real GEMINI_API_KEY in .env
 ```
 
