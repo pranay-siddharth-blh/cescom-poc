@@ -317,9 +317,9 @@
         </div>
         <div class="chips" id="chips">
           <button class="chip" data-q="What was the collection efficiency in Arkalgud in 2024-25?" data-i18n="chip1">Collection efficiency, one sub-division</button>
-          <button class="chip" data-q="Which tariff category generated the most demand in 2023-24?" data-i18n="chip2">Top tariff category by demand</button>
+          <button class="chip" data-q="Compare domestic (LT-1) vs industrial (HT-2) demand across all years." data-i18n="chip2">Compare LT-1 vs HT-2 demand (chart)</button>
           <button class="chip" data-q="How much outstanding balance does Konanur currently carry?" data-i18n="chip3">Outstanding arrears</button>
-          <button class="chip" data-q="Which sub-division has the best collection efficiency in the most recent year?" data-i18n="chip4">Best-performing sub-division</button>
+          <button class="chip" data-q="What's the year-over-year growth in total installations for the whole division?" data-i18n="chip4">Installations growth over time (chart)</button>
           <button class="chip" data-q="What was the total demand for tariff code ZZ-99 in 2024-25?" data-i18n="chip5">A tariff code that doesn't exist</button>
         </div>
       </div>
@@ -380,15 +380,22 @@ const sendBtn = document.getElementById('send');
 // (see send() below, which removes #welcomeScreen on the first call).
 // Icons are purely decorative alongside their own text label -- never
 // icon-only, consistent with this app's accessibility-toolbar rule.
+// chip2 and chip4 are deliberately comparison/trend-shaped (they're the
+// ones this project's own eval set -- CLAUDE.md's Q5 and Q2 -- confirmed
+// actually produce chart_data). Before this, all 5 suggestions were
+// single-value or adversarial questions, so nothing a user could click
+// from the welcome screen or sidebar ever exercised the chart panel or
+// chart history at all -- the feature worked, but nothing discoverable
+// ever demonstrated it. See CLAUDE.md's chart-history troubleshooting note.
 const WELCOME_CARDS = [
   { q: 'What was the collection efficiency in Arkalgud in 2024-25?', i18n: 'chip1',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' },
-  { q: 'Which tariff category generated the most demand in 2023-24?', i18n: 'chip2',
-    icon: '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/>' },
+  { q: 'Compare domestic (LT-1) vs industrial (HT-2) demand across all years.', i18n: 'chip2',
+    icon: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>' },
   { q: 'How much outstanding balance does Konanur currently carry?', i18n: 'chip3',
     icon: '<path d="M2 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/>' },
-  { q: 'Which sub-division has the best collection efficiency in the most recent year?', i18n: 'chip4',
-    icon: '<path d="m12 2 2.9 6.6L22 9.3l-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l7.1-.7Z"/>' },
+  { q: "What's the year-over-year growth in total installations for the whole division?", i18n: 'chip4',
+    icon: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>' },
   { q: "What was the total demand for tariff code ZZ-99 in 2024-25?", i18n: 'chip5',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.2 1.9-2.5 3.5"/><path d="M12 17h.01"/>' },
 ];
@@ -802,9 +809,9 @@ const I18N = {
     sidebarPromoLink: 'Open dashboard',
     composerCaption: 'Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.',
     chip1: 'Collection efficiency, one sub-division',
-    chip2: 'Top tariff category by demand',
+    chip2: 'Compare LT-1 vs HT-2 demand (chart)',
     chip3: 'Outstanding arrears',
-    chip4: 'Best-performing sub-division',
+    chip4: 'Installations growth over time (chart)',
     chip5: "A tariff code that doesn't exist",
     boxPlaceholder: 'Ask about demand, collection, balance, tariffs, sub-divisions…',
     send: 'Send',
@@ -847,9 +854,9 @@ const I18N = {
     sidebarPromoLink: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ',
     composerCaption: 'ಉತ್ತರಗಳು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಿಂದ ಬರುತ್ತವೆ — ಪ್ರತಿ ಉತ್ತರದ ಅಡಿಯಲ್ಲಿ "Technical details" ನೋಡಿ.',
     chip1: 'ಸಂಗ್ರಹಣೆ ದಕ್ಷತೆ, ಒಂದು ಉಪ-ವಿಭಾಗ',
-    chip2: 'ಬೇಡಿಕೆಯಿಂದ ಅಗ್ರ ಸುಂಕ ವರ್ಗ',
+    chip2: 'LT-1 ಮತ್ತು HT-2 ಬೇಡಿಕೆ ಹೋಲಿಸಿ (ಚಾರ್ಟ್)',
     chip3: 'ಬಾಕಿ ಉಳಿದ ಮೊತ್ತ',
-    chip4: 'ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನದ ಉಪ-ವಿಭಾಗ',
+    chip4: 'ಕಾಲಾನಂತರ ಅಳವಡಿಕೆಗಳ ಬೆಳವಣಿಗೆ (ಚಾರ್ಟ್)',
     chip5: 'ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲದ ಸುಂಕ ಸಂಕೇತ',
     boxPlaceholder: 'ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ, ಬಾಕಿ, ಸುಂಕ, ಉಪ-ವಿಭಾಗಗಳ ಬಗ್ಗೆ ಕೇಳಿ…',
     send: 'ಕಳುಹಿಸಿ',

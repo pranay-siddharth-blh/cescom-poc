@@ -987,6 +987,30 @@ correctly at real tablet width. Full non-LLM regression
 (`dry_run_no_llm`, `pipeline_mock_test`, `double_count_guard_test`)
 re-confirmed unaffected — frontend-only change, `app/main.py` untouched.
 
+**Follow-up, found right after this shipped: "chart history isn't
+working."** It wasn't broken — a fresh Playwright test asking a
+comparison question populated it correctly, zero console errors. The
+actual cause: all 5 suggested questions (both the sidebar chips and the
+`WELCOME_CARDS` welcome-screen cards, §8.7 above) were single-value or
+adversarial questions — **none of them were comparison/trend-shaped**,
+so none of them ever produced `chart_data` (§8.4's whole design). A user
+who only ever clicks the provided suggestions — the obvious, discoverable
+thing to do — could never see the chart panel or chart history do
+anything, even though the underlying feature worked correctly the whole
+time. **Fix:** swapped 2 of the 5 slots (`chip2`, `chip4`, in both the
+sidebar chips and `WELCOME_CARDS`) for this project's own known
+chart-bearing eval questions — the LT-1 vs HT-2 comparison (Q5, bar
+chart) and the year-over-year installations trend (Q2, line chart) —
+with matching icons, both EN and Kannada strings updated, and each
+chip/card label now says "(chart)" so it's obvious which ones demonstrate
+it. Kept `chip1`/`chip3`/`chip5` (a quick single-value answer, a
+real-world arrears lookup, and the adversarial nonexistent-tariff-code
+demo) unchanged — still useful, still deliberately chart-free contrast.
+**Verified live:** clicking the new chip2/chip4 (from both the sidebar
+and the welcome screen) each populate chart history and render a real
+chart in the panel; zero console errors; non-LLM regression re-confirmed
+unaffected.
+
 ---
 
 ## 9. Dashboard + login gate — built and live-verified (see §9.3)
