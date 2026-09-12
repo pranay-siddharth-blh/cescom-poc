@@ -102,6 +102,15 @@ class AskRequest(BaseModel):
     question: str
 
 
+class LoginRequest(BaseModel):
+    """Body for POST /api/login -- see app/auth.py's docstring for exactly
+    how limited this login is (one shared username/password, no user
+    table)."""
+
+    username: str
+    password: str
+
+
 class AskResponse(BaseModel):
     question: str
     answerable: bool

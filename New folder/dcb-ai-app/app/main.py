@@ -10,6 +10,13 @@ FastAPI app. Two endpoints share app.pipeline.answer_question:
                             side templating needed since it carries no
                             per-request data at load time.
 
+Also a small, separate login-gated dashboard (app/static/login.html +
+dashboard.html), backed by app.auth's signed-cookie session and
+app.dashboard_data's read-only summary queries. Deliberately NOT wired
+into the chat pipeline above or into /api/ask*'s auth (there is none) --
+the dashboard is additive, same as the rest of this app's history of
+additive-only changes (see CLAUDE.md).
+
 Persistent connections (design point #3): the DB connection and the LLM
 client are both created once in `lifespan`, stored on `app.state`, and
 reused for every request — never re-opened per request.
@@ -21,18 +28,22 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.auth import COOKIE_NAME, SESSION_MAX_AGE_SECONDS, create_session_token, verify_session_token
+from app.config import settings
+from app.dashboard_data import build_dashboard_summary
 from app.db import get_db, init_db, shutdown_db
 from app.llm import init_llm_client
-from app.models import AskRequest, AskResponse
+from app.models import AskRequest, AskResponse, LoginRequest
 from app.pipeline import answer_question
 from app.semantic_layer import build_router_index
-from app.config import settings
 
 _CHAT_HTML_PATH = Path(__file__).resolve().parent / "static" / "chat.html"
+_LOGIN_HTML_PATH = Path(__file__).resolve().parent / "static" / "login.html"
+_DASHBOARD_HTML_PATH = Path(__file__).resolve().parent / "static" / "dashboard.html"
 
 # Pure UX pacing for the typewriter/reveal effect on streamed answer text --
 # purely a delivery-speed knob, not a change to how the answer is generated
@@ -68,6 +79,71 @@ async def health():
 @app.get("/", response_class=HTMLResponse)
 async def chat_ui():
     return _CHAT_HTML_PATH.read_text(encoding="utf-8")
+
+
+def _current_user(request: Request) -> str | None:
+    """None means 'not logged in' -- see app.auth.verify_session_token,
+    which never raises, so a missing/garbled/expired cookie all collapse
+    to this same None rather than a 500."""
+    return verify_session_token(request.cookies.get(COOKIE_NAME))
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
+    return _LOGIN_HTML_PATH.read_text(encoding="utf-8")
+
+
+@app.post("/api/login")
+async def login(req: LoginRequest):
+    # Plain equality, not hmac.compare_digest -- see app/auth.py's
+    # docstring: this is a POC single-shared-login gate, not a system
+    # being hardened against timing attacks on its own username/password.
+    if req.username == settings.dashboard_username and req.password == settings.dashboard_password:
+        response = JSONResponse({"ok": True})
+        response.set_cookie(
+            COOKIE_NAME,
+            create_session_token(req.username),
+            httponly=True,
+            samesite="lax",
+            max_age=SESSION_MAX_AGE_SECONDS,
+        )
+        return response
+    return JSONResponse({"ok": False, "error": "Invalid username or password."}, status_code=401)
+
+
+@app.post("/api/logout")
+async def logout():
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(COOKIE_NAME)
+    return response
+
+
+@app.get("/api/me")
+async def me(request: Request):
+    username = _current_user(request)
+    if not username:
+        return JSONResponse({"error": "Not authenticated."}, status_code=401)
+    return {"username": username}
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page(request: Request):
+    if not _current_user(request):
+        return RedirectResponse(url="/login")
+    return _DASHBOARD_HTML_PATH.read_text(encoding="utf-8")
+
+
+@app.get("/api/dashboard_summary")
+async def dashboard_summary(request: Request):
+    if not _current_user(request):
+        return JSONResponse({"error": "Not authenticated."}, status_code=401)
+    try:
+        summary = build_dashboard_summary(
+            get_db(), max_rows=settings.dcb_max_rows, timeout_seconds=settings.dcb_query_timeout_seconds
+        )
+    except Exception as exc:  # noqa: BLE001 — surfaced to the caller, not swallowed
+        return JSONResponse({"error": f"Could not build dashboard summary: {exc}"}, status_code=500)
+    return summary
 
 
 async def _run(question: str) -> AskResponse:

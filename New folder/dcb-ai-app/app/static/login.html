@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — DCB Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231a2f5c'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
+    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
+    --bg:#f6f7f9; --surface:#ffffff;
+    --ink:#1c2430; --muted:#4b5563; --border:#d7dce4;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;background:var(--navy-deep);
+       color:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--surface);border-radius:16px;padding:34px 32px;width:100%;max-width:380px;
+        box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .logo-row{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .logo-row img{height:38px;width:auto}
+  .logo-row div{line-height:1.25}
+  .logo-row .name{font-weight:700;color:var(--navy);font-size:1.05rem}
+  .logo-row .sub{font-size:.7rem;color:var(--muted)}
+  h1{font-size:1.15rem;margin:0 0 4px}
+  p.lead{margin:0 0 22px;font-size:.84rem;color:var(--muted)}
+  label{display:block;font-size:.76rem;font-weight:700;color:var(--ink);margin-bottom:6px}
+  input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;
+        margin-bottom:16px;background:var(--bg);color:var(--ink)}
+  input:focus{outline:2px solid var(--navy);outline-offset:1px}
+  button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--navy);color:#fff;
+         font-size:.9rem;font-weight:700;cursor:pointer}
+  button:hover{background:var(--navy-deep)}
+  button:disabled{opacity:.6;cursor:default}
+  .error{background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);border-radius:8px;
+         padding:9px 11px;font-size:.8rem;margin-bottom:16px}
+  .back-link{display:block;text-align:center;margin-top:18px;font-size:.8rem;color:var(--navy);text-decoration:none}
+  .back-link:hover{text-decoration:underline}
+  .hint{margin-top:18px;font-size:.7rem;color:var(--muted);text-align:center;line-height:1.5}
+</style>
+</head>
+<body>
+  <form class="card" id="loginForm" autocomplete="on">
+    <div class="logo-row">
+      <img src="/static/cescom_official_logo.png" alt="">
+      <div>
+        <div class="name">DCB Insights</div>
+        <div class="sub">Holenarasipura Division</div>
+      </div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="lead">Access the Demand, Collection &amp; Balance dashboard.</p>
+
+    <div class="error" id="errorMsg" hidden></div>
+
+    <label for="username">Username</label>
+    <input id="username" name="username" autocomplete="username" required autofocus>
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+    <button type="submit" id="submitBtn">Sign in</button>
+
+    <a class="back-link" href="/">← Ask a question instead</a>
+    <div class="hint">POC login — one shared account, not per-user access.<br>See app/auth.py before this ever leaves one laptop.</div>
+  </form>
+
+<script>
+const form = document.getElementById('loginForm');
+const errorMsg = document.getElementById('errorMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.hidden = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+  try {
+    const resp = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      window.location.href = '/dashboard';
+      return;
+    }
+    errorMsg.textContent = data.error || 'Invalid username or password.';
+    errorMsg.hidden = false;
+  } catch (err) {
+    errorMsg.textContent = 'Could not reach the server: ' + err.message;
+    errorMsg.hidden = false;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Sign in';
+  }
+});
+</script>
+</body>
+</html>

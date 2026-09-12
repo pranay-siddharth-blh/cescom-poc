@@ -24,6 +24,15 @@ uvicorn app.main:app --reload
 - `POST /api/ask_once` — plain JSON, same pipeline, easier for scripts.
 - `GET /health` — liveness check.
 - `GET /docs` — FastAPI's auto-generated Swagger UI, still available unchanged.
+- `GET /login` — sign-in page for the dashboard below. `POST /api/login` /
+  `POST /api/logout` back it with a signed cookie (`app/auth.py`) — one
+  shared username/password from `.env`, **not** a per-user account system;
+  see that file's docstring before this is ever reachable by anyone else.
+- `GET /dashboard` — a read-only summary view (KPIs, demand trend, top
+  sub-divisions/tariff categories) built from the same locked star-schema
+  DB, gated behind the login above. `GET /api/dashboard_summary` /
+  `GET /api/me` are its two data endpoints. Entirely separate from the
+  chat pipeline and its `/api/ask*` routes, which are still unauthenticated.
 
 ## Run the tests
 

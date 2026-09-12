@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     dcb_query_timeout_seconds: float = 8.0
     dcb_max_rows: int = 200
 
+    # Dashboard login gate (see app/auth.py's docstring for exactly how
+    # limited this is -- one shared login, signed cookie, no user table).
+    # These three defaults are fine for running the POC on one laptop but
+    # MUST be overridden in .env before the app is ever reachable by
+    # anyone else.
+    dashboard_username: str = "admin"
+    dashboard_password: str = "changeme"
+    session_secret: str = "dev-secret-change-me-in-env"
+
     @property
     def db_path(self) -> Path:
         if self.dcb_db_path:

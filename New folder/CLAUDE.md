@@ -127,7 +127,9 @@ New folder/
     ├── requirements.txt
     ├── app/
     │   ├── __init__.py
+    │   ├── auth.py                       # dashboard login: signed-cookie session (§9)
     │   ├── config.py                     # pydantic-settings, .env loading
+    │   ├── dashboard_data.py             # dashboard's read-only summary queries (§9)
     │   ├── db.py                         # ReadOnlyDB — read-only SQLite wrapper
     │   ├── llm.py                        # Gemini client init + generate_query_plan()
     │   ├── main.py                       # FastAPI app, routes, lifespan
@@ -139,6 +141,8 @@ New folder/
     │   └── static/
     │       ├── chat.html                 # the chat UI (GET /) -- gov-portal shell,
     │       │                             # conversational interaction, inline charts (§8)
+    │       ├── login.html                # dashboard sign-in page (§9)
+    │       ├── dashboard.html            # login-gated summary dashboard (§9)
     │       ├── cesc_logo_reference.png   # CESC dept mark -- third-party crop, see §8.5
     │       └── cescom_official_logo.png  # Karnataka state emblem
     └── tests/
@@ -198,6 +202,9 @@ differs.
 - `POST /api/ask_once` — plain JSON, same pipeline, easier for scripts/evals.
 - `GET /health` — liveness check, returns `{"status":"ok"}`.
 - `GET /docs` — FastAPI's auto-generated Swagger UI (unaffected by any of the above).
+- `GET /login`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
+  `GET /dashboard`, `GET /api/dashboard_summary` — the login-gated
+  dashboard added in §9. Entirely separate from the chat pipeline above.
 
 ---
 
@@ -924,6 +931,115 @@ backend contract change.
   CESCOM logo and Chart.js visualization — is done, not just planned.**
   Removed from this list; see §8.1/§8.4/§8.6 above for what was actually
   built and how it was verified.
+
+---
+
+## 9. Dashboard + login gate — built and live-verified (see §9.3)
+
+Added on request: a summary dashboard (KPIs, demand trend, top
+sub-divisions/tariff categories) modeled structurally on a reference
+screenshot of an unrelated project-management template ("Donezo") the
+project owner supplied — same shell shape (left sidebar, topbar with
+search, a KPI row, two 3-column card rows, a floating action button, a
+promo card pinned to the bottom of the sidebar) — with every number and
+list re-derived from this project's own real data, and a login page in
+front of it since the reference and the request both implied one.
+Entirely additive: no existing route, file, or behavior changed except
+`app/main.py` (new routes only) and `app/config.py` (new settings only).
+
+### 9.1 New files
+
+- `app/auth.py` — signed-cookie session (stdlib `hmac`/`hashlib`/`base64`
+  only, no new dependency). One shared username/password
+  (`settings.dashboard_username`/`dashboard_password`), one cookie, no
+  user table, no password hashing, no CSRF token, no rate limiting.
+  **This is a POC gate, not real auth** — see its own docstring before
+  this app is ever reachable by anyone but one person on one laptop.
+- `app/dashboard_data.py` — the dashboard's only DB access: fixed,
+  hand-written aggregate queries via `app.db.ReadOnlyDB.run` (the same
+  one persistent connection everything else uses — no second connection
+  opened). Follows `DCB_Semantic_Layer/semantic_layer.md`'s rules exactly
+  like a correct hand-written query would (division total via
+  `subdivision_type = 'division'`, never `fact_dcb` summed with
+  `fact_dcb_rollups`, efficiency recomputed from summed totals, never
+  averaged from `pct_collection_efficiency_with_adj`). Not LLM-generated,
+  so `app.sql_safety`'s guard doesn't apply here — reviewed once, by hand.
+- `app/static/login.html`, `app/static/dashboard.html` — same navy/red
+  palette as `chat.html` (§8.2), kept in both files' `:root` blocks; if
+  one changes, mirror the change in the other two.
+
+### 9.2 What the dashboard actually shows (all real, all live-queried)
+
+- 4 KPI cards for the latest fiscal year (2025-26 as of this build):
+  Total Demand, Total Collection, Outstanding Balance, Collection
+  Efficiency — each with a real YoY delta against 2024-25, colored by
+  whether that direction is actually good (up is good for
+  demand/collection, bad for outstanding balance).
+- A demand-trend bar chart across all 11 fiscal years (division total).
+- The 5 real sub-divisions (`subdivision_type IN ('sub_division',
+  'section')`, i.e. excluding `Division_Total`/`Division_Office` per
+  semantic-layer rule 2), each with its own collection-efficiency badge.
+- The top 5 tariff codes by demand for the latest year, with each one's
+  share of total demand.
+- A "Data integrity" tile citing the pipeline's own verified 0.0%
+  reconciliation deviation (§5.1) — a static historical fact from the
+  locked pipeline's build, not a live-recomputed number.
+- An "Ask DCB AI" card and a sidebar promo card, both linking back to
+  `GET /` — the dashboard and the chat UI cross-link each other rather
+  than being two disconnected surfaces.
+
+### 9.3 What was and wasn't verified, honestly
+
+This was originally built and reviewed in an environment with no
+outbound access to PyPI, so §9's routes couldn't be exercised through a
+real `uvicorn` process there — see the superseded version of this
+subsection in git history for exactly what that first pass did verify
+(direct calls to `build_dashboard_summary`/`create_session_token`, a
+mock-server Playwright pass, the non-LLM test suite). **That one real
+gap has since been closed, in a different session/environment with
+working network access:**
+
+- **Full live click-through, real `uvicorn`, real cookies, real HTTP**
+  (Playwright driving real Chrome against `http://127.0.0.1:8001`):
+  hitting `/dashboard` unauthenticated correctly redirects to `/login`;
+  logging in with the real (default) credentials redirects to
+  `/dashboard` and loads real data; logging out redirects to `/login`;
+  **hitting `/dashboard` again after logout redirects to `/login`
+  again** — proving the session cookie is actually cleared server-side,
+  not just a client-side redirect.
+- **KPI numbers cross-checked against this file's own long-established
+  baseline (§5.4/§6), not just "a number appeared":** Total Demand
+  ₹354.16 Cr, Total Collection ₹330.01 Cr, Collection Efficiency 93.2% —
+  these are `3,541,649,882.79` and `3,300,093,200.76` (§5.4's Q6/§6
+  verified FY2025-26 grand totals) converted to crore and divided,
+  computed independently and matched exactly, not eyeballed.
+- 5 subdivision rows, 5 tariff rows, 2 canvases (demand bar chart +
+  efficiency donut) all rendered with real data.
+- Client-side search filter tested for real: typing "Konanur" correctly
+  narrows the sub-division list to 1 visible row.
+- Mobile drawer tested at a real narrow viewport (700px): sidebar
+  correctly off-canvas by default (bounding box `x:-260`), correctly
+  slides on-screen on toggle (`x:0`).
+- The "Ask DCB AI" cross-link was clicked for real and correctly lands
+  on the chat UI (`GET /`).
+- Zero console/page errors across the entire click-through.
+- `tests/dry_run_no_llm`, `tests/double_count_guard_test`, and
+  `tests/pipeline_mock_test` (this last one specifically couldn't be run
+  in the original environment) all re-run in this session — all three
+  still pass unchanged, confirming the dashboard addition doesn't touch
+  the chat pipeline, `sql_safety`, or the DB layer's read-only guard.
+
+This feature is now held to the same standard as everything else in
+this file (§5, §6): live-verified, not just evidenced.
+
+### 9.4 Known limitations (in addition to §7 and §8.5)
+
+- Single shared login, not per-user accounts — see `app/auth.py`.
+- The dashboard has no auto-refresh; "↻ Refresh data" (and the floating
+  button) re-fetch on click only.
+- `/api/ask*` remain fully unauthenticated — logging into the dashboard
+  does not gate the chat endpoints, by design (kept additive/separate),
+  but worth knowing if that's ever expected to change together.
 
 ---
 
