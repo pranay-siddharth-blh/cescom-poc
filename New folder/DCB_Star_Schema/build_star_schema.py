@@ -3,8 +3,18 @@ import os
 import re
 from collections import defaultdict
 
-STAGING_DB = r"C:\Users\Dell\OneDrive\Desktop\New folder\DCB_Staging_DB\dcb_staging.sqlite"
-OUT_DIR = r"C:\Users\Dell\OneDrive\Desktop\New folder\DCB_Star_Schema"
+# Resolved relative to this script's own location -- see build_staging.py's
+# equivalent comment. Override-able via env var for the standing
+# reconciliation regression test's scratch-directory runs.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STAGING_DB = os.environ.get(
+    "DCB_STAGING_DB",
+    os.path.join(_PROJECT_ROOT, "DCB_Staging_DB", "dcb_staging.sqlite"),
+)
+OUT_DIR = os.environ.get(
+    "DCB_STAR_SCHEMA_OUT_DIR",
+    os.path.join(_PROJECT_ROOT, "DCB_Star_Schema"),
+)
 OUT_DB = os.path.join(OUT_DIR, "dcb_star_schema.sqlite")
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -24,9 +34,20 @@ SUBDIVISION_TYPE = {
 # would produce a meaningless number. Kept only when a fact_dcb row is built
 # from a single staging row; set to NULL when multiple rows were combined.
 NON_ADDITIVE_PREFIXES = ("pct_", "ratio_", "collection_per_unit_", "demand_per_unit", "consumption_per_installation")
+# Exact-name non-additive columns that don't share a common prefix with the
+# ones above. revised_arr ("Average Revenue Realized" -- revenue per unit
+# of energy realized, see DCB_Semantic_Layer/semantic_layer.json's glossary
+# entry for "ARR") is a RATE, not a count/amount -- found via the standing
+# Grand Total reconciliation check itself (test_grand_total_reconciliation.py):
+# summing it across tariff categories produced diffs of up to >1,000,000%
+# against the sheet's own printed Grand Total row for that column, which is
+# computed some other way (division-wide realized rate), not a sum of parts.
+NON_ADDITIVE_EXACT = {"revised_arr"}
 
 
 def is_additive(col):
+    if col in NON_ADDITIVE_EXACT:
+        return False
     return not any(col.startswith(p) or col == p.rstrip("_") for p in NON_ADDITIVE_PREFIXES)
 
 
@@ -186,11 +207,34 @@ CREATE TABLE fact_dcb_rollups (
 def extract_tariff_code(sl_no):
     if not sl_no:
         return None
-    m = re.search(r"(?:sub\s*)?total\s+of\s+(.+)$", sl_no, re.IGNORECASE)
-    return m.group(1).strip() if m else None
+    # '\s*' (not '\s+') between "of" and the category text -- a real source
+    # variant is 'Sub Total ofIPP' with NO space at all before the category
+    # name (confirmed in the 2025-26 sheet); '\s+' there silently failed to
+    # extract a code at all, leaving tariff_code_summarized NULL for that row.
+    m = re.search(r"(?:sub\s*)?total\s+of\s*(.+)$", sl_no, re.IGNORECASE)
+    if not m:
+        return None
+    code = m.group(1).strip()
+    # Collapse internal whitespace runs so a spacing variant like the real
+    # 'LT-5  b' (double space) is stored the same as 'LT-5 b' (single space)
+    # -- callers matching a requested category against this column should
+    # still additionally normalize case/whitespace on their own side rather
+    # than relying solely on this storage-time cleanup (this is the ONLY
+    # normalization applied here; case is deliberately left as printed).
+    code = re.sub(r"\s+", " ", code)
+    return code or None
 
 
-ROLLUP_TYPES = ("sub_total", "lt_total", "ht_total", "lt_ht_total", "misc_total", "grand_total")
+ROLLUP_TYPES = (
+    "sub_total", "lt_total", "ht_total", "lt_ht_total", "misc_total", "grand_total",
+    # A bare "Total of <category>" (no "Sub" prefix) is the sheet's own
+    # explicit COMBINED total across >1 same-named "Sub Total of X" groups
+    # (see classify_row_type's docstring in build_staging.py for the
+    # 2025-26 LT-1 worked example) -- previously fell into the generic
+    # 'other_total' bucket, which isn't in this tuple, so the row (and its
+    # real figures) was silently dropped from fact_dcb_rollups entirely.
+    "combined_total",
+)
 scur.execute(f"""
     SELECT * FROM staging_dcb WHERE row_type IN ({",".join("?" * len(ROLLUP_TYPES))})
 """, ROLLUP_TYPES)
@@ -220,7 +264,13 @@ CREATE TABLE reconciliation_report (
 )
 """)
 
-RECON_METRICS = ["total_installations", "demand_total", "collection_grand_total", "closing_balance_total"]
+# Every additive numeric metric this year's data actually produced --
+# not a fixed short list -- so a metric this reconciliation never checked
+# before can't silently carry a category-attribution or column-mapping bug
+# (see test_grand_total_reconciliation.py, which asserts on this same
+# table and is what actually enforces this rather than a human eyeballing
+# the printed avg/max diff_pct below).
+RECON_METRICS = [c for c in numeric_cols if is_additive(c)]
 recon_rows = []
 for fy in years:
     for subdiv, sid in subdivision_id.items():

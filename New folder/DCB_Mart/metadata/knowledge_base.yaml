@@ -1,0 +1,406 @@
+# =============================================================================
+# CESC DCB Assistant -- general knowledge base (ported pattern from the KPCL POC)
+# =============================================================================
+# Used by dcb-ai-app/app/knowledge.py to answer GENERAL questions that are not about figures: what CESC is, the area it
+# serves, who regulates it, what the DCB statement is, the Holenarasipura Division and its sub-divisions, the subsidy
+# schemes behind some tariff categories, and how the DCB terms are meant. It is also the fallback when the data path
+# cannot answer. Figures (demand, collection, arrears, installations ...) ALWAYS come from the data, never from here.
+#
+# Every entry has English (en) and Kannada (kn) text; a question typed in Kannada gets the Kannada text.
+# Facts that change often (office holders, tariff rates, staff numbers, finances) are deliberately left out.
+# Hand-written; reviewed 2026-10-01. Data periods quoted below come from the DCB statement itself.
+# =============================================================================
+
+meta:
+  title: CESC DCB Assistant knowledge base
+  updated: "2026-10-01"
+  display_rule: "Answers never show sources or where the text came from."
+
+organisation:
+  name: Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysuru
+  aliases: [cesc, cescom, cesc mysore, cesc mysuru, chamundeshwari electricity supply corporation, chamundeshwari electricity,
+            chamundeshwari, the company, the escom, your company, this company]
+  summary:
+    en: >-
+      Chamundeshwari Electricity Supply Corporation Limited (CESC), headquartered in Mysuru, is one of Karnataka's five
+      electricity supply companies (ESCOMs). It buys electricity and distributes it to consumers in Mysuru, Mandya,
+      Hassan, Chamarajanagar and Kodagu districts: it builds and maintains the local distribution network, gives
+      connections, reads meters, bills consumers (the "demand") and collects payment (the "collection").
+    kn: >-
+      ಚಾಮುಂಡೇಶ್ವರಿ ವಿದ್ಯುತ್ ಸರಬರಾಜು ನಿಗಮ ನಿಯಮಿತ (ಸೆಸ್ಕ್), ಮೈಸೂರು — ಕರ್ನಾಟಕದ ಐದು ವಿದ್ಯುತ್ ಸರಬರಾಜು ಕಂಪನಿಗಳಲ್ಲಿ (ಎಸ್ಕಾಂ)
+      ಒಂದು. ಇದು ಮೈಸೂರು, ಮಂಡ್ಯ, ಹಾಸನ, ಚಾಮರಾಜನಗರ ಮತ್ತು ಕೊಡಗು ಜಿಲ್ಲೆಗಳ ಗ್ರಾಹಕರಿಗೆ ವಿದ್ಯುತ್ ವಿತರಿಸುತ್ತದೆ: ವಿತರಣಾ ಜಾಲ ನಿರ್ಮಾಣ
+      ಮತ್ತು ನಿರ್ವಹಣೆ, ಹೊಸ ಸಂಪರ್ಕ, ಮೀಟರ್ ರೀಡಿಂಗ್, ಬಿಲ್ಲಿಂಗ್ ("ಬೇಡಿಕೆ") ಮತ್ತು ಹಣ ವಸೂಲಿ ("ಸಂಗ್ರಹಣೆ") ಇದರ ಕೆಲಸ.
+  facets:
+    founded:
+      match: '\b(when|founded|formed|incorporated|established|set up|started|origin|history|year)\b'
+      label: Formation
+      en: >-
+        CESC was formed in 2005, when the southern districts of the Mangalore Electricity Supply Company (MESCOM) area
+        were separated into a company of their own, as part of the reorganisation of Karnataka's power sector that
+        split generation, transmission and distribution into separate companies.
+      kn: >-
+        ಕರ್ನಾಟಕದ ವಿದ್ಯುತ್ ವಲಯದ ಪುನರ್ರಚನೆಯ ಭಾಗವಾಗಿ, ಮೆಸ್ಕಾಂ ವ್ಯಾಪ್ತಿಯ ದಕ್ಷಿಣ ಜಿಲ್ಲೆಗಳನ್ನು ಬೇರ್ಪಡಿಸಿ 2005ರಲ್ಲಿ ಸೆಸ್ಕ್ ರಚಿಸಲಾಯಿತು.
+    ownership:
+      match: '\b(who owns|owns|owner|owned|ownership|government|public sector|psu)\b'
+      label: Ownership
+      en: >-
+        CESC is a company owned by the Government of Karnataka (a state public sector undertaking), administered
+        through the state's Energy Department.
+      kn: ಸೆಸ್ಕ್ ಕರ್ನಾಟಕ ಸರ್ಕಾರದ ಸ್ವಾಮ್ಯದ ಕಂಪನಿ (ರಾಜ್ಯ ಸಾರ್ವಜನಿಕ ವಲಯದ ಉದ್ದಿಮೆ); ಇಂಧನ ಇಲಾಖೆಯ ಆಡಳಿತಕ್ಕೆ ಒಳಪಟ್ಟಿದೆ.
+    area:
+      match: '\b(area|areas|districts?|region|cover\w*|serve\w*|jurisdiction|where)\b'
+      label: Area served
+      en: >-
+        CESC serves Mysuru, Mandya, Hassan, Chamarajanagar and Kodagu districts. Its area is organised into circles,
+        divisions, sub-divisions and sections. This assistant has the DCB statement of one division only:
+        Holenarasipura Division.
+      kn: >-
+        ಸೆಸ್ಕ್ ಮೈಸೂರು, ಮಂಡ್ಯ, ಹಾಸನ, ಚಾಮರಾಜನಗರ ಮತ್ತು ಕೊಡಗು ಜಿಲ್ಲೆಗಳಿಗೆ ಸೇವೆ ನೀಡುತ್ತದೆ. ವ್ಯಾಪ್ತಿಯನ್ನು ವೃತ್ತ, ವಿಭಾಗ, ಉಪವಿಭಾಗ
+        ಮತ್ತು ಶಾಖೆಗಳಾಗಿ ವಿಂಗಡಿಸಲಾಗಿದೆ. ಈ ಸಹಾಯಕದಲ್ಲಿ ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಡಿಸಿಬಿ ವಿವರಗಳು ಮಾತ್ರ ಇವೆ.
+    regulated_by:
+      match: '\b(regulat\w*|rules?|laws?|acts?|tariffs? (are|is) (set|fixed|decided)|who (sets|fixes|decides))\b'
+      label: Regulation
+      en: >-
+        CESC works under the Electricity Act, 2003. Its retail tariffs (the rates for each tariff category) are fixed
+        by the Karnataka Electricity Regulatory Commission (KERC) through yearly tariff orders; CESC applies them when
+        it bills consumers.
+      kn: >-
+        ಸೆಸ್ಕ್ ವಿದ್ಯುತ್ ಕಾಯ್ದೆ, 2003ರ ಅಡಿಯಲ್ಲಿ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ. ಪ್ರತಿ ಸುಂಕ ವರ್ಗದ ದರಗಳನ್ನು ಕರ್ನಾಟಕ ವಿದ್ಯುತ್ ನಿಯಂತ್ರಣ
+        ಆಯೋಗ (ಕೆಇಆರ್‌ಸಿ) ವಾರ್ಷಿಕ ಸುಂಕ ಆದೇಶಗಳ ಮೂಲಕ ನಿಗದಿಪಡಿಸುತ್ತದೆ; ಸೆಸ್ಕ್ ಅವುಗಳನ್ನು ಬಿಲ್ಲಿಂಗ್‌ನಲ್ಲಿ ಅನ್ವಯಿಸುತ್ತದೆ.
+    head_office:
+      match: '\b(head ?office|headquarter\w*|hq|located|location|address)\b'
+      label: Head office
+      en: CESC's corporate office is in Mysuru, Karnataka.
+      kn: ಸೆಸ್ಕ್‌ನ ಕಾರ್ಪೊರೇಟ್ ಕಚೇರಿ ಮೈಸೂರಿನಲ್ಲಿದೆ.
+    in_this_data:
+      match: '\b(in (this|the) (data|system)|what data|data (do )?you have|dataset|coverage|this assistant)\b'
+      label: In this assistant
+      en: >-
+        This assistant has CESC's Demand-Collection-Balance (DCB) statement for Holenarasipura Division, fiscal years
+        2015-16 to 2025-26: installations, connected load, consumption, demand, collection and balances for the whole
+        division, each sub-division and section, and each tariff category and slab.
+      kn: >-
+        ಈ ಸಹಾಯಕದಲ್ಲಿ ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ 2015-16 ರಿಂದ 2025-26ರ ವರೆಗಿನ ಡಿಸಿಬಿ (ಬೇಡಿಕೆ-ಸಂಗ್ರಹಣೆ-ಬಾಕಿ) ವಿವರಗಳಿವೆ: ಸ್ಥಾವರಗಳು,
+        ಸಂಪರ್ಕಿತ ಹೊರೆ, ಬಳಕೆ, ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ ಮತ್ತು ಬಾಕಿ — ಇಡೀ ವಿಭಾಗ, ಪ್ರತಿ ಉಪವಿಭಾಗ ಮತ್ತು ಪ್ರತಿ ಸುಂಕ ವರ್ಗಕ್ಕೆ.
+
+# -----------------------------------------------------------------------------
+# Places. The data periods are those of the DCB statement (see DCB_Mart/metadata/known_issues.json).
+places:
+  - key: division
+    name: Holenarasipura Division
+    aliases: [holenarasipura division, hn pura division, hnpura division, the division, this division, sub-divisions of,
+              which sub-divisions, what are the sub-divisions, sub divisions of]
+    en: >-
+      Holenarasipura Division is one of CESC's operation and maintenance divisions, in the Hassan district area. In this
+      data it is made up of the Holenarasipura, Arkalgud, Hangarahalli and Ramanathapura sub-divisions and the Konanur
+      section; Saligrama sub-division was part of it up to 2017-18. A "Division Office" unit appears from 2020-21 to
+      2023-24 as an administrative unit with almost no billing. The division's own printed total is the official figure
+      for the whole division.
+    kn: >-
+      ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗ ಸೆಸ್ಕ್‌ನ ಕಾರ್ಯಾಚರಣೆ ಮತ್ತು ನಿರ್ವಹಣಾ ವಿಭಾಗಗಳಲ್ಲಿ ಒಂದು (ಹಾಸನ ಜಿಲ್ಲೆ). ಈ ಡೇಟಾದಲ್ಲಿ ಹೊಳೆನರಸೀಪುರ,
+      ಅರಕಲಗೂಡು, ಹಂಗರಹಳ್ಳಿ, ರಾಮನಾಥಪುರ ಉಪವಿಭಾಗಗಳು ಮತ್ತು ಕೊಣನೂರು ಶಾಖೆ ಇವೆ; ಸಾಲಿಗ್ರಾಮ ಉಪವಿಭಾಗ 2017-18ರ ವರೆಗೆ ಇದರ ಭಾಗವಾಗಿತ್ತು.
+    subdivision: null
+  - key: holenarasipura
+    name: Holenarasipura sub-division
+    aliases: [holenarasipura sub-division, holenarasipura subdivision, holenarasipura sub division]
+    en: >-
+      Holenarasipura sub-division is the largest unit of Holenarasipura Division by demand and installations. It has
+      figures for every year from 2015-16 to 2025-26.
+    kn: ಹೊಳೆನರಸೀಪುರ ಉಪವಿಭಾಗ ಬೇಡಿಕೆ ಮತ್ತು ಸ್ಥಾವರಗಳ ದೃಷ್ಟಿಯಿಂದ ವಿಭಾಗದ ಅತಿ ದೊಡ್ಡ ಘಟಕ. 2015-16 ರಿಂದ 2025-26ರ ವರೆಗಿನ ಎಲ್ಲಾ ವರ್ಷಗಳ ವಿವರಗಳಿವೆ.
+    subdivision: Holenarasipura
+  - key: arkalgud
+    name: Arkalgud sub-division
+    aliases: [arkalgud, arkalgud sub-division, arkalgud subdivision, arkalgud sub division]
+    en: Arkalgud sub-division is part of Holenarasipura Division, with figures for every year from 2015-16 to 2025-26.
+    kn: ಅರಕಲಗೂಡು ಉಪವಿಭಾಗ ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಭಾಗ; 2015-16 ರಿಂದ 2025-26ರ ವರೆಗಿನ ಎಲ್ಲಾ ವರ್ಷಗಳ ವಿವರಗಳಿವೆ.
+    subdivision: Arkalgud
+  - key: hangarahalli
+    name: Hangarahalli sub-division
+    aliases: [hangarahalli, hangarahalli sub-division, hangarahalli subdivision, hangarahalli sub division]
+    en: Hangarahalli sub-division is part of Holenarasipura Division, with figures for every year from 2015-16 to 2025-26.
+    kn: ಹಂಗರಹಳ್ಳಿ ಉಪವಿಭಾಗ ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಭಾಗ; 2015-16 ರಿಂದ 2025-26ರ ವರೆಗಿನ ಎಲ್ಲಾ ವರ್ಷಗಳ ವಿವರಗಳಿವೆ.
+    subdivision: Hangarahalli
+  - key: ramanathapura
+    name: Ramanathapura sub-division
+    aliases: [ramanathapura, ramanathapura sub-division, ramanathapura subdivision, ramanathapura sub division]
+    en: Ramanathapura sub-division is part of Holenarasipura Division, with figures for every year from 2015-16 to 2025-26.
+    kn: ರಾಮನಾಥಪುರ ಉಪವಿಭಾಗ ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗದ ಭಾಗ; 2015-16 ರಿಂದ 2025-26ರ ವರೆಗಿನ ಎಲ್ಲಾ ವರ್ಷಗಳ ವಿವರಗಳಿವೆ.
+    subdivision: Ramanathapura
+  - key: konanur
+    name: Konanur section
+    aliases: [konanur, konanur section, konanur sub-division]
+    en: >-
+      Konanur is a section (a unit below a sub-division) that the DCB statement reports on its own, alongside the
+      sub-divisions. It has figures for every year from 2015-16 to 2025-26.
+    kn: ಕೊಣನೂರು ಒಂದು ಶಾಖೆ (ಉಪವಿಭಾಗಕ್ಕಿಂತ ಕೆಳಗಿನ ಘಟಕ); ಡಿಸಿಬಿ ವಿವರಗಳಲ್ಲಿ ಇದನ್ನು ಉಪವಿಭಾಗಗಳ ಜೊತೆಗೆ ಪ್ರತ್ಯೇಕವಾಗಿ ತೋರಿಸಲಾಗಿದೆ.
+    subdivision: Konanur
+  - key: saligrama
+    name: Saligrama sub-division
+    aliases: [saligrama, saligrama sub-division, saligrama subdivision, saligrama sub division]
+    en: >-
+      Saligrama sub-division appears in Holenarasipura Division's DCB statement only from 2015-16 to 2017-18. In
+      2017-18 it shows no new demand while collections against old arrears continued; it has no figures after that.
+    kn: >-
+      ಸಾಲಿಗ್ರಾಮ ಉಪವಿಭಾಗ 2015-16 ರಿಂದ 2017-18ರ ವರೆಗೆ ಮಾತ್ರ ಈ ವಿಭಾಗದ ಡಿಸಿಬಿ ವಿವರಗಳಲ್ಲಿದೆ; 2017-18ರಲ್ಲಿ ಹೊಸ ಬೇಡಿಕೆ ಇಲ್ಲ,
+      ಹಳೆಯ ಬಾಕಿಯ ವಸೂಲಿ ಮಾತ್ರ ಮುಂದುವರಿದಿದೆ.
+    subdivision: Saligrama
+
+# -----------------------------------------------------------------------------
+# Regulators, laws, schemes and how the DCB terms are meant. Tariff codes (LT-1 ... HT-7, with every sub-category),
+# rates and tariff rules are answered from the CESC tariff booklet (metadata/tariff_booklet.json, app/tariff_booklet.py);
+# these entries answer the "what is / how does" questions around them.
+entries:
+  - key: kerc
+    name: Karnataka Electricity Regulatory Commission (KERC)
+    aliases: [kerc, karnataka electricity regulatory commission, regulatory commission, the regulator]
+    en: >-
+      KERC is Karnataka's electricity regulator, set up under the Electricity Act, 2003. It fixes the retail tariffs
+      the ESCOMs, including CESC, charge each tariff category, through yearly tariff orders after public hearings, and
+      it sets standards of performance and supply.
+    kn: >-
+      ಕೆಇಆರ್‌ಸಿ ಕರ್ನಾಟಕದ ವಿದ್ಯುತ್ ನಿಯಂತ್ರಕ ಸಂಸ್ಥೆ (ವಿದ್ಯುತ್ ಕಾಯ್ದೆ, 2003ರ ಅಡಿ). ಸಾರ್ವಜನಿಕ ವಿಚಾರಣೆಗಳ ನಂತರ ವಾರ್ಷಿಕ ಸುಂಕ ಆದೇಶಗಳ
+      ಮೂಲಕ ಸೆಸ್ಕ್ ಸೇರಿದಂತೆ ಎಸ್ಕಾಂಗಳು ವಿಧಿಸುವ ದರಗಳನ್ನು ನಿಗದಿಪಡಿಸುತ್ತದೆ.
+  - key: electricity_act
+    name: Electricity Act, 2003
+    aliases: [electricity act, electricity act 2003, the act]
+    en: >-
+      The Electricity Act, 2003 is the central law for generation, transmission, distribution, trading and use of
+      electricity in India. It provides for state regulatory commissions such as KERC, which fix tariffs.
+    kn: ವಿದ್ಯುತ್ ಕಾಯ್ದೆ, 2003 ಭಾರತದಲ್ಲಿ ವಿದ್ಯುತ್ ಉತ್ಪಾದನೆ, ಪ್ರಸರಣ, ವಿತರಣೆ ಮತ್ತು ಬಳಕೆಗೆ ಸಂಬಂಧಿಸಿದ ಕೇಂದ್ರ ಕಾನೂನು; ಕೆಇಆರ್‌ಸಿಯಂತಹ ರಾಜ್ಯ ಆಯೋಗಗಳು ಇದರ ಅಡಿಯಲ್ಲಿ ರಚನೆಯಾಗಿವೆ.
+  - key: escoms
+    name: ESCOMs (electricity supply companies)
+    aliases: [escom, escoms, electricity supply companies, electricity supply company, discoms, discom]
+    en: >-
+      Karnataka's electricity is distributed by five supply companies (ESCOMs): BESCOM (Bengaluru), MESCOM (Mangaluru),
+      HESCOM (Hubballi), GESCOM (Kalaburagi) and CESC (Mysuru). Each serves its own districts, bills consumers and
+      collects payment; power is transmitted to them by KPTCL.
+    kn: >-
+      ಕರ್ನಾಟಕದಲ್ಲಿ ಐದು ಎಸ್ಕಾಂಗಳಿವೆ: ಬೆಸ್ಕಾಂ (ಬೆಂಗಳೂರು), ಮೆಸ್ಕಾಂ (ಮಂಗಳೂರು), ಹೆಸ್ಕಾಂ (ಹುಬ್ಬಳ್ಳಿ), ಜೆಸ್ಕಾಂ (ಕಲಬುರಗಿ) ಮತ್ತು
+      ಸೆಸ್ಕ್ (ಮೈಸೂರು). ಕೆಪಿಟಿಸಿಎಲ್ ಇವುಗಳಿಗೆ ವಿದ್ಯುತ್ ಪ್ರಸರಣ ಮಾಡುತ್ತದೆ.
+  - key: kptcl
+    name: KPTCL
+    aliases: [kptcl, karnataka power transmission corporation, transmission company]
+    en: >-
+      Karnataka Power Transmission Corporation Limited (KPTCL) runs the state's high-voltage transmission network that
+      carries electricity to the ESCOMs, including CESC.
+    kn: ಕರ್ನಾಟಕ ವಿದ್ಯುತ್ ಪ್ರಸರಣ ನಿಗಮ ನಿಯಮಿತ (ಕೆಪಿಟಿಸಿಎಲ್) ರಾಜ್ಯದ ಹೆಚ್ಚಿನ ವೋಲ್ಟೇಜ್ ಪ್ರಸರಣ ಜಾಲವನ್ನು ನಿರ್ವಹಿಸಿ ಎಸ್ಕಾಂಗಳಿಗೆ ವಿದ್ಯುತ್ ತಲುಪಿಸುತ್ತದೆ.
+  - key: dcb_statement
+    name: The DCB statement
+    aliases: [dcb statement, dcb report, demand collection balance statement, demand collection and balance, dcb]
+    en: >-
+      The Demand-Collection-Balance (DCB) statement is the ESCOM's periodic billing and collection position. For each
+      tariff category in each sub-division it shows the number of installations, connected load and consumption, the
+      opening balance (dues brought forward), the demand (amount billed), the collection (amount received) and the
+      closing balance: opening balance + demand - collection.
+    kn: >-
+      ಡಿಸಿಬಿ (ಬೇಡಿಕೆ-ಸಂಗ್ರಹಣೆ-ಬಾಕಿ) ವಿವರಪಟ್ಟಿ ಎಸ್ಕಾಂನ ಬಿಲ್ಲಿಂಗ್ ಮತ್ತು ವಸೂಲಿ ಸ್ಥಿತಿ. ಪ್ರತಿ ಉಪವಿಭಾಗದ ಪ್ರತಿ ಸುಂಕ ವರ್ಗಕ್ಕೆ
+      ಸ್ಥಾವರಗಳ ಸಂಖ್ಯೆ, ಸಂಪರ್ಕಿತ ಹೊರೆ, ಬಳಕೆ, ಆರಂಭಿಕ ಬಾಕಿ, ಬೇಡಿಕೆ (ಬಿಲ್ ಮಾಡಿದ ಮೊತ್ತ), ಸಂಗ್ರಹಣೆ (ವಸೂಲಾದ ಮೊತ್ತ) ಮತ್ತು
+      ಅಂತಿಮ ಬಾಕಿ = ಆರಂಭಿಕ ಬಾಕಿ + ಬೇಡಿಕೆ − ಸಂಗ್ರಹಣೆ ಇದರಲ್ಲಿರುತ್ತವೆ.
+  - key: collection_efficiency
+    name: Collection efficiency
+    aliases: [collection efficiency, how is collection efficiency calculated, collection efficiency formula]
+    en: >-
+      Collection efficiency is collection divided by demand for the same period, as a percentage. It can exceed 100%
+      when consumers also pay old arrears in the year. Across several places or years it is recomputed from the summed
+      collection and demand, never averaged.
+    kn: >-
+      ಸಂಗ್ರಹಣಾ ದಕ್ಷತೆ = ಅದೇ ಅವಧಿಯ ಸಂಗ್ರಹಣೆ ÷ ಬೇಡಿಕೆ × 100. ಹಳೆಯ ಬಾಕಿಯನ್ನೂ ಪಾವತಿಸಿದಾಗ ಇದು 100% ಮೀರಬಹುದು.
+  - key: arrears
+    name: Arrears (closing balance)
+    aliases: [arrears, closing balance, opening balance, what are arrears, dues, outstanding dues]
+    en: >-
+      The closing balance is what consumers still owe at the end of a period: opening balance + demand - collection.
+      It is carried forward as the next period's opening balance. "Arrears" usually means this outstanding amount.
+    kn: ಅಂತಿಮ ಬಾಕಿ = ಆರಂಭಿಕ ಬಾಕಿ + ಬೇಡಿಕೆ − ಸಂಗ್ರಹಣೆ; ಇದು ಮುಂದಿನ ಅವಧಿಯ ಆರಂಭಿಕ ಬಾಕಿಯಾಗುತ್ತದೆ. "ಬಾಕಿ" ಎಂದರೆ ಸಾಮಾನ್ಯವಾಗಿ ಈ ಮೊತ್ತ.
+  - key: installations
+    name: Installations
+    aliases: [an installation, installation, installations]
+    en: >-
+      An installation is one electricity connection (one meter or service). The statement counts total installations,
+      live installations (in service) and installations actually billed in the period.
+    kn: ಸ್ಥಾವರ ಎಂದರೆ ಒಂದು ವಿದ್ಯುತ್ ಸಂಪರ್ಕ (ಒಂದು ಮೀಟರ್/ಸೇವೆ). ಒಟ್ಟು, ಚಾಲ್ತಿಯಲ್ಲಿರುವ ಮತ್ತು ಬಿಲ್ ಮಾಡಲಾದ ಸ್ಥಾವರಗಳನ್ನು ಎಣಿಸಲಾಗುತ್ತದೆ.
+  - key: dc_mnr
+    name: MNR and DC installations
+    aliases: [dc/mnr, dc mnr, mnr, meter not recording, dc/mnr installations, dc installations, what is dc]
+    en: >-
+      MNR (meter not recording) installations are connections whose meter has stopped recording; their consumption is
+      billed on an assessed (estimated) basis until the meter is replaced. The statement also prints a "DC
+      installations" column: DC stands for direct connection (confirmed by CESC). When a meter burns out or is
+      faulty and no replacement of the required capacity is in stock, the engineer connects the premises on a direct
+      connection basis, without a meter. Under KERC rules a new meter is to be installed within 3 days, and the usage
+      in the unmetered gap is billed pro-rata on the previous month's consumption. Up to 2017-18
+      the statement prints DC and MNR in one combined column; from 2018-19 in two separate columns.
+    kn: >-
+      ಎಂಎನ್‌ಆರ್ (ಮೀಟರ್ ದಾಖಲಿಸದ) ಸ್ಥಾವರಗಳಲ್ಲಿ ಮೀಟರ್ ದಾಖಲಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿದೆ; ಮೀಟರ್ ಬದಲಾಗುವವರೆಗೆ ಬಳಕೆಯನ್ನು ಅಂದಾಜಿನ ಮೇಲೆ ಬಿಲ್
+      ಮಾಡಲಾಗುತ್ತದೆ. ವಿವರಪಟ್ಟಿಯಲ್ಲಿ "ಡಿಸಿ ಸ್ಥಾವರಗಳು" ಎಂಬ ಕಾಲಂ ಕೂಡ ಇದೆ; ಇಲ್ಲಿ ಡಿಸಿ ಎಂದರೆ ಏನು (ನೇರ ಸಂಪರ್ಕ ಅಥವಾ ಸಂಪರ್ಕ ಕಡಿತ)
+      ಎಂಬುದನ್ನು ಸೆಸ್ಕ್‌ನಿಂದ ದೃಢಪಡಿಸಬೇಕಿದೆ; ಅಂಕಿಅಂಶಗಳನ್ನು ಮುದ್ರಿತವಾದಂತೆಯೇ ತೋರಿಸಲಾಗಿದೆ. 2017-18ರ ವರೆಗೆ ಡಿಸಿ ಮತ್ತು ಎಂಎನ್‌ಆರ್
+      ಒಂದೇ ಕಾಲಂನಲ್ಲಿ, 2018-19ರಿಂದ ಪ್ರತ್ಯೇಕವಾಗಿ ಮುದ್ರಿತವಾಗಿವೆ.
+  - key: fac
+    name: FPPCA (fuel and power purchase cost adjustment, printed as FAC)
+    aliases: [fac, fuel adjustment charge, fuel adjustment, fuel cost adjustment, fppca, fuel and power purchase cost adjustment,
+              power purchase cost adjustment]
+    en: >-
+      FPPCA (fuel and power purchase cost adjustment) is a per-unit charge, approved by KERC, that passes changes in the
+      cost of buying power on to consumers. The DCB statement prints it as "FAC" and shows it billed, collected and
+      outstanding separately from the main revenue. It can be negative when the adjustment is a refund (as in 2021-22).
+      Ask, for example, "FPPCA billed in 2024-25", "FPPCA outstanding in Arkalgud" or "FPPCA share of demand trend".
+    kn: >-
+      ಎಫ್‌ಪಿಪಿಸಿಎ (ಇಂಧನ ಮತ್ತು ವಿದ್ಯುತ್ ಖರೀದಿ ವೆಚ್ಚ ಹೊಂದಾಣಿಕೆ) ಕೆಇಆರ್‌ಸಿ ಅನುಮೋದಿಸಿದ ಪ್ರತಿ ಯೂನಿಟ್ ಶುಲ್ಕ; ವಿದ್ಯುತ್ ಖರೀದಿ ವೆಚ್ಚದ
+      ಬದಲಾವಣೆಯನ್ನು ಗ್ರಾಹಕರಿಗೆ ವರ್ಗಾಯಿಸುತ್ತದೆ. ಡಿಸಿಬಿ ವಿವರಪಟ್ಟಿಯಲ್ಲಿ ಇದನ್ನು "FAC" ಎಂದು ಮುದ್ರಿಸಲಾಗಿದೆ; ಹೊಂದಾಣಿಕೆ ಮರುಪಾವತಿಯಾದಾಗ
+      (2021-22ರಂತೆ) ಇದು ಋಣಾತ್ಮಕವಾಗಬಹುದು.
+  - key: lt_ht
+    name: LT and HT
+    aliases: [lt and ht, lt vs ht, low tension, high tension, lt and ht connections]
+    en: >-
+      Per the CESC tariff booklet (FY2025-26 to FY2027-28): LT (low tension) supply is 400 V three-phase or 230 V
+      single-phase, given where the requisitioned load is less than 150 kW / 201 HP -- homes, shops, small industries,
+      pump sets, street lights (categories LT-1 to LT-7). HT (high tension) is bulk supply at 11 kV (including 2.3/4.6
+      kV) and above when the contract demand is 50 kW / 67 HP and above (minimum HT contract demand 25 kVA) -- large
+      industries, commercial complexes, lift irrigation, apartments, bulk water supply (HT-1 to HT-7).
+    kn: >-
+      ಸೆಸ್ಕ್ ಸುಂಕ ಪುಸ್ತಕದ ಪ್ರಕಾರ: ಎಲ್‌ಟಿ (ಕಡಿಮೆ ಒತ್ತಡ) 400 ವೋಲ್ಟ್ ಮೂರು ಹಂತ / 230 ವೋಲ್ಟ್ ಏಕ ಹಂತ, 150 ಕಿವ್ಯಾ / 201 ಎಚ್‌ಪಿಗಿಂತ
+      ಕಡಿಮೆ ಹೊರೆಗೆ: ಮನೆಗಳು, ಅಂಗಡಿಗಳು, ಸಣ್ಣ ಕೈಗಾರಿಕೆಗಳು, ಪಂಪ್‌ಸೆಟ್‌ಗಳು, ಬೀದಿ ದೀಪಗಳು (ಎಲ್‌ಟಿ-1 ರಿಂದ ಎಲ್‌ಟಿ-7). ಎಚ್‌ಟಿ (ಹೆಚ್ಚಿನ ಒತ್ತಡ)
+      11 ಕೆವಿ ಮತ್ತು ಮೇಲ್ಪಟ್ಟು, ಒಪ್ಪಂದದ ಬೇಡಿಕೆ 50 ಕಿವ್ಯಾ / 67 ಎಚ್‌ಪಿ ಮತ್ತು ಮೇಲ್ಪಟ್ಟು: ದೊಡ್ಡ ಕೈಗಾರಿಕೆಗಳು, ಏತ ನೀರಾವರಿ,
+      ಅಪಾರ್ಟ್‌ಮೆಂಟ್‌ಗಳು (ಎಚ್‌ಟಿ-1 ರಿಂದ ಎಚ್‌ಟಿ-7).
+  - key: bhagyajyothi
+    name: Bhagyajyothi / Kutirajyothi
+    aliases: [bhagyajyothi, bhagya jyothi, kutirajyothi, kutira jyothi, bj/kj, bj kj]
+    en: >-
+      Bhagyajyothi and Kutirajyothi are Government of Karnataka schemes that give poor households a lighting connection
+      with subsidised supply. Under the current tariff (CESC tariff booklet FY2025-26 to FY2027-28) they are part of
+      LT-1 Domestic, which covers all residential houses and is billed on a single slab (Rs 145/kW per month fixed +
+      580 paise per unit in FY2025-26). In the DCB sheets they are the "BV/KJ" LT-1 lines; up to 2023-24 LT-1 held only
+      these, and from 2024-25 the urban domestic lines (LT-2(a) before) are printed under LT-1 as well.
+    kn: >-
+      ಭಾಗ್ಯಜ್ಯೋತಿ ಮತ್ತು ಕುಟೀರಜ್ಯೋತಿ ಬಡ ಕುಟುಂಬಗಳಿಗೆ ರಿಯಾಯಿತಿ ದರದ ದೀಪದ ಸಂಪರ್ಕ ನೀಡುವ ಕರ್ನಾಟಕ ಸರ್ಕಾರದ ಯೋಜನೆಗಳು; ಈಗಿನ ಸುಂಕದಲ್ಲಿ
+      ಇವು ಎಲ್‌ಟಿ-1 ಗೃಹ ಬಳಕೆ ವರ್ಗದ ಭಾಗ (2025-26: ತಿಂಗಳಿಗೆ ಕಿವ್ಯಾಗೆ ₹145 ನಿಗದಿತ ಶುಲ್ಕ + ಯೂನಿಟ್‌ಗೆ 580 ಪೈಸೆ).
+  - key: gruha_jyothi
+    name: Gruha Jyothi
+    aliases: [gruha jyothi, gruhajyothi, griha jyothi, free electricity scheme, 200 units free]
+    en: >-
+      Gruha Jyothi is a Government of Karnataka scheme, in force from August 2023, under which domestic households
+      (tariff LT-1 Domestic in the current tariff booklet) get free electricity up to a monthly limit (at most 200
+      units), with the state paying the ESCOM for it. In the DCB statement the Government's payment shows up as
+      collection booked by "adjustment": for domestic LT-1 the adjusted share of collection was 16-31% up to 2022-23,
+      60% in 2023-24 and 82-84% in 2024-25 and 2025-26. Ask, for example, "subsidy for LT-1 in 2025-26" or "subsidy
+      share trend for LT-1".
+    kn: >-
+      ಗೃಹಜ್ಯೋತಿ ಆಗಸ್ಟ್ 2023ರಿಂದ ಜಾರಿಯಲ್ಲಿರುವ ಕರ್ನಾಟಕ ಸರ್ಕಾರದ ಯೋಜನೆ; ಗೃಹ ಬಳಕೆದಾರರಿಗೆ (ಎಲ್‌ಟಿ-1) ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 200 ಯೂನಿಟ್ ವರೆಗೆ
+      ಉಚಿತ ವಿದ್ಯುತ್, ಅದರ ಮೊತ್ತವನ್ನು ಸರ್ಕಾರ ಎಸ್ಕಾಂಗೆ ಪಾವತಿಸುತ್ತದೆ. ಡಿಸಿಬಿಯಲ್ಲಿ ಇದು "ಹೊಂದಾಣಿಕೆ" ಸಂಗ್ರಹಣೆಯಾಗಿ ಕಾಣುತ್ತದೆ: ಎಲ್‌ಟಿ-1ರಲ್ಲಿ
+      2023-24ರಲ್ಲಿ 60%, 2024-25 ಮತ್ತು 2025-26ರಲ್ಲಿ 82-84%.
+  - key: ip_sets
+    name: IP sets (irrigation pump sets)
+    aliases: [ip set, ip sets, irrigation pump sets, irrigation pump set, what are ip sets, free power for farmers]
+    en: >-
+      IP sets are farmers' irrigation pump sets (tariff LT-4). The tariff booklet splits them into LT-4(a) up to 10 HP,
+      LT-4(b) above 10 HP and LT-4(c) nurseries, gardens and plantations. LT-4(a) is billed at the Commission
+      Determined Tariff (830 paise per unit in FY2025-26), which the Government of Karnataka pays as subsidy -- if it
+      does not, the CDT is collected from the consumers. Most LT-4(a) sets are un-metered, so their consumption is
+      assessed; in the DCB they are collected 100% by adjustment (the subsidy). This is why LT-4 is the largest
+      category by demand.
+    kn: >-
+      ಐಪಿ ಸೆಟ್‌ಗಳು ರೈತರ ನೀರಾವರಿ ಪಂಪ್‌ಸೆಟ್‌ಗಳು (ಎಲ್‌ಟಿ-4). 10 ಎಚ್‌ಪಿ ವರೆಗಿನ ಪಂಪ್‌ಸೆಟ್‌ಗಳಿಗೆ ಉಚಿತ ವಿದ್ಯುತ್, ಸಬ್ಸಿಡಿಯನ್ನು ಸರ್ಕಾರ
+      ಎಸ್ಕಾಂಗೆ ಪಾವತಿಸುತ್ತದೆ; ಹೆಚ್ಚಿನವು ಮೀಟರ್ ರಹಿತ, ಆದ್ದರಿಂದ ಬಳಕೆಯನ್ನು ಅಂದಾಜಿಸಲಾಗುತ್ತದೆ.
+  - key: tariff_categories
+    name: Tariff categories
+    aliases: [tariff categories, tariff category, what are tariff categories, tariff families, slabs, what is a slab]
+    en: >-
+      Every connection is billed under a tariff category fixed by KERC. The CESC tariff booklet FY2025-26 to
+      FY2027-28 (KERC order 27.03.2025) has 22 categories. LT: LT-1 Domestic (all homes incl. Bhagyajyothi /
+      Kutirajyothi, Government hospitals and schools, religious and charitable institutions), LT-2 private educational
+      institutions and hospitals, LT-3(a) commercial, LT-3(b) hoardings, LT-4(a) IP sets up to 10 HP, LT-4(b) IP sets
+      above 10 HP, LT-4(c) nurseries and plantations, LT-5 industrial, LT-6(a) water supply, LT-6(b) public lighting,
+      LT-6(c) EV charging, LT-7 temporary. HT: HT-1 water supply, HT-2(a) industrial, HT-2(b) commercial, HT-2(c)(i)
+      Government hospitals and educational institutions, HT-2(c)(ii) other hospitals and educational institutions,
+      HT-3 private lift irrigation, HT-4 residential apartments, HT-5 temporary, HT-6 agricultural farms and
+      plantations, HT-7 Government lift irrigation. LT energy is billed on a single slab. In the DCB sheets each
+      category is printed in lines ("slabs") by area, load or metering; up to 2023-24 domestic lighting was LT-2(a)
+      and Government lift irrigation HT-3(a)(i). Ask "What is the LT-3 tariff rate?" or "Which category is a homestay?".
+    kn: >-
+      ಸೆಸ್ಕ್ ಸುಂಕ ಪುಸ್ತಕ 2025-26 ರಿಂದ 2027-28ರಲ್ಲಿ 22 ವರ್ಗಗಳಿವೆ: ಎಲ್‌ಟಿ-1 ಗೃಹ ಬಳಕೆ (ಭಾಗ್ಯಜ್ಯೋತಿ/ಕುಟೀರಜ್ಯೋತಿ ಸೇರಿ), ಎಲ್‌ಟಿ-2 ಖಾಸಗಿ
+      ಶಿಕ್ಷಣ ಸಂಸ್ಥೆ ಮತ್ತು ಆಸ್ಪತ್ರೆ, ಎಲ್‌ಟಿ-3(ಎ) ವಾಣಿಜ್ಯ, ಎಲ್‌ಟಿ-3(ಬಿ) ಜಾಹೀರಾತು ಫಲಕ, ಎಲ್‌ಟಿ-4(ಎ) 10 ಎಚ್‌ಪಿ ವರೆಗಿನ ಐಪಿ ಸೆಟ್,
+      ಎಲ್‌ಟಿ-4(ಬಿ) 10 ಎಚ್‌ಪಿ ಮೇಲ್ಪಟ್ಟು, ಎಲ್‌ಟಿ-4(ಸಿ) ನರ್ಸರಿ/ತೋಟ, ಎಲ್‌ಟಿ-5 ಕೈಗಾರಿಕೆ, ಎಲ್‌ಟಿ-6(ಎ) ನೀರು ಸರಬರಾಜು, ಎಲ್‌ಟಿ-6(ಬಿ) ಬೀದಿ
+      ದೀಪ, ಎಲ್‌ಟಿ-6(ಸಿ) ಇವಿ ಚಾರ್ಜಿಂಗ್, ಎಲ್‌ಟಿ-7 ತಾತ್ಕಾಲಿಕ; ಎಚ್‌ಟಿ-1 ರಿಂದ ಎಚ್‌ಟಿ-7 ಹೆಚ್ಚಿನ ಒತ್ತಡದ ವರ್ಗಗಳು.
+  - key: misc_revenue
+    name: Miscellaneous revenue
+    aliases: [miscellaneous revenue, misc revenue, "62.9177", 61 codes, 62 codes, account codes]
+    en: >-
+      Miscellaneous revenue (account codes 61.xxxx and 62.xxxx) is fees, penalties, rentals, recoveries and other
+      receipts, not consumption billing. From 2019-20 the division books some of it (mainly 62.9177, other recoveries)
+      only in its own block, so the division's total is higher than the sum of its sub-divisions in those years.
+    kn: >-
+      ಇತರೆ ಆದಾಯ (61.xxxx / 62.xxxx ಖಾತೆ ಸಂಕೇತಗಳು) ಶುಲ್ಕ, ದಂಡ, ಬಾಡಿಗೆ ಮತ್ತು ವಸೂಲಾತಿಗಳು — ಬಳಕೆಯ ಬಿಲ್ಲಿಂಗ್ ಅಲ್ಲ. 2019-20ರಿಂದ
+      ಇದರ ಕೆಲವು ಭಾಗವನ್ನು ವಿಭಾಗ ಮಟ್ಟದಲ್ಲೇ ದಾಖಲಿಸಿರುವುದರಿಂದ ವಿಭಾಗದ ಒಟ್ಟು ಉಪವಿಭಾಗಗಳ ಮೊತ್ತಕ್ಕಿಂತ ಹೆಚ್ಚು.
+  - key: fiscal_year
+    name: Fiscal year
+    aliases: [fiscal year, financial year, what is fy]
+    en: A fiscal (financial) year runs from 1 April to 31 March; 2024-25 means April 2024 to March 2025.
+    kn: ಆರ್ಥಿಕ ವರ್ಷ ಏಪ್ರಿಲ್ 1 ರಿಂದ ಮಾರ್ಚ್ 31ರ ವರೆಗೆ; 2024-25 ಎಂದರೆ ಏಪ್ರಿಲ್ 2024 ರಿಂದ ಮಾರ್ಚ್ 2025.
+  - key: atc_loss
+    name: AT&C loss
+    aliases: [at&c loss, at&c losses, atc loss, at&c, aggregate technical and commercial loss, aggregate technical & commercial loss,
+              how is at&c calculated, at&c formula]
+    en: >-
+      AT&C (aggregate technical and commercial) loss = 100 - billing efficiency x collection efficiency. Here billing
+      efficiency is the one the DCB sheet's own consolidation block prints, "Billing Efficiency (4/3)" = installations
+      actually billed / live installations, and collection efficiency = collection / demand. The official
+      energy-based version uses units billed / units input; the DCB workbook has no energy-input figures, so energy
+      (technical) loss is not included. It is negative in a year when more is collected than billed (arrears
+      recovered). Ask "AT&C loss in Arkalgud in 2024-25" or "AT&C loss trend".
+    kn: >-
+      ಎಟಿ&ಸಿ ನಷ್ಟ = 100 − ಬಿಲ್ಲಿಂಗ್ ದಕ್ಷತೆ × ಸಂಗ್ರಹಣಾ ದಕ್ಷತೆ. ಬಿಲ್ಲಿಂಗ್ ದಕ್ಷತೆ = ಬಿಲ್ ಮಾಡಲಾದ ಸ್ಥಾವರಗಳು ÷ ಚಾಲ್ತಿ ಸ್ಥಾವರಗಳು
+      (ಡಿಸಿಬಿ ಹಾಳೆಯ "Billing Efficiency (4/3)"); ಸಂಗ್ರಹಣಾ ದಕ್ಷತೆ = ಸಂಗ್ರಹಣೆ ÷ ಬೇಡಿಕೆ. ಡೇಟಾದಲ್ಲಿ ಇನ್‌ಪುಟ್ ಇಂಧನದ ಅಂಕಿಅಂಶಗಳಿಲ್ಲದ ಕಾರಣ
+      ತಾಂತ್ರಿಕ ನಷ್ಟ ಸೇರಿಲ್ಲ.
+  - key: billing_efficiency
+    name: Billing efficiency
+    aliases: [billing efficiency, how is billing efficiency calculated]
+    en: >-
+      Billing efficiency, as the DCB sheet's consolidation block prints it ("Billing Efficiency (4/3)"), is the number
+      of installations actually billed in the period divided by the live installations, as a percentage. It is one of
+      the two factors of AT&C loss.
+    kn: ಬಿಲ್ಲಿಂಗ್ ದಕ್ಷತೆ = ಬಿಲ್ ಮಾಡಲಾದ ಸ್ಥಾವರಗಳು ÷ ಚಾಲ್ತಿ ಸ್ಥಾವರಗಳು × 100 (ಡಿಸಿಬಿ ಹಾಳೆಯ "Billing Efficiency (4/3)").
+  - key: subsidy_adjustment
+    name: Adjustment collections and Government subsidy
+    aliases: [adjustment, adjustments, what is adjustment, subsidy, government subsidy, collection by adjustment,
+              cash and adjustment, chq/cash and adjust, collection efficiency without adjustment]
+    en: >-
+      The DCB sheet prints every collection in two parts: "Chq/cash" (money received) and "Adjust" (amounts settled by
+      book adjustment). For LT-1 domestic (Gruha Jyothi, from August 2023) and LT-4(a) irrigation pump sets up to 10 HP
+      the adjustment is the Government of Karnataka subsidy (confirmed by CESC) -- LT-4(a) is collected 100% by adjustment,
+      and the tariff booklet says GoK pays the IP-set tariff (CDT); for other categories adjustments are small and
+      sometimes negative (reversals). Collection efficiency without adjustment (the sheet's own formula (34 - Adj.) /
+      30) is cash collection / demand. Ask "subsidy for LT-1 in 2025-26",
+      "subsidy share by tariff category" or "collection efficiency without adjustment".
+    kn: >-
+      ಡಿಸಿಬಿ ಹಾಳೆ ಪ್ರತಿ ಸಂಗ್ರಹಣೆಯನ್ನು "ಚೆಕ್/ನಗದು" ಮತ್ತು "ಹೊಂದಾಣಿಕೆ" ಎಂದು ತೋರಿಸುತ್ತದೆ. ಎಲ್‌ಟಿ-1 (ಗೃಹಜ್ಯೋತಿ) ಮತ್ತು ಎಲ್‌ಟಿ-4(ಎ)
+      ಐಪಿ ಸೆಟ್‌ಗಳಿಗೆ ಹೊಂದಾಣಿಕೆಯು ಮುಖ್ಯವಾಗಿ ಕರ್ನಾಟಕ ಸರ್ಕಾರದ ಸಬ್ಸಿಡಿ; ಎಲ್‌ಟಿ-4(ಎ) ಸಂಪೂರ್ಣವಾಗಿ ಹೊಂದಾಣಿಕೆಯಿಂದ ಸಂಗ್ರಹವಾಗುತ್ತದೆ.
+  - key: tariff_booklet
+    name: CESC tariff booklet
+    aliases: [tariff booklet, tariff book, tariff order 2025, kerc tariff order, cesc tariff, electricity tariff 2025]
+    en: >-
+      The CESC tariff booklet "Electricity Tariff for FY2025-26, FY2026-27 & FY2027-28" prints the retail tariff KERC
+      approved in its Tariff Order 2025 dated 27.03.2025 (corrigendum 26.05.2025, amendment 18.07.2025) for all CESC
+      consumers in Mysuru, Mandya, Chamarajanagara, Kodagu and Hassan districts: 12 LT and 10 HT categories with fixed /
+      demand and energy charges for each of the three years, and the general terms (interest on late payment, payment
+      priority, reconnection charges, power factor, ToD, rebates, electricity tax 9%, open-access charges). CESC has
+      filed Review Petition 08/2025 seeking revision for LT-4(a), industries and commercial, so those rates may
+      change. Ask "What is the LT-5 rate?", "Which category is a data centre?" or "interest on late payment".
+    kn: >-
+      ಸೆಸ್ಕ್ ಸುಂಕ ಪುಸ್ತಕ (2025-26, 2026-27, 2027-28) ಕೆಇಆರ್‌ಸಿ ಸುಂಕ ಆದೇಶ 27.03.2025ರ ದರಗಳನ್ನು ಒಳಗೊಂಡಿದೆ: 12 ಎಲ್‌ಟಿ ಮತ್ತು 10 ಎಚ್‌ಟಿ
+      ವರ್ಗಗಳು, ನಿಗದಿತ ಮತ್ತು ಇಂಧನ ಶುಲ್ಕಗಳು, ವಿಳಂಬ ಪಾವತಿ ಬಡ್ಡಿ, ಮರುಸಂಪರ್ಕ ಶುಲ್ಕ, ವಿದ್ಯುತ್ ತೆರಿಗೆ 9% ಮುಂತಾದ ನಿಯಮಗಳು.
+  - key: data_lines
+    name: LT-5(b), Free Lighting (FL) and Office Lighting (OL) lines
+    aliases: [lt-5(b), lt 5 b, lt5b, free lighting, fl lines, (fl), office lighting, ol lines, (ol), what is free lighting,
+              what is office lighting, village pan, village panchayat lines, ulb's & cc]
+    en: >-
+      The DCB sheets print some lines the CESC tariff booklet does not name separately; the booklet places each in its
+      category. LT-5(b) "Heating & Motive Power - other than BMA" is LT-5 Industrial: the booklet has only LT-5, with no
+      sub-categories; up to 2023-24 all of this division's LT-5 is printed as LT-5(b), and from 2024-25 LT-5 and LT-5(b) are billed at the same rate. "(FL) Free
+      Lighting" lines are LT-1 Domestic: a handful of installations billed at the domestic rate and paid 85-95% by the
+      Government subsidy. "(OL) Office Lighting" lines are LT-3(a) Commercial, which covers "all offices": 13-15
+      installations at the LT-3 rate, paid 99-100% by adjustment. Lines marked (i) / (ii) split a category by area: urban
+      local bodies and city corporations, and village panchayats.
+    kn: >-
+      ಡಿಸಿಬಿ ಹಾಳೆಯ ಎಲ್‌ಟಿ-5(ಬಿ) ಸಾಲುಗಳು ಸುಂಕ ಪುಸ್ತಕದ ಎಲ್‌ಟಿ-5 ಕೈಗಾರಿಕೆ ವರ್ಗ; "(FL) ಉಚಿತ ದೀಪ" ಸಾಲುಗಳು ಎಲ್‌ಟಿ-1 ಗೃಹ ಬಳಕೆ (ಹೆಚ್ಚಿನ ಮೊತ್ತ
+      ಸರ್ಕಾರದ ಸಬ್ಸಿಡಿ); "(OL) ಕಚೇರಿ ದೀಪ" ಸಾಲುಗಳು ಎಲ್‌ಟಿ-3(ಎ) ವಾಣಿಜ್ಯ ("ಎಲ್ಲಾ ಕಚೇರಿಗಳು"). (i) / (ii) ಸಾಲುಗಳು ನಗರ ಸ್ಥಳೀಯ ಸಂಸ್ಥೆ ಮತ್ತು
+      ಗ್ರಾಮ ಪಂಚಾಯಿತಿ ಪ್ರದೇಶಗಳು.

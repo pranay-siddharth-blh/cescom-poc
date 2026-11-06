@@ -1,0 +1,91 @@
+/* Building blocks used by ux.js on every page (chart cards with the Bar / Line / Doughnut toggle and its sliding thumb,
+   count-up, reveal animations, progress sweep, streaming caret, toasts). Layout and motion follow the RDPR / KPCL
+   front end; colours are the CESC website palette (navy #072577 / #151b54 / #121d81, amber #e38f00, flag yellow #ffcd00,
+   red #d82221). Each rule reads the page's own tokens first, so the chat and the dashboard pages share it. */
+.ux-card{margin:2px 0 10px;background:var(--surface,#fff);border:1px solid var(--border,#e2e6f0);border-radius:10px;padding:12px 14px 14px;
+  transition:box-shadow .25s ease,border-color .25s ease}
+.ux-card:hover{border-color:var(--border-strong,#d0d7e6);box-shadow:0 8px 24px rgba(7,37,119,.08)}
+.ux-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ux-title{font-family:var(--serif,Georgia,serif);font-size:.86rem;font-weight:600;color:var(--navy,#072577)}
+/* Bar / Line / Doughnut: a navy thumb slides under the chosen button */
+.ux-toggle{position:relative;isolation:isolate;margin-left:auto;display:inline-flex;border:1px solid var(--border-strong,#d0d7e6);border-radius:8px;overflow:hidden;background:var(--surface,#fff)}
+.ux-thumb{position:absolute;z-index:0;top:0;bottom:0;left:0;width:0;background:linear-gradient(135deg,var(--navy-mid,#121d81),var(--navy,#072577));
+  box-shadow:0 2px 8px rgba(7,37,119,.3);transition:transform .38s cubic-bezier(.3,1.25,.4,1),width .38s cubic-bezier(.3,1.25,.4,1)}
+.ux-toggle.no-anim .ux-thumb{transition:none}
+.ux-toggle button{position:relative;z-index:1;display:inline-flex;align-items:center;gap:5px;background:transparent;border:none;color:var(--muted,#5b667a);
+  font:inherit;font-size:.72rem;font-weight:700;padding:5px 11px;cursor:pointer;transition:color .25s ease,background .2s ease}
+.ux-toggle button + button{border-left:1px solid var(--border-strong,#d0d7e6)}
+.ux-toggle button svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ux-toggle button:hover{color:var(--navy,#072577);background:var(--navy-soft,#eaeefa)}
+.ux-toggle button[aria-pressed="true"]{background:transparent;color:#fff;cursor:default}
+.ux-toggle button:active{transform:scale(.95)}
+.ux-toggle button:focus-visible{outline:2px solid var(--gold,#e38f00);outline-offset:-2px}
+.ux-canvas{position:relative;height:250px}
+.chart > .ux-canvas{height:100%}
+.ux-canvas canvas{width:100% !important;height:100% !important}
+.ux-canvas svg{width:100%;height:100%}
+.ux-canvas svg text{fill:var(--muted,#5b667a);font-size:11px}
+.ux-canvas.swap{animation:uxFade .35s ease both}
+.ux-rings{margin-top:6px;font-size:.72rem;font-weight:600;color:var(--muted,#5b667a);text-align:center}
+@media(max-width:480px){ .ux-canvas{height:210px} .ux-toggle button{padding:5px 8px} .ux-toggle button span{display:none} }
+
+/* entrance animations */
+.ux-reveal{animation:uxRise .45s ease both}
+.ux-stagger > *{animation:uxRise .45s ease both}
+.ux-stagger > *:nth-child(2){animation-delay:.06s}.ux-stagger > *:nth-child(3){animation-delay:.12s}
+.ux-stagger > *:nth-child(4){animation-delay:.18s}.ux-stagger > *:nth-child(5){animation-delay:.24s}.ux-stagger > *:nth-child(6){animation-delay:.3s}
+.ux-stagger > *:nth-child(7){animation-delay:.36s}.ux-stagger > *:nth-child(8){animation-delay:.42s}
+.ux-onscroll{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
+.ux-onscroll.in{opacity:1;transform:none}
+@keyframes uxRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes uxFade{from{opacity:0}to{opacity:1}}
+
+/* waiting: an indeterminate sweep */
+.ux-sweep{height:2px;border-radius:2px;background:var(--navy-soft,#eaeefa);overflow:hidden;position:relative;margin-bottom:9px}
+.ux-sweep::after{content:"";position:absolute;top:0;bottom:0;left:-35%;width:35%;
+  background:linear-gradient(90deg,transparent,var(--gold,#e38f00),transparent);animation:uxSweep 1.3s ease-in-out infinite}
+@keyframes uxSweep{to{left:100%}}
+
+/* streaming: a caret after the text being typed out */
+.ux-streaming > :last-child::after{content:"";display:inline-block;width:2px;height:1.05em;margin-left:2px;vertical-align:-3px;
+  background:var(--gold,#e38f00);animation:uxBlink 1s steps(1) infinite}
+.ux-streaming > ul:last-child::after{content:none}
+.ux-streaming > ul:last-child > li:last-child::after{content:"";display:inline-block;width:2px;height:1.05em;margin-left:2px;
+  vertical-align:-3px;background:var(--gold,#e38f00);animation:uxBlink 1s steps(1) infinite}
+@keyframes uxBlink{50%{opacity:0}}
+
+/* button states (download / view): spinner while busy, tick when done */
+.ux-busy{cursor:progress !important;opacity:.8}
+.ux-busy .ux-ico{animation:uxSpin .8s linear infinite}
+.ux-ico{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.ux-badge{font-size:.56rem;font-weight:800;letter-spacing:.6px;padding:1px 5px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--gold,#e38f00),var(--gold-deep,#9a5b00))}
+@keyframes uxSpin{to{transform:rotate(360deg)}}
+
+/* tables: row hover */
+.ux-hover tbody tr:hover td{background:var(--gold-soft,#fff6e0)}
+
+/* toast (pages without the shell's own) */
+.ux-toast{position:fixed;left:50%;bottom:26px;z-index:90;display:flex;align-items:center;gap:10px;max-width:min(92vw,520px);width:max-content;
+  padding:11px 18px;border-radius:999px;background:linear-gradient(135deg,var(--navy-mid,#121d81),var(--navy-deep,#151b54));color:#fff;font-size:.82rem;font-weight:600;
+  box-shadow:0 14px 34px rgba(21,27,84,.35);transform:translate(-50%,24px);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+.ux-toast.on{opacity:1;transform:translate(-50%,0)}
+.ux-toast b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--gold-bright,#ffcd00);color:var(--navy-deep,#151b54);font-size:.7rem}
+.ux-toast.err{background:linear-gradient(135deg,#b81c1b,#8a1514)}
+.ux-toast.err b{background:#fff;color:#b81c1b}
+
+.ux-spark{height:38px;margin-top:8px}
+.ux-spark canvas{width:100% !important;height:100% !important}
+.ux-num{font-variant-numeric:tabular-nums}
+.ux-grow{transition:width .9s cubic-bezier(.2,.8,.2,1),left .9s cubic-bezier(.2,.8,.2,1)}
+
+/* high contrast (the chat's body.hc) */
+body.hc .ux-thumb{background:#000;box-shadow:none}
+body.hc .ux-sweep::after{background:#000}
+
+@media (prefers-reduced-motion: reduce){
+  .ux-reveal,.ux-stagger > *,.ux-canvas.swap{animation:none}
+  .ux-onscroll{opacity:1;transform:none;transition:none}
+  .ux-sweep::after{display:none}
+  .ux-streaming > :last-child::after,.ux-streaming > ul:last-child > li:last-child::after{animation:none}
+  .ux-grow,.ux-thumb{transition:none}
+}

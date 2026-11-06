@@ -3,559 +3,258 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DCB Dashboard — CESC, Mysore</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231a2f5c'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+<title>DCB Dashboard — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="preload" href="/static/vendor/fonts/NotoSans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/vendor/fonts/NotoSans-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/vendor/fonts/NotoSerif-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
+<link rel="stylesheet" href="/static/ux.css?v=20261005j">
+<link rel="stylesheet" href="/static/report-viewer.css?v=20261005j">
 <style>
-  /*
-    Same palette as app/static/chat.html (sampled from the CESC logo
-    files, WCAG-checked) -- kept in sync deliberately so the dashboard
-    and the chat page read as one product, not two. If chat.html's
-    :root block ever changes, mirror the change here too.
-  */
-  :root{
-    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
-    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
-    --bg:#f6f7f9; --surface:#ffffff;
-    --ink:#1c2430; --muted:#4b5563; --border:#d7dce4;
-    --good:#2f9e58; --good-soft:#e7f6ec;
-    --warn:#8a5a00; --warn-bg:#fff6e6; --warn-border:#f0dca0;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
-       background:var(--bg);color:var(--ink);height:100vh;overflow:hidden}
-  a{color:inherit}
-  button{font-family:inherit}
+  /* The original Cescom dashboard arrangement in the RDPR / KPCL look */
+  .top-area{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch}
+  .top-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .top-left .kpis{margin:0}
+  .top-left .top-charts{flex:1;margin:0}
+  .top-charts .chart{min-height:250px}
+  .kpi .top .t{flex:1}
+  .kpi .top .dl{flex:0 0 auto}
+  .kpi .top .dl:empty{display:none}
+  /* Total Demand: the navy feature card (KPCL / RDPR hero colours) */
+  .kpi.feature{color:#fff;border:none;
+    background:radial-gradient(circle at 100% 0%,rgba(255,205,0,.26),transparent 45%),radial-gradient(circle at 0% 100%,rgba(34,113,160,.45),transparent 55%),
+      linear-gradient(135deg,var(--navy-mid) 0%,var(--navy) 50%,var(--navy-deep) 100%);box-shadow:0 12px 30px rgba(7,37,119,.25)}
+  .kpi.feature::before{background:var(--gold-bright)}
+  .kpi.feature .ico{background:rgba(255,255,255,.12)} .kpi.feature .ico svg{stroke:var(--on-navy)}
+  .kpi.feature .t{color:rgba(255,255,255,.85)}
+  .kpi.feature .v{color:#fff} .kpi.feature .v small{color:var(--on-navy)}
+  .kpi.feature .foot{color:rgba(255,255,255,.75)}
+  .kpi.feature .chip.up{background:rgba(70,211,138,.18);color:#86f2b9} .kpi.feature .chip.down{background:rgba(255,122,107,.2);color:#ffb3a9}
+  /* Sub-divisions: clickable rows with a collected / outstanding bar (old Cescom §9.7-9.12) */
+  .sd-panel{display:flex;flex-direction:column}
+  .sd-list{display:flex;flex-direction:column;gap:6px;flex:1}
+  .sd-row{position:relative;display:flex;flex-direction:column;gap:7px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:11px;
+    padding:10px 10px 11px 12px;cursor:pointer;font:inherit;color:var(--ink);transition:background .15s ease,border-color .15s ease,transform .15s ease}
+  .sd-row::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--gold);transform:scaleY(0);transition:transform .18s ease}
+  .sd-row:hover{background:var(--paper);border-color:var(--border)}
+  .sd-row:hover::before,.sd-row.sel::before{transform:scaleY(1)}
+  .sd-row.sel{background:var(--navy-soft);border-color:#d6ddf3}
+  .sd-top{display:flex;align-items:center;gap:10px}
+  .sd-ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff}
+  .sd-main{flex:1;min-width:0}
+  .sd-name{display:block;font-size:.86rem;font-weight:700;color:var(--navy)}
+  .sd-sub{display:block;font-size:.7rem;color:var(--muted);line-height:1.4;margin-top:1px}
+  .sd-eff{flex:0 0 auto;font-family:var(--serif);font-weight:700;font-size:.95rem;font-variant-numeric:tabular-nums}
+  .sd-row .split{width:auto;margin:0 0 0 44px;height:8px}
+  .sd-row .split.nodata{background:var(--border)}
+  .sd-key{display:flex;gap:14px;flex-wrap:wrap;font-size:.68rem;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .sd-key span{display:inline-flex;align-items:center;gap:6px}
+  .sd-key i{width:12px;height:6px;border-radius:3px;display:inline-block}
+  .sd-key i.c{background:var(--good)} .sd-key i.o{background:var(--bad)}
+  /* Top tariff categories (old Cescom rows) */
+  .tr-list{display:flex;flex-direction:column;gap:4px}
+  .tr-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px;transition:background .15s ease}
+  .tr-row:hover{background:var(--gold-soft)}
+  .tr-ic{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--navy-soft);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800}
+  .tr-main{flex:1;min-width:0}
+  .tr-title{display:block;font-size:.82rem;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tr-title span{font-weight:500;color:var(--muted)}
+  .tr-sub{display:block;font-size:.7rem;color:var(--muted);margin-top:1px}
 
-  /* ---------- Overall shell: sidebar + main column ---------- */
-  .dash-shell{display:flex;height:100vh}
+  /* First screen: on a laptop / desktop the KPI cards, Demand trend, Collection efficiency and Sub-divisions fit the
+     window (dashboard.js sets the height; the rest of the page follows below as usual) */
+  .top-area.fit .top-left{height:100%}
+  .top-area.fit .top-charts{flex:1 1 0;min-height:0}
+  .top-area.fit .top-charts > .panel{min-height:0;display:flex;flex-direction:column}
+  .top-area.fit .top-charts .chart{flex:1 1 0;min-height:0;height:auto}
+  .top-area.fit .donut-wrap{min-height:0}
+  .top-area.fit .donut-box{width:min(170px,100%);height:auto;aspect-ratio:1;max-height:100%}
+  .top-area.fit .sd-panel{min-height:0;overflow:hidden}
+  .top-area.fit .sd-list{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;justify-content:space-between}
+  .top-area .kpi .spark{height:30px}
+  .top-area .kpi{padding:13px 15px 9px}
+  .top-area .kpi .v{margin:8px 0 3px}
+  .sd-row{gap:6px;padding:8px 10px 9px 12px}
+  .sd-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sd-ic{width:32px;height:32px}
+  .sd-row .split{margin-left:42px}
+  #demandHead,#liveHead{flex-wrap:wrap;row-gap:2px} #demandHead .ux-toggle,#liveHead .ux-toggle{flex:0 0 auto;margin-left:auto}
+  #demandHead .hint,#liveHead .hint{flex-basis:100%;order:3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  /* ---------- Sidebar ---------- */
-  .dash-sidebar{width:250px;flex:0 0 auto;background:var(--surface);border-right:1px solid var(--border);
-                display:flex;flex-direction:column;padding:20px 16px;overflow-y:auto}
-  .brand{display:flex;align-items:center;gap:10px;padding:2px 6px 20px}
-  .brand img{height:34px;width:auto}
-  .brand-name{font-weight:700;color:var(--navy);font-size:1.02rem}
-  .brand-sub{font-size:.68rem;color:var(--muted);margin-top:1px}
-  .nav-heading{font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
-               font-weight:700;padding:14px 10px 6px}
-  .nav-list{display:flex;flex-direction:column;gap:2px}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
-            font-size:.86rem;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;
-            border:none;background:none;width:100%;text-align:left}
-  .nav-item svg{flex:0 0 auto;width:18px;height:18px;stroke:var(--muted);fill:none}
-  .nav-item:hover{background:var(--navy-soft)}
-  .nav-item.active{background:var(--navy);color:#fff}
-  .nav-item.active svg{stroke:#fff}
-  .nav-item[disabled]{cursor:default;opacity:.55}
-  .nav-item[disabled]:hover{background:none}
-
-  .sidebar-promo{margin-top:auto;background:var(--navy-deep);color:#fff;border-radius:14px;
-                 padding:16px 14px;display:flex;flex-direction:column;gap:8px;position:relative}
-  .sidebar-promo-icon{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.14);
-                       display:flex;align-items:center;justify-content:center}
-  .sidebar-promo-icon svg{width:18px;height:18px;stroke:#fff;fill:none}
-  .sidebar-promo h4{margin:2px 0 0;font-size:.86rem;font-weight:700}
-  .sidebar-promo p{margin:0;font-size:.72rem;line-height:1.4;color:rgba(255,255,255,.8)}
-  .sidebar-promo a.btn{display:inline-block;margin-top:4px;background:#fff;color:var(--navy-deep);
-                        font-size:.74rem;font-weight:700;padding:6px 10px;border-radius:7px;
-                        text-decoration:none;text-align:center}
-  .sidebar-promo .docs-link{position:absolute;left:14px;bottom:-11px;background:var(--surface);
-                             border:1px solid var(--border);color:var(--navy);font-size:.68rem;
-                             font-weight:700;padding:4px 9px;border-radius:20px;text-decoration:none}
-
-  /* ---------- Main column ---------- */
-  .dash-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-y:auto}
-  .dash-topbar{flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:14px 26px;
-               background:var(--surface);border-bottom:1px solid var(--border)}
-  .drawer-toggle{display:none;background:var(--surface);border:1px solid var(--border);color:var(--navy);
-                 border-radius:7px;padding:6px 9px;cursor:pointer}
-  .search-box{flex:1;max-width:360px;display:flex;align-items:center;gap:8px;background:var(--bg);
-              border:1px solid var(--border);border-radius:9px;padding:8px 12px}
-  .search-box svg{width:16px;height:16px;stroke:var(--muted);fill:none;flex:0 0 auto}
-  .search-box input{border:none;background:none;outline:none;font-size:.84rem;width:100%;color:var(--ink)}
-  .topbar-icons{display:flex;align-items:center;gap:14px;margin-left:auto}
-  .icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;position:relative}
-  .icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none}
-  .user-chip{display:flex;align-items:center;gap:10px;padding-left:14px;border-left:1px solid var(--border)}
-  .user-avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;
-               display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem}
-  .user-name{font-size:.82rem;font-weight:700;color:var(--ink)}
-  .user-email{font-size:.7rem;color:var(--muted)}
-  #logoutBtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;
-             text-decoration:underline;padding:0}
-
-  .dash-content{flex:1;padding:22px 26px 90px;max-width:1180px;width:100%;margin:0 auto}
-  .dash-heading-row{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-  .dash-heading-row h1{margin:0;font-size:1.5rem;color:var(--ink)}
-  .dash-heading-row .sub{margin:4px 0 0;font-size:.84rem;color:var(--muted)}
-  .heading-actions{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
-  .btn-outline, .btn-solid{font-size:.8rem;font-weight:700;padding:9px 15px;border-radius:8px;cursor:pointer;
-                            text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-  .btn-outline{background:var(--surface);border:1px solid var(--border);color:var(--navy)}
-  .btn-outline:hover{background:var(--navy-soft)}
-  .btn-solid{background:var(--navy);border:1px solid var(--navy);color:#fff}
-  .btn-solid:hover{background:var(--navy-deep)}
-
-  /* ---------- KPI row ---------- */
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
-  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
-  .kpi-card.highlight{background:var(--navy);border-color:var(--navy);color:#fff}
-  .kpi-top{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;font-weight:700}
-  .kpi-card.highlight .kpi-top{color:rgba(255,255,255,.85)}
-  .kpi-card:not(.highlight) .kpi-top{color:var(--muted)}
-  .kpi-value{font-size:1.5rem;font-weight:800;margin:10px 0 6px}
-  .kpi-delta{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;
-             padding:3px 7px;border-radius:20px}
-  .kpi-delta.up-good{background:var(--good-soft);color:var(--good)}
-  .kpi-card.highlight .kpi-delta.up-good{background:rgba(255,255,255,.18);color:#fff}
-  .kpi-delta.up-bad{background:var(--red-soft);color:var(--red)}
-  .kpi-delta.flat{background:var(--navy-soft);color:var(--navy)}
-
-  /* ---------- Generic panel card ---------- */
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;
-         display:flex;flex-direction:column;min-width:0}
-  .panel-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-  .panel-head h3{margin:0;font-size:.92rem;color:var(--ink)}
-  .panel-head .hint{margin-left:auto;font-size:.7rem;color:var(--muted)}
-
-  .row-3col{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:16px;margin-bottom:16px}
-
-  /* Demand trend bar chart */
-  .chart-box{flex:1;min-height:200px;position:relative}
-  .chart-box canvas{width:100% !important;height:100% !important}
-
-  /* Ask-AI reminder-style card */
-  .ask-ai-card{background:var(--navy-soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
-  .ask-ai-card p{margin:0;font-size:.82rem;color:var(--navy);font-weight:600;line-height:1.4}
-  .ask-ai-card .example-q{font-size:.76rem;color:var(--muted);font-style:italic}
-  .ask-ai-card .btn-solid{align-self:flex-start;margin-top:4px}
-
-  /* Sub-divisions / tariff list rows */
-  .list-rows{display:flex;flex-direction:column;gap:8px}
-  .list-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:8px}
-  .list-row:hover{background:var(--bg)}
-  .row-icon{width:32px;height:32px;border-radius:9px;background:var(--navy-soft);color:var(--navy);
-            display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex:0 0 auto}
-  .row-main{flex:1;min-width:0}
-  .row-title{font-size:.82rem;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .row-sub{font-size:.7rem;color:var(--muted)}
-  .row-badge{font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:20px;flex:0 0 auto}
-  .badge-good{background:var(--good-soft);color:var(--good)}
-  .badge-warn{background:var(--warn-bg);color:var(--warn)}
-  .badge-bad{background:var(--red-soft);color:var(--red)}
-
-  /* Donut */
-  .donut-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative}
-  .donut-canvas-box{position:relative;width:140px;height:140px}
-  .donut-canvas-box canvas{width:140px !important;height:140px !important}
-  .donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .donut-label .pct{font-size:1.3rem;font-weight:800;color:var(--ink)}
-  .donut-label .cap{font-size:.64rem;color:var(--muted)}
-  .donut-legend{display:flex;gap:14px;font-size:.72rem;color:var(--muted)}
-  .donut-legend span{display:inline-flex;align-items:center;gap:5px}
-  .legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-
-  /* Data integrity tile */
-  .integrity-tile{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-                   gap:8px;text-align:center;background:var(--good-soft);border-radius:10px;padding:14px}
-  .integrity-tile svg{width:30px;height:30px;stroke:var(--good);fill:none}
-  .integrity-tile .big{font-size:1.25rem;font-weight:800;color:var(--good)}
-  .integrity-tile .cap{font-size:.7rem;color:var(--muted);line-height:1.4}
-
-  /* Floating refresh button */
-  .fab{position:fixed;right:24px;bottom:24px;width:52px;height:52px;border-radius:50%;background:var(--navy);
-       color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;
-       box-shadow:0 6px 18px rgba(16,32,63,.25)}
-  .fab svg{width:22px;height:22px;stroke:#fff;fill:none}
-  .fab.spinning svg{animation:spin .8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  .load-error{background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);
-              border-radius:10px;padding:12px 14px;font-size:.84rem;margin-bottom:16px}
-  .skeleton{color:var(--muted);font-size:.82rem;padding:20px 4px}
-
-  .drawer-backdrop{display:none}
-
-  @media(max-width:1100px){
-    .row-3col{grid-template-columns:1fr 1fr}
-    .row-3col .panel:first-child{grid-column:1 / -1}
-  }
-  @media(max-width:860px){
-    .kpi-row{grid-template-columns:1fr 1fr}
-  }
-  @media(max-width:760px){
-    .drawer-toggle{display:inline-flex;align-items:center}
-    .search-box{max-width:none}
-    .dash-sidebar{position:fixed;top:0;bottom:0;left:0;width:260px;z-index:40;
-                  transform:translateX(-100%);transition:transform .2s ease;box-shadow:0 0 24px rgba(16,32,63,.18)}
-    body.sidebar-open .dash-sidebar{transform:translateX(0)}
-    body.sidebar-open .drawer-backdrop{display:block;position:fixed;inset:0;background:rgba(16,32,63,.35);z-index:30}
-    .row-3col{grid-template-columns:1fr}
-    .row-3col .panel:first-child{grid-column:auto}
-    .kpi-row{grid-template-columns:1fr 1fr}
-    .user-name,.user-email{display:none}
-  }
-  @media(max-width:480px){
-    .kpi-row{grid-template-columns:1fr}
-    .dash-content{padding:16px 14px 90px}
-    .dash-topbar{padding:12px 14px}
-  }
+  /* The heading keeps one height in every view (division or any sub-division), so the dashboard never moves when a
+     sub-division is clicked: one line each for the eyebrow (with the back button), the title and the sub-line, and
+     the action buttons on the same row, never wrapping. */
+  .dash-head{flex-wrap:nowrap;align-items:flex-end}
+  .dash-titles{flex:1 1 auto;min-width:0}
+  .eyebrow-row{display:flex;align-items:center;gap:10px;height:24px}
+  .eyebrow-row .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .eyebrow-row .btn-back{flex:0 0 auto;margin:0;padding:3px 10px;font-size:.7rem;border-radius:999px;animation:fade .25s ease both}
+  .eyebrow-row .btn-back svg{width:12px;height:12px}
+  .dash-head h1{margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dash-head .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dash-head .head-actions{flex:0 0 auto;flex-wrap:nowrap;margin-left:16px}
+  @media(max-width:1100px){ .dash-head{flex-wrap:wrap} .dash-head .head-actions{flex-wrap:wrap;margin-left:auto} }
+  @media(max-width:700px){ .dash-head h1,.dash-head .sub{white-space:normal} .dash-head .head-actions{margin-left:0} }
+  @media(max-width:1100px){ .top-area{grid-template-columns:1fr} }
 </style>
 </head>
-<body>
-
-<div class="drawer-backdrop" id="drawerBackdrop"></div>
-
-<div class="dash-shell">
-  <aside class="dash-sidebar" id="sidebar">
-    <div class="brand">
-      <img src="/static/cescom_official_logo.png" alt="">
-      <div>
-        <div class="brand-name">DCB Insights</div>
-        <div class="brand-sub">Holenarasipura Division</div>
-      </div>
+<body data-page="dashboard">
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
     </div>
+    <div class="overlay-text"><b>DCB Dashboard</b><small data-i18n="loading">Loading the latest figures</small></div>
+  </div>
 
-    <div class="nav-heading">Menu</div>
-    <div class="nav-list">
-      <button type="button" class="nav-item active">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        Dashboard
-      </button>
-      <a href="/chat" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.5 8.7 8.7 0 0 1-3.8-.8L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.9 3a8.5 8.5 0 0 1 8.1 8.5z"/></svg>
-        Ask DCB AI
-      </a>
-      <div class="nav-item" id="subdivisionsNavLink">
-        <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-        Sub-Divisions
-      </div>
-      <div class="nav-item" id="tariffNavLink">
-        <svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
-        Tariff Categories
-      </div>
-    </div>
-
-    <div class="nav-heading">General</div>
-    <div class="nav-list">
-      <button type="button" class="nav-item" disabled title="Not part of this POC">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-        Settings
-      </button>
-      <a href="/docs" target="_blank" class="nav-item">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.2 1.9-2.5 3.5"/><path d="M12 17h.01"/></svg>
-        Help
-      </a>
-      <button type="button" class="nav-item" id="logoutNavBtn">
-        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        Logout
-      </button>
-    </div>
-
-    <div class="sidebar-promo">
-      <div class="sidebar-promo-icon">
-        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.5 8.7 8.7 0 0 1-3.8-.8L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.9 3a8.5 8.5 0 0 1 8.1 8.5z"/></svg>
-      </div>
-      <h4>Have a question about these numbers?</h4>
-      <p>Ask in plain English — real SQL against the real database, every time.</p>
-      <a class="btn" href="/chat">Open chat</a>
-      <a class="docs-link" href="/docs" target="_blank">↗ API docs</a>
-    </div>
-  </aside>
-
-  <div class="dash-main">
-    <div class="dash-topbar">
-      <button type="button" class="drawer-toggle" id="sidebarToggle">
-        <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <div class="search-box">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchBox" placeholder="Search sub-divisions or tariff codes…" autocomplete="off">
-      </div>
-      <div class="topbar-icons">
-        <button class="icon-btn" title="Not wired up in this POC">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" style="display:none"/><path d="M22 6 12 13 2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
-        </button>
-        <button class="icon-btn" title="Not wired up in this POC">
-          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-        </button>
-        <div class="user-chip">
-          <div class="user-avatar" id="userAvatar">…</div>
-          <div>
-            <div class="user-name" id="userName">Signed in</div>
-            <div class="user-email">DCB Dashboard access</div>
-          </div>
-        </div>
-        <button id="logoutBtn">Log out</button>
-      </div>
-    </div>
-
-    <div class="dash-content">
-      <div class="dash-heading-row">
-        <div>
-          <h1>Dashboard</h1>
-          <p class="sub" id="fyLine">Demand, Collection &amp; Balance — Holenarasipura Division</p>
-        </div>
-        <div class="heading-actions">
-          <a class="btn-outline" href="/chat">Ask a question</a>
-          <button class="btn-solid" id="refreshBtn">↻ Refresh data</button>
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru">
+        <span class="brand-divider"></span>
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
         </div>
       </div>
-
-      <div id="errorBanner" class="load-error" hidden></div>
-      <div id="skeleton" class="skeleton">Loading dashboard data…</div>
-
-      <div id="dashBody" hidden>
-        <div class="kpi-row">
-          <div class="kpi-card highlight">
-            <div class="kpi-top">Total Demand <span id="kpiDemandDelta"></span></div>
-            <div class="kpi-value" id="kpiDemand">—</div>
-            <div style="font-size:.72rem;color:rgba(255,255,255,.75)">This fiscal year</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-top">Total Collection <span id="kpiCollectionDelta"></span></div>
-            <div class="kpi-value" id="kpiCollection">—</div>
-            <div style="font-size:.72rem;color:var(--muted)">This fiscal year</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-top">Outstanding Balance <span id="kpiBalanceDelta"></span></div>
-            <div class="kpi-value" id="kpiBalance">—</div>
-            <div style="font-size:.72rem;color:var(--muted)">Arrears carried forward</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-top">Collection Efficiency <span id="kpiEfficiencyDelta"></span></div>
-            <div class="kpi-value" id="kpiEfficiency">—</div>
-            <div style="font-size:.72rem;color:var(--muted)">Collection ÷ demand</div>
-          </div>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
         </div>
+        <div class="user-chip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"><b>DCB · Demand, Collection &amp; Balance</b></div>
+      <a class="ai-badge ai-link" href="/chat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></a>
+    </div>
+    <div class="flag-rule"></div>
+  </header>
 
-        <div class="row-3col">
-          <div class="panel">
-            <div class="panel-head"><h3>Demand trend</h3><span class="hint">All 11 fiscal years, division total</span></div>
-            <div class="chart-box"><canvas id="demandChart"></canvas></div>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav" id="siteNav"></nav>
+      <div class="side-status" id="sideStatus" aria-live="polite"></div>
+      <p class="side-foot"><span data-i18n="sideFoot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</span> <a href="/docs" target="_blank" rel="noopener" id="apiDocsLink" hidden>API docs ↗</a></p>
+    </aside>
+
+    <div class="main" id="main">
+      <div class="content">
+        <div class="head dash-head">
+          <div class="dash-titles">
+            <div class="eyebrow-row"><span class="eyebrow" id="eyebrow">Dashboard</span>
+              <button type="button" class="btn btn-back" id="backToGeneralBtn" hidden><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><span>All sub-divisions</span></button></div>
+            <h1 id="dashTitle">Dashboard</h1>
+            <p class="sub" id="fyLine"></p>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>Ask DCB AI</h3></div>
-            <div class="ask-ai-card">
-              <p>Curious about a specific sub-division or tariff code?</p>
-              <div class="example-q">"Compare LT-1 vs HT-2 demand across all years"</div>
-              <a class="btn-solid" href="/chat">Ask now</a>
+          <div class="head-actions">
+            <div class="mis" id="mis">
+              <button type="button" class="btn mis-view" id="misView" title="View the Excel MIS report of what is on screen">
+                <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span>
+              </button>
+              <button type="button" class="btn mis-main" id="misReportBtn" title="Download what is on screen as an Excel MIS report">
+                <span class="mis-ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path class="arrow" d="M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg></span>
+                <span>MIS report</span><span class="tag">XLSX</span>
+              </button>
             </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>Sub-divisions</h3></div>
-            <div class="list-rows" id="subdivisionRows"></div>
+            <a class="btn btn-ai ai-link" href="/chat" id="askAiBtn"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span>Ask AI about this</span></a>
           </div>
         </div>
 
-        <div class="row-3col">
-          <div class="panel">
-            <div class="panel-head"><h3>Top tariff categories</h3><span class="hint">By demand, this fiscal year</span></div>
-            <div class="list-rows" id="tariffRows"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>Collection efficiency</h3></div>
-            <div class="donut-wrap">
-              <div class="donut-canvas-box">
-                <canvas id="efficiencyDonut"></canvas>
-                <div class="donut-label"><span class="pct" id="donutPct">—</span><span class="cap">collected</span></div>
-              </div>
-              <div class="donut-legend">
-                <span><i class="legend-dot" style="background:var(--navy)"></i>Collected</span>
-                <span><i class="legend-dot" style="background:var(--navy-soft);border:1px solid var(--border)"></i>Outstanding</span>
-              </div>
+        <div id="errorBanner" class="error" hidden></div>
+        <div id="skeleton"><div class="sk-hero"><div class="skeleton"></div><div class="skeleton"></div></div><div class="sk-row"><div class="skeleton"></div><div class="skeleton"></div></div></div>
+
+        <div id="dashBody" hidden>
+          <!-- The original Cescom arrangement (CLAUDE.md §9.8-9.12, §13.10): the KPI cards with Demand trend and Collection
+               efficiency under them on the left, the clickable Sub-divisions panel on the right; then Top tariff categories
+               beside Live installations; then the DCB indicators. Only the look is the RDPR / KPCL one. -->
+          <section class="top-area">
+            <div class="top-left">
+              <section class="kpis" id="kpis" data-n="3">
+                <div class="kpi feature">
+                  <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></span><span class="t">Total Demand</span><span class="dl" id="kpiDemandDelta"></span></div>
+                  <div class="v"><span id="kpiDemand">—</span><small>₹ Cr</small></div>
+                  <div class="foot" id="kpiDemandFoot"></div>
+                  <div class="spark"><canvas id="sparkDemand"></canvas></div>
+                </div>
+                <div class="kpi" style="--accent:#1f9d57;--accent-soft:#e5f5ec">
+                  <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span><span class="t">Total Collection</span><span class="dl" id="kpiCollectionDelta"></span></div>
+                  <div class="v"><span id="kpiCollection">—</span><small>₹ Cr</small></div>
+                  <div class="foot" id="kpiCollectionFoot"></div>
+                  <div class="spark"><canvas id="sparkCollection"></canvas></div>
+                </div>
+                <div class="kpi" style="--accent:#d82221;--accent-soft:#fdeceb">
+                  <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.2"/></svg></span><span class="t">Outstanding Balance</span><span class="dl" id="kpiBalanceDelta"></span></div>
+                  <div class="v"><span id="kpiBalance">—</span><small>₹ Cr</small></div>
+                  <div class="foot" id="kpiBalanceFoot"></div>
+                  <div class="spark"><canvas id="sparkBalance"></canvas></div>
+                </div>
+              </section>
+              <section class="grid g-2-1 top-charts">
+                <div class="panel">
+                  <div class="panel-head" id="demandHead"><h3>Demand trend</h3><span class="hint" id="demandHint">All 11 fiscal years, division total</span></div>
+                  <div class="chart" id="demandBox"></div>
+                </div>
+                <div class="panel">
+                  <div class="panel-head"><h3>Collection efficiency</h3><div class="right"><span class="asof" id="effAsof"></span></div></div>
+                  <div class="donut-wrap">
+                    <div class="donut-box"><canvas id="efficiencyDonut"></canvas><div class="donut-label"><b><span id="donutPct">—</span>%</b><span>collected</span></div></div>
+                    <div class="legend"><span><i style="background:#072577;height:10px;width:10px;border-radius:3px"></i>Collected</span><span><i style="background:#e2e6f0;height:10px;width:10px;border-radius:3px"></i>Outstanding</span></div>
+                  </div>
+                </div>
+              </section>
             </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>Data integrity</h3></div>
-            <div class="integrity-tile">
-              <svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
-              <div class="big">0.0% deviation</div>
-              <div class="cap">Locked 4-stage pipeline, reconciled against the source workbook (see CLAUDE.md §5.1)</div>
+            <div class="panel sd-panel">
+              <div class="panel-head"><h3>Sub-divisions</h3><span class="hint">Click one for its own dashboard</span></div>
+              <div class="sd-list" id="subdivisionRows"></div>
+              <div class="sd-key"><span><i class="c"></i>Collected</span><span><i class="o"></i>Outstanding this year</span></div>
             </div>
-          </div>
+          </section>
+
+          <section class="grid g-1-2">
+            <div class="panel">
+              <div class="panel-head"><h3>Top tariff categories</h3><span class="hint">By demand, this fiscal year</span></div>
+              <div class="tr-list" id="tariffRows"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head" id="liveHead"><h3>Live installations</h3><span class="hint" id="liveHint">All 11 fiscal years, division total</span></div>
+              <div class="chart" id="liveBox"></div>
+            </div>
+          </section>
+
+          <section class="grid g-3">
+            <div class="panel">
+              <div class="panel-head"><h3>DCB at a glance (%)</h3><span class="hint" id="indYear"></span></div>
+              <div class="ind-list" id="indPct"></div>
+              <div class="ind-per" id="indPer"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>FPPCA</h3><span class="hint">Fuel &amp; power purchase cost adjustment (FAC)</span></div>
+              <div class="ind-stats" id="indFppca"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Meters: MNR &amp; DC</h3><span class="hint">Installations</span></div>
+              <div class="ind-stats" id="indMeters"></div>
+              <p class="ind-note" id="indMetersNote"></p>
+            </div>
+          </section>
+          <p class="foot-note">Figures come from fixed, read-only queries on the checked DCB data mart, built from the CESC Holenarasipura Division DCB statements (FY 2015-16 to 2025-26). Tariff categories follow the CESC tariff booklet. Proof of concept, not for official use.</p>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<button class="fab" id="refreshFab" title="Refresh dashboard data">
-  <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
-</button>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
-<script>
-const INR_CR = 10000000; // 1 crore
-
-function formatCr(value){
-  if (value === null || value === undefined) return "—";
-  return "₹" + (value / INR_CR).toLocaleString("en-IN", {maximumFractionDigits: 2}) + " Cr";
-}
-function formatInt(value){
-  if (value === null || value === undefined) return "—";
-  return Math.round(value).toLocaleString("en-IN");
-}
-function deltaBadge(pct, goodDirectionIsUp){
-  if (pct === null || pct === undefined) return "";
-  const isUp = pct >= 0;
-  const isGood = goodDirectionIsUp ? isUp : !isUp;
-  const cls = isGood ? "up-good" : "up-bad";
-  const arrow = isUp ? "▲" : "▼";
-  return `<span class="kpi-delta ${cls}">${arrow} ${Math.abs(pct).toFixed(1)}%</span>`;
-}
-function effBadgeClass(pct){
-  if (pct === null || pct === undefined) return "badge-warn";
-  if (pct >= 95) return "badge-good";
-  if (pct >= 90) return "badge-warn";
-  return "badge-bad";
-}
-
-let demandChart, efficiencyDonut;
-
-async function loadDashboard(){
-  const skeleton = document.getElementById('skeleton');
-  const errorBanner = document.getElementById('errorBanner');
-  const body = document.getElementById('dashBody');
-  const fab = document.getElementById('refreshFab');
-  fab.classList.add('spinning');
-  errorBanner.hidden = true;
-
-  try {
-    const meResp = await fetch('/api/me');
-    if (meResp.status === 401){ window.location.href = '/login'; return; }
-    const me = await meResp.json();
-    document.getElementById('userName').textContent = me.username;
-    document.getElementById('userAvatar').textContent = (me.username || '?').slice(0,1).toUpperCase();
-
-    const resp = await fetch('/api/dashboard_summary');
-    if (resp.status === 401){ window.location.href = '/login'; return; }
-    if (!resp.ok) throw new Error('Server returned ' + resp.status);
-    const data = await resp.json();
-    render(data);
-    skeleton.hidden = true;
-    body.hidden = false;
-  } catch (err) {
-    errorBanner.textContent = 'Could not load dashboard data: ' + err.message;
-    errorBanner.hidden = false;
-    skeleton.hidden = true;
-  } finally {
-    fab.classList.remove('spinning');
-  }
-}
-
-function render(data){
-  document.getElementById('fyLine').textContent =
-    `Demand, Collection & Balance — Holenarasipura Division · FY ${data.fiscal_year}`;
-
-  const k = data.kpis;
-  document.getElementById('kpiDemand').textContent = formatCr(k.total_demand);
-  document.getElementById('kpiDemandDelta').innerHTML = deltaBadge(k.total_demand_yoy_pct, true);
-  document.getElementById('kpiCollection').textContent = formatCr(k.total_collection);
-  document.getElementById('kpiCollectionDelta').innerHTML = deltaBadge(k.total_collection_yoy_pct, true);
-  document.getElementById('kpiBalance').textContent = formatCr(k.outstanding_balance);
-  document.getElementById('kpiBalanceDelta').innerHTML = deltaBadge(k.outstanding_balance_yoy_pct, false);
-  document.getElementById('kpiEfficiency').textContent = (k.collection_efficiency_pct ?? '—') + '%';
-  const effDeltaPts = (k.collection_efficiency_pct != null && k.collection_efficiency_prev_pct != null)
-    ? Math.round((k.collection_efficiency_pct - k.collection_efficiency_prev_pct) * 10) / 10 : null;
-  document.getElementById('kpiEfficiencyDelta').innerHTML = effDeltaPts === null ? '' :
-    `<span class="kpi-delta ${effDeltaPts >= 0 ? 'up-good' : 'up-bad'}">${effDeltaPts >= 0 ? '▲' : '▼'} ${Math.abs(effDeltaPts)}pp</span>`;
-
-  // Sub-divisions list
-  const subRows = document.getElementById('subdivisionRows');
-  subRows.innerHTML = '';
-  data.subdivisions.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'list-row';
-    row.innerHTML = `
-      <div class="row-icon">${s.subdivision_name.slice(0,2).toUpperCase()}</div>
-      <div class="row-main">
-        <div class="row-title">${s.subdivision_name}</div>
-        <div class="row-sub">${formatCr(s.demand_total)} demand</div>
-      </div>
-      <span class="row-badge ${effBadgeClass(s.efficiency_pct)}">${s.efficiency_pct ?? '—'}%</span>`;
-    subRows.appendChild(row);
-  });
-
-  // Top tariff categories list
-  const tariffRows = document.getElementById('tariffRows');
-  tariffRows.innerHTML = '';
-  data.top_tariff_categories.forEach(t => {
-    const row = document.createElement('div');
-    row.className = 'list-row';
-    row.innerHTML = `
-      <div class="row-icon">${t.tariff_code.slice(0,2).toUpperCase()}</div>
-      <div class="row-main">
-        <div class="row-title">${t.tariff_code}</div>
-        <div class="row-sub">${formatCr(t.demand)} demand</div>
-      </div>
-      <span class="row-badge badge-good">${t.share_pct}%</span>`;
-    tariffRows.appendChild(row);
-  });
-
-  renderDemandChart(data.yearly_demand);
-  renderEfficiencyDonut(k.collection_efficiency_pct);
-}
-
-function renderDemandChart(yearly){
-  const ctx = document.getElementById('demandChart');
-  const labels = yearly.map(y => y.fiscal_year);
-  const values = yearly.map(y => Math.round(y.demand_total / INR_CR * 100) / 100);
-  if (demandChart) demandChart.destroy();
-  demandChart = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ label: 'Demand (₹ Cr)', data: values,
-            backgroundColor: '#1a2f5c', borderRadius: 6, maxBarThickness: 34 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v } } }
-    }
-  });
-}
-
-function renderEfficiencyDonut(pct){
-  const ctx = document.getElementById('efficiencyDonut');
-  const collected = pct ?? 0;
-  const outstanding = Math.max(0, 100 - collected);
-  document.getElementById('donutPct').textContent = (pct ?? '—') + '%';
-  if (efficiencyDonut) efficiencyDonut.destroy();
-  efficiencyDonut = new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels: ['Collected', 'Outstanding'], datasets: [{ data: [collected, outstanding],
-            backgroundColor: ['#1a2f5c', '#e8ecf3'], borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '72%',
-               plugins: { legend: { display: false }, tooltip: { enabled: false } } }
-  });
-}
-
-async function logout(){
-  await fetch('/api/logout', { method: 'POST' });
-  window.location.href = '/login';
-}
-document.getElementById('logoutBtn').onclick = logout;
-document.getElementById('logoutNavBtn').onclick = logout;
-document.getElementById('refreshBtn').onclick = loadDashboard;
-document.getElementById('refreshFab').onclick = loadDashboard;
-
-document.getElementById('sidebarToggle').onclick = () => document.body.classList.toggle('sidebar-open');
-document.getElementById('drawerBackdrop').onclick = () => document.body.classList.remove('sidebar-open');
-
-// Client-side filter over the two lists already on the page -- no
-// server round-trip, since both lists are small (5 rows each).
-document.getElementById('searchBox').addEventListener('input', (e) => {
-  const q = e.target.value.trim().toLowerCase();
-  document.querySelectorAll('#subdivisionRows .list-row, #tariffRows .list-row').forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-});
-document.getElementById('subdivisionsNavLink').onclick = () =>
-  document.getElementById('subdivisionRows').scrollIntoView({behavior:'smooth', block:'center'});
-document.getElementById('tariffNavLink').onclick = () =>
-  document.getElementById('tariffRows').scrollIntoView({behavior:'smooth', block:'center'});
-
-loadDashboard();
-</script>
+<script src="/static/vendor/chart.umd.min.js?v=20261005j"></script>
+<script src="/static/nav.js?v=20261005j"></script>
+<script src="/static/ux.js?v=20261005j"></script>
+<script src="/static/report-viewer.js?v=20261005j"></script>
+<script src="/static/dashboard.js?v=20261005j"></script>
 </body>
 </html>

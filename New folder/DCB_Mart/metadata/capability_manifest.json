@@ -1,0 +1,215 @@
+{
+  "_purpose": "What the data can and cannot answer. build_mart.py fails if a 'loaded' topic's mart tables are empty. The chatbot answers a question that needs a 'not_loaded' topic with the note instead of running SQL.",
+  "topics": [
+    {
+      "topic": "demand_collection_balance",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_division_year",
+        "mart_fact_subdivision_year"
+      ],
+      "note": "Yearly demand, collection, opening and closing balance, collection efficiency, for the division and each sub-division, 2015-16 to 2025-26."
+    },
+    {
+      "topic": "tariff",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_family_division_year",
+        "mart_fact_slab_division_year",
+        "mart_fact_booklet_division_year"
+      ],
+      "note": "The same figures per tariff family (LT-1 ... HT-7, miscellaneous), per tariff-booklet category (LT-4(a), HT-2(b), LT-6(b) ...) and per tariff slab."
+    },
+    {
+      "topic": "tariff_rates",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_tariff_booklet_category",
+        "mart_tariff_booklet_rate",
+        "mart_tariff_booklet_rule",
+        "mart_tariff_rate_check"
+      ],
+      "note": "The CESC tariff booklet FY2025-26 to FY2027-28 (KERC order 27.03.2025): every category and sub-category, who it applies to, fixed / demand and energy rates for the three years, and the general rules (interest, tax, reconnection, power factor, ToD, rebates, DERS, open-access charges). Rates for years before 2025-26 are not in it."
+    },
+    {
+      "topic": "installations",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_division_year"
+      ],
+      "note": "Total, live, billed and DC/MNR installations and connected load at year end."
+    },
+    {
+      "topic": "consumption",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_division_year"
+      ],
+      "note": "Metered, assessed and total energy consumption billed, in units."
+    },
+    {
+      "topic": "atc_loss",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_division_year",
+        "mart_fact_subdivision_year"
+      ],
+      "note": "AT&C loss = 100 - billing efficiency x collection efficiency, with the sheet's billing efficiency (installations billed / live), for the division, each sub-division, family and booklet category, every year."
+    },
+    {
+      "topic": "subsidy",
+      "status": "loaded",
+      "mart_tables": [
+        "mart_fact_booklet_division_year",
+        "mart_fact_division_year"
+      ],
+      "note": "Collections split into cash / cheque and adjustments; the adjustment is the Government subsidy (confirmed by CESC): almost all of it Gruha Jyothi for LT-1 domestic and the IP-set subsidy for LT-4(a)."
+    },
+    {
+      "topic": "monthly",
+      "status": "not_loaded",
+      "keywords": [
+        "monthly",
+        "month wise",
+        "month-wise",
+        "per month",
+        "each month",
+        "every month",
+        "quarterly",
+        "quarter",
+        "weekly",
+        "daily",
+        "per day",
+        "january",
+        "february",
+        "march",
+        "april",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december"
+      ],
+      "note": "The DCB statement in this data is yearly: one figure per fiscal year, so monthly, quarterly or daily figures can't be given."
+    },
+    {
+      "topic": "consumer_level",
+      "status": "not_loaded",
+      "keywords": [
+        "rr number",
+        "rr no",
+        "account number",
+        "account no",
+        "consumer number",
+        "consumer no",
+        "consumer id",
+        "customer id",
+        "my bill",
+        "my account",
+        "individual consumer",
+        "meter number",
+        "top defaulters",
+        "defaulter list",
+        "names of defaulters",
+        "which consumers"
+      ],
+      "note": "This data has totals per sub-division and tariff slab only; it holds no individual consumers, accounts or RR numbers."
+    },
+    {
+      "topic": "other_divisions",
+      "status": "not_loaded",
+      "keywords": [
+        "mysuru",
+        "mysore",
+        "mandya",
+        "chamarajanagar",
+        "kodagu",
+        "madikeri",
+        "hassan division",
+        "hassan circle",
+        "hunsur",
+        "nanjangud",
+        "other division",
+        "other divisions",
+        "all divisions",
+        "cescom wide",
+        "cescom-wide",
+        "whole cescom",
+        "entire cescom",
+        "bescom",
+        "hescom",
+        "mescom",
+        "gescom",
+        "state wide",
+        "statewide"
+      ],
+      "note": "Only Holenarasipura Division is in this data (its sub-divisions Arkalgud, Hangarahalli, Holenarasipura, Ramanathapura, Saligrama and the Konanur section); other CESCOM divisions and other ESCOMs are not."
+    },
+    {
+      "topic": "losses",
+      "status": "not_loaded",
+      "keywords": [
+        "distribution loss",
+        "t&d loss",
+        "t & d loss",
+        "technical loss",
+        "technical losses",
+        "line loss",
+        "energy loss",
+        "input energy",
+        "energy input",
+        "feeder-wise",
+        "feeder wise",
+        "transformer",
+        "dtc",
+        "outage",
+        "outages",
+        "power cut",
+        "reliability",
+        "saidi",
+        "saifi",
+        "power purchase cost",
+        "cost of power purchase",
+        "power purchased",
+        "units purchased"
+      ],
+      "note": "Energy input, feeders, transformers, energy (technical) losses and outages are not in the DCB statement. AT&C loss is available on the sheet's own billing-efficiency basis: 100 - billing efficiency (installations billed / live) x collection efficiency."
+    },
+    {
+      "topic": "payment_modes",
+      "status": "not_loaded",
+      "keywords": [
+        "online payment",
+        "upi",
+        "paytm",
+        "bbps",
+        "payment mode",
+        "mode of payment",
+        "digital payment",
+        "cash counter"
+      ],
+      "note": "Collections are split only into cash/cheque and adjustments in this data; payment channels such as online or UPI are not recorded. (How bills may be paid is in the tariff booklet: up to Rs 10,000 by cash, DD or digital payment; above that by cheque, DD or digital payment.)"
+    },
+    {
+      "topic": "staff",
+      "status": "not_loaded",
+      "keywords": [
+        "employee",
+        "employees",
+        "staff strength",
+        "number of staff",
+        "salary",
+        "salaries",
+        "linemen",
+        "lineman",
+        "engineer name",
+        "aee name",
+        "officer name",
+        "contact number"
+      ],
+      "note": "Staff and organisation records are not part of this billing data."
+    }
+  ]
+}

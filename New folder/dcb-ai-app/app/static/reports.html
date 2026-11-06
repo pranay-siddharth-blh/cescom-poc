@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCB Reports — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
+<link rel="stylesheet" href="/static/ux.css?v=20261005j">
+<style>
+  .compare-controls{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+  .picker{min-width:240px;flex:1 1 240px}
+  .picker label{display:flex;align-items:center;gap:6px}
+  .picker.a select{border-color:#072577;box-shadow:inset 3px 0 0 #072577}
+  .picker.b select{border-color:#e54825;box-shadow:inset 3px 0 0 #e54825}
+  .legend-swatch{display:inline-block;width:10px;height:10px;border-radius:3px}
+  .side-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  .side-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}
+  .side-table th,.side-table td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+  .side-table th:first-child,.side-table td:first-child{text-align:left;color:var(--muted);font-weight:600}
+  .side-table thead th{position:sticky;top:0;background:#f4f6fc;font-size:.72rem;letter-spacing:.3px;text-transform:uppercase;color:var(--navy);font-weight:700}
+  .side-table thead th.a{color:#072577;box-shadow:inset 0 -3px 0 #072577} .side-table thead th.b{color:#e54825;box-shadow:inset 0 -3px 0 #e54825}
+  .side-table td small{color:var(--faint);font-weight:700;margin-left:5px}
+  .side-table tbody tr:hover td{background:var(--gold-soft)}
+  .side-table tr.sep td{border-top:2px solid var(--border-strong)}
+  .charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .charts-grid .panel{display:flex;flex-direction:column}
+  .chart-box{height:260px;position:relative}
+  .chart-box > .ux-canvas{height:100%}
+  .seg button{padding:8px 20px}
+  @media(max-width:1000px){ .charts-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body data-page="reports">
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
+    </div>
+    <div class="overlay-text"><b>DCB Reports</b><small data-i18n="loading">Loading the latest figures</small></div>
+  </div>
+
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru">
+        <span class="brand-divider"></span>
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
+        </div>
+      </div>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
+        </div>
+        <div class="user-chip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"><b>DCB · Demand, Collection &amp; Balance</b></div>
+      <a class="ai-badge ai-link" href="/chat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></a>
+    </div>
+    <div class="flag-rule"></div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav" id="siteNav"></nav>
+      <div class="side-status" id="sideStatus" aria-live="polite"></div>
+      <p class="side-foot" data-i18n="sideFoot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</p>
+    </aside>
+
+    <div class="main" id="main">
+      <div class="content">
+        <div class="head">
+          <div>
+            <div class="eyebrow">Reports</div>
+            <h1>Compare side by side</h1>
+            <p class="sub">Pick two sub-divisions or two tariff categories to chart across every fiscal year — consumer population, demand, collection, subsidy and AT&amp;C, each as an amount and as a percentage.</p>
+          </div>
+          <div class="head-actions"><a class="btn btn-ai ai-link" href="/chat"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span>Ask AI about this</span></a></div>
+        </div>
+        <div id="errorBanner" class="error" hidden></div>
+        <div id="skeleton"><div class="skeleton" style="height:110px"></div><div class="skeleton" style="height:320px"></div></div>
+
+        <div id="reportsBody" hidden>
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head"><h3>Compare</h3><span class="hint">Two sub-divisions, or two tariff categories as the CESC tariff booklet names them</span></div>
+            <div class="compare-controls">
+              <div class="seg" id="modeSeg" style="--n:2">
+                <span class="seg-thumb" aria-hidden="true"></span>
+                <button type="button" id="modeSubdivision" class="active">Sub-divisions</button>
+                <button type="button" id="modeTariff">Tariff categories</button>
+              </div>
+              <div class="field picker a"><label for="selectA"><span class="legend-swatch" style="background:#072577"></span>Entity A</label><div class="select-wrap"><select id="selectA"></select></div></div>
+              <div class="field picker b"><label for="selectB"><span class="legend-swatch" style="background:#e54825"></span>Entity B</label><div class="select-wrap"><select id="selectB"></select></div></div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head"><h3>Side by side</h3><span class="hint">Latest fiscal year both have figures for</span><div class="right"><span class="asof" id="sideYear"></span></div></div>
+            <div class="side-scroll"><table class="side-table" id="sideTable"></table></div>
+          </div>
+
+          <div class="charts-grid ux-stagger">
+            <div class="panel"><div class="panel-head" id="demandHead"><h3>Demand (₹ Cr)</h3></div><div class="chart-box" id="demandBox"></div></div>
+            <div class="panel"><div class="panel-head" id="effHead"><h3>Collection efficiency (%)</h3></div><div class="chart-box" id="effBox"></div></div>
+            <div class="panel"><div class="panel-head" id="instHead"><h3>Consumer population (installations)</h3></div><div class="chart-box" id="instBox"></div></div>
+            <div class="panel"><div class="panel-head" id="cshHead"><h3>Share of the division's consumers (%)</h3></div><div class="chart-box" id="cshBox"></div></div>
+            <div class="panel"><div class="panel-head" id="cgrHead"><h3>Consumer growth, year on year (%)</h3></div><div class="chart-box" id="cgrBox"></div></div>
+            <div class="panel"><div class="panel-head" id="dshHead"><h3>Share of the division's demand (%)</h3></div><div class="chart-box" id="dshBox"></div></div>
+            <div class="panel"><div class="panel-head" id="subHead"><h3>Subsidy share of collection (%)</h3></div><div class="chart-box" id="subBox"></div></div>
+            <div class="panel"><div class="panel-head" id="cefHead"><h3>Collection efficiency without adjustment (%)</h3></div><div class="chart-box" id="cefBox"></div></div>
+            <div class="panel"><div class="panel-head" id="atcHead"><h3>AT&amp;C loss (%)</h3></div><div class="chart-box" id="atcBox"></div></div>
+            <div class="panel"><div class="panel-head" id="dpcHead"><h3>Demand per consumer (₹)</h3></div><div class="chart-box" id="dpcBox"></div></div>
+            <div class="panel"><div class="panel-head" id="cpcHead"><h3>Collection per consumer (₹)</h3></div><div class="chart-box" id="cpcBox"></div></div>
+            <div class="panel"><div class="panel-head" id="apcHead"><h3>Arrears per consumer (₹)</h3></div><div class="chart-box" id="apcBox"></div></div>
+          </div>
+          <p class="foot-note">Every series comes from the checked DCB mart: every fiscal year from 2015-16 to 2025-26, as an amount and as a percentage. A year one side has no figures for is a gap, not a zero.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="/static/vendor/chart.umd.min.js?v=20261005j"></script>
+<script src="/static/nav.js?v=20261005j"></script>
+<script src="/static/ux.js?v=20261005j"></script>
+<script src="/static/reports.js?v=20261005j"></script>
+</body>
+</html>

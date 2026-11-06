@@ -3,103 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in — DCB Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231a2f5c'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+<title>Sign in — CESC DCB, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
 <style>
-  :root{
-    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
-    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
-    --bg:#f6f7f9; --surface:#ffffff;
-    --ink:#1c2430; --muted:#4b5563; --border:#d7dce4;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;background:var(--navy-deep);
-       color:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{background:var(--surface);border-radius:16px;padding:34px 32px;width:100%;max-width:380px;
-        box-shadow:0 20px 50px rgba(0,0,0,.25)}
-  .logo-row{display:flex;align-items:center;gap:10px;margin-bottom:22px}
-  .logo-row img{height:38px;width:auto}
-  .logo-row div{line-height:1.25}
-  .logo-row .name{font-weight:700;color:var(--navy);font-size:1.05rem}
-  .logo-row .sub{font-size:.7rem;color:var(--muted)}
-  h1{font-size:1.15rem;margin:0 0 4px}
-  p.lead{margin:0 0 22px;font-size:.84rem;color:var(--muted)}
-  label{display:block;font-size:.76rem;font-weight:700;color:var(--ink);margin-bottom:6px}
-  input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;
-        margin-bottom:16px;background:var(--bg);color:var(--ink)}
-  input:focus{outline:2px solid var(--navy);outline-offset:1px}
-  button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--navy);color:#fff;
-         font-size:.9rem;font-weight:700;cursor:pointer}
-  button:hover{background:var(--navy-deep)}
-  button:disabled{opacity:.6;cursor:default}
-  .error{background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);border-radius:8px;
-         padding:9px 11px;font-size:.8rem;margin-bottom:16px}
-  .back-link{display:block;text-align:center;margin-top:18px;font-size:.8rem;color:var(--navy);text-decoration:none}
-  .back-link:hover{text-decoration:underline}
-  .hint{margin-top:18px;font-size:.7rem;color:var(--muted);text-align:center;line-height:1.5}
+  /* Sign-in: the RDPR / KPCL opening splash as the page itself (deep navy, two logos in spinning halos) with a white card */
+  body{align-items:center;justify-content:center;overflow:auto;padding:24px 16px;
+    background:radial-gradient(circle at 85% 10%,rgba(255,205,0,.16),transparent 40%),radial-gradient(circle at 10% 90%,rgba(34,113,160,.45),transparent 45%),
+      radial-gradient(circle at 50% 40%,var(--navy-mid) 0%,var(--navy) 50%,var(--navy-deep) 100%)}
+  .login-wrap{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:22px;margin:auto}
+  .login-logos{display:flex;gap:26px}
+  .login-gov{color:#fff;text-align:center;animation:fade .6s ease-out .15s both}
+  .login-gov small{display:block;font-size:.68rem;letter-spacing:2.4px;text-transform:uppercase;color:var(--on-navy)}
+  .login-gov b{display:block;margin-top:6px;font-family:var(--serif);font-weight:600;font-size:1.12rem;line-height:1.35}
+  .card{position:relative;width:100%;background:var(--surface);border-radius:16px;padding:26px 26px 22px;box-shadow:0 24px 60px rgba(5,10,40,.45);
+    animation:rise .5s ease .2s both;overflow:hidden}
+  .card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(180deg,var(--kn-yellow) 0 50%,var(--kn-red) 50% 100%)}
+  .card .eyebrow{text-align:left}
+  .card h1{margin:6px 0 4px;font-family:var(--serif);font-size:1.5rem;font-weight:600;color:var(--navy)}
+  .card .lead{margin:0 0 18px;font-size:.84rem;color:var(--muted);line-height:1.5}
+  .card .field{margin-bottom:12px}
+  .card .field input{padding:11px 13px}
+  .card .btn-ai{width:100%;justify-content:center;padding:12px;font-size:.9rem;margin-top:6px}
+  .card .error{margin:0 0 12px}
+  .alt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;font-size:.78rem}
+  .alt a{color:var(--navy);font-weight:700;text-decoration:none}
+  .alt a:hover{text-decoration:underline}
+  .hint{margin-top:14px;font-size:.7rem;color:var(--faint);line-height:1.5;text-align:center}
+  .login-foot{color:rgba(255,255,255,.65);font-size:.68rem;text-align:center;line-height:1.5}
+  #goOverlay.off{opacity:0;visibility:hidden;pointer-events:none}
 </style>
 </head>
 <body>
-  <form class="card" id="loginForm" autocomplete="on">
-    <div class="logo-row">
-      <img src="/static/cescom_official_logo.png" alt="">
-      <div>
-        <div class="name">DCB Insights</div>
-        <div class="sub">Holenarasipura Division</div>
-      </div>
+  <div class="overlay off" id="goOverlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
     </div>
-    <h1>Sign in</h1>
-    <p class="lead">Access the Demand, Collection &amp; Balance dashboard.</p>
+    <div class="overlay-text"><b id="goLabel">Opening the dashboard</b><small>CESC · Holenarasipura Division</small></div>
+  </div>
 
-    <div class="error" id="errorMsg" hidden></div>
+  <main class="login-wrap">
+    <div class="login-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka"></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru"></span>
+    </div>
+    <div class="login-gov"><small>Government of Karnataka</small><b>Chamundeshwari Electricity Supply Corporation Limited, Mysuru</b></div>
 
-    <label for="username">Username</label>
-    <input id="username" name="username" autocomplete="username" required autofocus>
+    <form class="card" id="loginForm" autocomplete="on">
+      <div class="eyebrow">DCB · Holenarasipura Division</div>
+      <h1>Sign in</h1>
+      <p class="lead">Demand, Collection &amp; Balance dashboard, insights, reports and the assistant.</p>
+      <div class="error" id="errorMsg" hidden></div>
+      <div class="field"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required autofocus></div>
+      <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
+      <button type="submit" class="btn btn-ai" id="submitBtn"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span>Sign in</span></button>
+      <div class="alt"><a class="ai-link" href="/chat">Ask the assistant instead →</a></div>
+      <div class="hint">Proof-of-concept sign-in: any username works and the password is not checked (see app/auth.py).</div>
+    </form>
+    <p class="login-foot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</p>
+  </main>
 
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="current-password" required>
-
-    <button type="submit" id="submitBtn">Sign in</button>
-
-    <a class="back-link" href="/chat">← Ask a question instead</a>
-    <div class="hint">POC login — any username works, password isn't checked.<br>See app/auth.py before this ever leaves one laptop.</div>
-  </form>
-
-<script>
-const form = document.getElementById('loginForm');
-const errorMsg = document.getElementById('errorMsg');
-const submitBtn = document.getElementById('submitBtn');
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  errorMsg.hidden = true;
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Signing in…';
-  try {
-    const resp = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: document.getElementById('username').value,
-        password: document.getElementById('password').value,
-      }),
-    });
-    const data = await resp.json();
-    if (resp.ok && data.ok) {
-      window.location.href = '/dashboard';
-      return;
-    }
-    errorMsg.textContent = data.error || 'Invalid username or password.';
-    errorMsg.hidden = false;
-  } catch (err) {
-    errorMsg.textContent = 'Could not reach the server: ' + err.message;
-    errorMsg.hidden = false;
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Sign in';
-  }
-});
-</script>
+<script src="/static/login.js?v=20261005j"></script>
 </body>
 </html>

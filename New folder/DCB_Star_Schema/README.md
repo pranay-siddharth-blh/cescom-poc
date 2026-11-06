@@ -12,6 +12,7 @@ chatbot to sit on top of.
 |---|---|
 | `dcb_star_schema.sqlite` | The database — 3 dimension tables, 2 fact tables, 1 QA table, 2 convenience views |
 | `build_star_schema.py` | The transform script. Re-run any time `dcb_staging.sqlite` changes |
+| `test_grand_total_reconciliation.py` | Standing regression test — re-runs the real pipeline against the real source file and asserts reconciliation. Run any time either build script or the source workbook changes |
 
 ## Tables
 
@@ -19,10 +20,10 @@ chatbot to sit on top of.
 |---|---|---|
 | `dim_fiscal_year` | 11 | One per year, 2015-16 .. 2025-26, with `start_year`/`end_year` as integers |
 | `dim_subdivision` | 8 | `Division_Total` (the whole-division rollup), 5 real sub-divisions, `Konanur` (a section, not a sub-division), `Saligrama` (closed after 2017-18), `Division_Office` (2020-21 to 2023-24 only) — see `subdivision_type` |
-| `dim_tariff_category` | 141 | Every distinct (tariff_code, description) pair actually billed somewhere in the 11 years |
+| `dim_tariff_category` | 139 | Every distinct (tariff_code, description) pair actually billed somewhere in the 11 years |
 | `fact_dcb` | 5,488 | One row per (year, sub-division, tariff_category, description) — every real numeric column, `REAL` typed |
-| `fact_dcb_rollups` | 2,232 | The report's own printed Sub Total / LT-TOTAL / HT-TOTAL / LT+HT-TOTAL / MISCELLANEOUS-Total / GRAND TOTAL rows, kept separate so `SUM()` over `fact_dcb` is always safe and never double-counts |
-| `reconciliation_report` | 292 | QA: for every (year, sub-division) block × 4 headline metrics, `fact_dcb` summed vs. the block's own `grand_total` row |
+| `fact_dcb_rollups` | 2,384 | The report's own printed Sub Total / Total-of / LT-TOTAL / HT-TOTAL / LT+HT-TOTAL / MISCELLANEOUS-Total / GRAND TOTAL rows, kept separate so `SUM()` over `fact_dcb` is always safe and never double-counts |
+| `reconciliation_report` | 4,526 | QA: for every (year, sub-division) block × every additive numeric metric (not just a fixed few), `fact_dcb` summed vs. the block's own `grand_total` row |
 
 **Views:** `fact_dcb_subdivisions` (fact_dcb filtered to real sub-divisions/sections only, excluding the `Division_Total` rollup and `Division_Office`) and `fact_dcb_grand_totals` (just the `grand_total` rows from `fact_dcb_rollups`).
 
@@ -31,18 +32,48 @@ chatbot to sit on top of.
 `fact_dcb.tariff_category_id → dim_tariff_category.tariff_category_id`.
 `fact_dcb_rollups` joins to `dim_fiscal_year`/`dim_subdivision` the same
 way but has no `tariff_category_id` (a rollup spans multiple categories).
-For a `sub_total` row, `tariff_code_summarized` gives the tariff code it
-subtotals (extracted from its printed label, e.g. `"Sub Total of LT-1"` → `"LT-1"`), as free text (not an FK).
+For a `sub_total`/`combined_total` row, `tariff_code_summarized` gives the
+tariff code/family it totals (extracted from its printed label, e.g.
+`"Sub Total of LT-1"` → `"LT-1"`, `"Sub Total ofIPP"` → `"IPP"`), as free
+text (not an FK), whitespace-normalized but not case-normalized — match
+case-insensitively. Some families (LT-2, LT-3, LT-4, LT-5, LT-6, HT-2,
+HT-3) NEVER appear as their own row in `dim_tariff_category`/`fact_dcb` —
+only their lettered sub-splits do (e.g. `HT-2(a)(ii)`) — their total
+exists ONLY here. `rollup_type='combined_total'` (rare — 6 rows, all
+2025-26) is the sheet's own explicit combined figure when the same family
+was printed as more than one separate `sub_total` group in one year
+(`"Total of LT-1"` = `"Sub Total of LT-1"` + `"Sub Total of LT-1 A"`,
+confirmed by direct arithmetic) — prefer it over the `sub_total` row(s)
+for the same code/year/subdivision when both exist; never add `sub_total`
+rows together yourself to approximate it.
 
 ## Reconciliation result
 
-**0.0% average and 0.0% max deviation** across all 292 checks — `fact_dcb`,
-summed per block, matches the report's own printed GRAND TOTAL exactly
-(to floating-point precision) for every year, every sub-division, on all
-4 headline metrics (installations, demand, collection, closing balance).
-This is a much tighter result than `HANDOFF.md`'s original caveat about a
-structural gap between line items and the printed total — see below for
-why.
+**~0.0005% average / 0.893% max deviation** across all 4,526 checks
+(every additive numeric metric this data actually has, not a fixed short
+list of 4) — `fact_dcb`, summed per block, matches the report's own
+printed GRAND TOTAL almost exactly for every year, every sub-division, on
+every metric. The two known non-zero cases are real, tiny, already
+hand-verified source-data imperfections, not extraction bugs — see
+`test_grand_total_reconciliation.py`'s own docstring for exactly which
+two and why. This is a much tighter result than `HANDOFF.md`'s original
+caveat about a structural gap between line items and the printed total —
+see below for why.
+
+**`test_grand_total_reconciliation.py`** is the standing regression test
+for this: it re-runs the real ingestion pipeline against the real source
+workbook into a scratch directory (never touching the checked-in
+`dcb_staging.sqlite`/`dcb_star_schema.sqlite`) and asserts reconciliation
+holds, no rollup label was silently dropped, and no placeholder
+(all-NULL) `fact_dcb` row exists. Run it any time `build_staging.py`,
+`build_star_schema.py`, or the source workbook itself changes — including
+when a new fiscal year's sheet is added, which is exactly the scenario
+most likely to introduce yet another layout quirk this is meant to catch
+automatically rather than silently serving a wrong number:
+
+```bash
+python test_grand_total_reconciliation.py
+```
 
 ## Design decisions
 

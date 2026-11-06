@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenders — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
+<link rel="stylesheet" href="/static/ux.css?v=20261005j">
+<style>
+  #tabDraft > .panel,#tabDraft > form,#analysis > .panel,#tabAnalyse > .panel{margin-bottom:16px}
+  .t-tabs{margin-bottom:16px}
+  .t-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .t-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .t-field label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .t-field input,.t-field select,.t-field textarea{padding:9px 12px;border:1px solid var(--border-strong);border-radius:9px;font-size:.86rem;background:var(--surface);color:var(--ink);
+    font-family:inherit;width:100%;outline:none;transition:border-color .15s ease,box-shadow .2s ease}
+  .t-field input:focus,.t-field select:focus,.t-field textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(7,37,119,.1)}
+  .t-field textarea{min-height:84px;resize:vertical;line-height:1.5}
+  .t-field.wide{grid-column:1/-1}
+  .t-checks{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.82rem;margin-top:4px}
+  .t-checks label{display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);font-size:.82rem}
+  .t-checks input{accent-color:var(--navy);width:auto}
+  .t-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .t-items{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  .t-items table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px}
+  .t-items th{font-size:.68rem;color:var(--muted);text-align:left;padding:8px;text-transform:uppercase;letter-spacing:.3px;background:#f4f6fc;border-bottom:1px solid var(--border-strong)}
+  .t-items td{padding:6px 8px;vertical-align:top;border-bottom:1px solid var(--border)}
+  .t-items input,.t-items textarea{width:100%;padding:7px 9px;border:1px solid var(--border-strong);border-radius:8px;font-family:inherit;font-size:.82rem}
+  .t-items textarea{min-height:38px;resize:vertical}
+  .t-del{background:none;border:none;color:var(--bad);font-size:1.1rem;cursor:pointer}
+  .plan-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+  .plan-card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:var(--paper);animation:rise .45s ease both}
+  .plan-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--navy)}
+  .plan-card .k{font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .plan-card .v{font-family:var(--serif);font-size:1rem;font-weight:700;color:var(--navy);margin-top:3px}
+  .plan-card .s{font-size:.76rem;color:var(--ink);margin-top:3px;line-height:1.4}
+  .warn-list{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .warn-list li{font-size:.8rem;border-radius:9px;padding:8px 11px;border:1px solid var(--border);line-height:1.45}
+  .warn-list li.error{background:var(--bad-soft);border-color:#f3c9c6;color:var(--bad)}
+  .warn-list li.warning{background:var(--warn-soft);border-color:#f0dca0;color:#7a5200}
+  .warn-list li.ok{background:var(--good-soft);border-color:#bfe3cb;color:#1d6b3b}
+  .warn-list li.info{background:var(--navy-soft);border-color:#d6ddf3}
+  .warn-list li small{display:block;color:var(--muted);margin-top:2px}
+  .ladder{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:10px}
+  .ladder th,.ladder td{border-bottom:1px solid var(--border);padding:7px 9px;text-align:left}
+  .ladder th{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;background:#f4f6fc}
+  .ladder tr.hit td{background:var(--gold-soft);font-weight:700;box-shadow:inset 3px 0 0 var(--gold)}
+  .doc-preview{border:1px solid var(--border);border-radius:12px;padding:24px 26px;background:#fff;max-height:780px;overflow:auto;box-shadow:inset 0 1px 3px rgba(7,37,119,.05)}
+  .doc-preview h2{margin:4px 0;color:var(--navy);font-family:var(--serif);font-size:1.2rem}
+  .doc-preview h3{margin:18px 0 6px;font-size:.92rem;color:var(--navy);border-bottom:2px solid var(--navy-soft);padding-bottom:3px}
+  .doc-preview .doc-kicker{font-size:.7rem;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:.5px}
+  .doc-preview .doc-sub{font-size:.78rem;color:var(--muted)}
+  .doc-preview table{width:100%;border-collapse:collapse;font-size:.8rem;margin:4px 0}
+  .doc-preview th,.doc-preview td{border:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}
+  .doc-preview table.kv th{width:42%;background:#f4f6fc;font-weight:600}
+  .doc-preview table.grid thead th{background:var(--navy-soft)}
+  .doc-preview .small{font-size:.76rem;line-height:1.5}
+  .doc-preview .center{text-align:center}
+  .doc-preview ol.clauses{font-size:.8rem;line-height:1.5;padding-left:20px}
+  .doc-preview .internal{margin-top:22px;border:2px dashed #f3c9c6;border-radius:10px;padding:10px 14px;background:#fffafa}
+  .fields{width:100%;border-collapse:collapse;font-size:.82rem}
+  .fields th,.fields td{border-bottom:1px solid var(--border);padding:7px 9px;text-align:left;vertical-align:top}
+  .fields th{width:38%;color:var(--muted);font-weight:700}
+  .elig td.pass,.elig td.exempt,.elig td.benefit{color:#1d6b3b;font-weight:800}
+  .elig td.fail{color:var(--bad);font-weight:800}
+  .elig td.pay,.elig td.check{color:#7a5200;font-weight:800}
+  .verdict{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font-size:.74rem;font-weight:800}
+  .verdict.ok{background:var(--good-soft);color:#1d6b3b} .verdict.no{background:var(--bad-soft);color:var(--bad)}
+  .drop{border:2px dashed var(--border-strong);border-radius:12px;padding:26px 18px;text-align:center;font-size:.84rem;color:var(--muted);cursor:pointer;background:var(--paper);transition:border-color .2s ease,background .2s ease}
+  .drop:hover,.drop.over{border-color:var(--navy);background:var(--navy-soft);color:var(--navy)}
+  .src-note{font-size:.74rem;color:var(--muted);margin-top:8px;line-height:1.55}
+  .hint{font-size:.7rem;color:var(--faint)}
+  @media print{ .gov-header,.sidebar,.head,.t-tabs,#draftForm,.t-actions,#tabAnalyse,.src-note,#planPanel{display:none!important}
+    .doc-preview{max-height:none;border:none;box-shadow:none} body{overflow:visible;height:auto;display:block} .app-shell,.main{display:block;height:auto;overflow:visible} }
+</style>
+</head>
+<body data-page="tenders">
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
+    </div>
+    <div class="overlay-text"><b>Tenders</b><small data-i18n="loading">Loading the latest figures</small></div>
+  </div>
+
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru">
+        <span class="brand-divider"></span>
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
+        </div>
+      </div>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
+        </div>
+        <div class="user-chip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"><b>DCB · Demand, Collection &amp; Balance</b></div>
+      <a class="ai-badge ai-link" href="/chat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></a>
+    </div>
+    <div class="flag-rule"></div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav" id="siteNav"></nav>
+      <div class="side-status" id="sideStatus" aria-live="polite"></div>
+      <p class="side-foot" data-i18n="sideFoot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</p>
+    </aside>
+
+    <div class="main" id="main">
+      <div class="content">
+        <div class="head">
+          <div>
+            <div class="eyebrow">Tenders · GeM</div>
+            <h1>Tenders</h1>
+            <p class="sub">Draft a bid in the GeM bid-document format with CESC's delegation-of-powers rules applied, and read any tender — a GeM bid PDF or tender text — the way Bid Assist does: key fields, dates, eligibility and compliance at a glance.</p>
+          </div>
+          <div class="head-actions"></div>
+        </div>
+        <div class="seg t-tabs" id="tabSeg" style="--n:2">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button type="button" id="tabBtnDraft" class="active">Create a tender (GeM format)</button>
+          <button type="button" id="tabBtnAnalyse">Analyse a tender (Bid Assist)</button>
+        </div>
+
+        <div id="tabDraft">
+        <form class="panel" id="draftForm" autocomplete="off">
+          <div class="panel-head"><h3>1 · What is being bought</h3></div>
+          <div class="t-grid">
+            <div class="t-field wide"><label for="f_title">Tender title / item description</label><input id="f_title" name="title" maxlength="300" placeholder="e.g. Supply of 11 kV LT distribution transformers, 25 kVA" required></div>
+            <div class="t-field"><label for="f_value">Estimated value (₹)</label><input id="f_value" name="estimated_value" inputmode="decimal" placeholder="e.g. 2500000"></div>
+            <div class="t-field"><label for="f_kind">Type</label><select id="f_kind" name="kind"><option value="goods">Goods</option><option value="services">Services</option><option value="works">Works</option></select></div>
+            <div class="t-field"><label for="f_method">Tender</label><select id="f_method" name="method"><option value="open">Open (advertised)</option><option value="limited">Limited</option></select></div>
+            <div class="t-field"><label for="f_category">GeM item category</label><input id="f_category" name="item_category" maxlength="300" placeholder="as listed on GeM"></div>
+            <div class="t-field"><label for="f_office">Office</label><input id="f_office" name="office" maxlength="200" placeholder="e.g. O&amp;M Division, Holenarasipura"></div>
+            <div class="t-field"><label for="f_email">Buyer email</label><input id="f_email" name="buyer_email" maxlength="120"></div>
+            <div class="t-field"><label for="f_period">Contract period</label><input id="f_period" name="contract_period" maxlength="60" placeholder="e.g. 1 Year(s)"></div>
+            <div class="t-field"><label for="f_end">Bid end date / time</label><input id="f_end" name="bid_end" maxlength="40" placeholder="dd-mm-yyyy hh:mm:ss"></div>
+          </div>
+          <div class="panel-head" style="margin-top:16px"><h3>2 · Items and specifications</h3></div>
+          <div class="t-items"><table><thead><tr><th style="width:24%">Item</th><th>Specification (no brand / make names)</th><th style="width:10%">Qty</th><th style="width:10%">Unit</th><th style="width:10%">Delivery days</th><th></th></tr></thead><tbody id="itemRows"></tbody></table></div>
+          <div class="t-actions" style="margin-top:6px"><button type="button" class="btn" id="addItem">+ Add item</button></div>
+          <div class="panel-head" style="margin-top:16px"><h3>3 · Eligibility, EMD and ePBG</h3></div>
+          <div class="t-grid">
+            <div class="t-field"><label for="f_turnover">Min. average annual turnover (₹ lakh, 3 yrs)</label><input id="f_turnover" name="turnover_lakh" inputmode="decimal"></div>
+            <div class="t-field"><label for="f_exp">Years of past experience</label><input id="f_exp" name="experience_years" inputmode="numeric"></div>
+            <div class="t-field"><label for="f_emd">EMD amount (₹) — blank: 2% of value</label><input id="f_emd" name="emd_amount" inputmode="decimal"></div>
+            <div class="t-field"><label for="f_epbg">ePBG %</label><input id="f_epbg" name="epbg_percent" value="5" inputmode="decimal"></div>
+            <div class="t-field"><label for="f_epbgm">ePBG duration (months) — blank: period + 2</label><input id="f_epbgm" name="epbg_months" inputmode="numeric"></div>
+            <div class="t-field"><label for="f_eval">Evaluation method</label><select id="f_eval" name="evaluation_method"><option>Total value wise evaluation</option><option>Item wise evaluation</option><option>Group wise evaluation</option></select></div>
+            <div class="t-field"><label for="f_bidtype">Type of bid</label><select id="f_bidtype" name="bid_type"><option>Two Packet Bid</option><option>Single Packet Bid</option></select></div>
+            <div class="t-field"><label for="f_benef">Beneficiary (EMD / ePBG in favour of)</label><input id="f_benef" name="beneficiary" maxlength="200" placeholder="e.g. Executive Engineer (Ele), O&amp;M Division, CESC"></div>
+            <div class="t-field wide"><label>Options</label>
+              <div class="t-checks">
+                <label><input type="checkbox" name="ra_enabled" checked> Bid to RA enabled</label>
+                <label><input type="checkbox" name="mse_exemption" checked> MSE exemption (experience / turnover)</label>
+                <label><input type="checkbox" name="startup_exemption" checked> Startup exemption</label>
+                <label><input type="checkbox" name="mse_preference" checked> MSE purchase preference</label>
+                <label><input type="checkbox" name="mii" checked> MII (Make in India) compliance</label>
+                <label><input type="checkbox" name="past_experience_similar" checked> Past experience of similar work</label>
+                <label><input type="checkbox" name="inspection" checked> Inspection required</label>
+                <label><input type="checkbox" name="arbitration"> Arbitration clause</label>
+                <label><input type="checkbox" name="mediation"> Mediation clause</label>
+              </div></div>
+            <div class="t-field wide"><label for="f_docs">Documents required from seller</label><input id="f_docs" name="documents_required" maxlength="600" value="Experience Criteria, Past Performance, Bidder Turnover, Certificate (Requested in ATC), OEM Authorization Certificate"></div>
+          </div>
+          <div class="panel-head" style="margin-top:16px"><h3>4 · Consignee and buyer-added terms</h3></div>
+          <div class="t-grid">
+            <div class="t-field"><label for="f_cname">Consignee / reporting officer</label><input id="f_cname" name="consignee_name" maxlength="120"></div>
+            <div class="t-field"><label for="f_caddr">Consignee address</label><input id="f_caddr" name="consignee_address" maxlength="300"></div>
+            <div class="t-field"><label for="f_days">Delivery (days)</label><input id="f_days" name="delivery_days" inputmode="numeric"></div>
+            <div class="t-field wide"><label for="f_atc">Buyer-added terms (ATC) — checked against GeM's null-and-void list</label><textarea id="f_atc" name="additional_terms" maxlength="8000" placeholder="One term per paragraph"></textarea></div>
+          </div>
+          <div class="t-actions">
+            <button type="submit" class="btn btn-solid" id="draftBtn">Generate bid document</button>
+            <button type="button" class="btn" id="docxBtn" disabled>Download Word (.docx)</button>
+            <button type="button" class="btn" id="printBtn" disabled>Print / save as PDF</button>
+          </div>
+        </form>
+
+        <div class="panel" id="planPanel" hidden>
+          <div class="panel-head"><h3>How this purchase goes</h3><span class="hint" id="planHint"></span></div>
+          <div class="plan-box" id="planBox"></div>
+          <table class="ladder" id="ladder"></table>
+          <ul class="warn-list" id="checkList"></ul>
+          <p class="src-note" id="planNote"></p>
+        </div>
+
+        <div class="panel" id="previewPanel" hidden>
+          <div class="panel-head"><h3>Bid document preview</h3><span class="hint">GeM bid-document format · draft</span></div>
+          <div class="doc-preview" id="docPreview"></div>
+        </div>
+      </div>
+
+      <div id="tabAnalyse" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Tender document</h3></div>
+          <div class="drop" id="dropZone" tabindex="0">Drop a tender PDF here or click to choose one (GeM bid documents read best; scanned PDFs have no text — paste the text below instead)</div>
+          <input type="file" id="pdfInput" accept="application/pdf" hidden>
+          <div class="t-field wide" style="margin-top:12px"><label for="a_text">…or paste the tender text</label><textarea id="a_text" maxlength="400000" style="min-height:120px"></textarea></div>
+          <div class="panel-head" style="margin-top:14px"><h3>Check a bidder against it (optional)</h3></div>
+          <div class="t-grid">
+            <div class="t-field"><label for="p_turn">Bidder's average turnover (₹ lakh)</label><input id="p_turn" inputmode="decimal"></div>
+            <div class="t-field"><label for="p_exp">Bidder's years of experience</label><input id="p_exp" inputmode="numeric"></div>
+            <div class="t-field"><label>Bidder is</label><div class="t-checks"><label><input type="checkbox" id="p_mse"> MSE</label><label><input type="checkbox" id="p_startup"> Startup</label></div></div>
+          </div>
+          <div class="t-actions"><button type="button" class="btn btn-solid" id="analyseBtn">Analyse</button><span class="hint" id="fileName" style="align-self:center;font-size:.78rem;color:var(--muted)"></span></div>
+        </div>
+        <div id="analysis" hidden>
+          <div class="panel"><div class="panel-head"><h3>Summary</h3><span id="verdict"></span></div><p id="aSummary" style="margin:0;font-size:.88rem;line-height:1.6"></p></div>
+          <div class="panel"><div class="panel-head"><h3>Key fields</h3></div><table class="fields" id="aFields"></table></div>
+          <div class="panel" id="eligPanel" hidden><div class="panel-head"><h3>Eligibility</h3></div><table class="fields elig" id="aElig"></table></div>
+          <div class="panel"><div class="panel-head"><h3>Compliance with GeM's null-and-void clause list</h3></div><ul class="warn-list" id="aComp"></ul></div>
+        </div>
+      </div>
+        <p class="src-note">Rules applied: GeM procurement modes — GFR 2017 Rule 149 as amended by Ministry of Finance OM F.1/3/2024-PPD (10.07.2024); tendering powers, limited-tender cap, single-tender and penalty guidelines — CESC Manual of Delegation of Powers, First Edition 2023; bid format, standard clauses and the null-and-void list — GeM bid documents (gem.gov.in). The analyser follows the Bid Assist / Nexizo approach (key-field extraction, eligibility check, shortlisting); documents are read in memory and not stored.</p>
+      </div>
+    </div>
+  </div>
+
+<script src="/static/nav.js?v=20261005j"></script>
+<script src="/static/ux.js?v=20261005j"></script>
+<script src="/static/tenders.js?v=20261005j"></script>
+</body>
+</html>

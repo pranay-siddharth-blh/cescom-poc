@@ -1,0 +1,8 @@
+# Silero VAD browser assets — @ricky0123/vad-web@0.0.31 (ISC), onnxruntime-web@1.30.0 (MIT)
+# Written by scripts/fetch_vad_assets.py; check with --verify. Format: sha256  file  source-url
+faece07e84faa9001f5104bbe4e5c70861d06cb2376a0dea1fa0ad33a67adc81  ort.wasm.min.js  https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js
+e13f7f94fc51b4ca72b12faeb1ee95f4ace6dfbc8939bc718aabdc0a27c4299b  ort-wasm-simd-threaded.mjs  https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort-wasm-simd-threaded.mjs
+3398c10d07d229bd91b364548e130e0e51a8e5704b88c7c083ebbeb78842dee2  ort-wasm-simd-threaded.wasm  https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort-wasm-simd-threaded.wasm
+4b3f72db78dc5f65c0ba9047a9033581e15fe57810a3ac5742aca274d1702e1f  bundle.min.js  https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js
+8a48fdc7429948a2fde3d29a84bb1a64c1f67b4ba578ccaa7548b7f989f06a74  vad.worklet.bundle.min.js  https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/vad.worklet.bundle.min.js
+a35ebf52fd3ce5f1469b2a36158dba761bc47b973ea3382b3186ca15b1f5af28  silero_vad_legacy.onnx  https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/silero_vad_legacy.onnx

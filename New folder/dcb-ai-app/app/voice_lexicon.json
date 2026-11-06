@@ -1,0 +1,6 @@
+{
+ "_purpose": "Words the speech-to-text model writes for Holenarasipura Division's sub-division names, and what they mean. Loaded by app/voice_guard.py and applied by app/spoken.py clean_transcript. Every entry is validated at load and by tests/test_voice.py: 'heard' must not be (or sound exactly like) a real sub-division name, or an ordinary question word; 'means' must be a name the data knows; 'reviewed_by' must be set. Invalid entries are ignored.",
+ "_how_to_add": "Only from reviewed recordings: the voice stress test (Windows Indian-English voices through qwen3-asr, tests/run_voice_stress.py), or real officer recordings collected with their consent (VOICE_COLLECT_MISHEARINGS=true; text only, no audio, written to dcb-ai-app/logs/voice_mishearings.jsonl). Then run the tests.",
+ "mishearings": [],
+ "confusable": []
+}

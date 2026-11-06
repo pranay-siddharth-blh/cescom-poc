@@ -3,766 +3,387 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DCB Assistant — CESC, Mysore</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231a2f5c'/%3E%3Cpath d='M55 12 L30 55 L48 55 L42 88 L74 42 L54 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+<title>DCB Assistant — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="preload" href="/static/vendor/fonts/NotoSans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/vendor/fonts/NotoSerif-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
 <style>
-  /*
-    Shell/chrome: government-portal style (light theme, two-logo header
-    bar, explicit text-labelled accessibility toolbar), matching the
-    layout convention of cescmysore.karnataka.gov.in.
-    Interior: conversational chat (bubbles, generous whitespace, the
-    conversation as the primary object), Perplexity/Claude.ai-style --
-    this part carries over the bones of the previous chat.html revision,
-    restyled to the new palette.
-
-    Palette sampled from the two provided logo files (not the old
-    navy/amber placeholder scheme):
-      --navy  #1a2f5c -- from the CESC mark's blue disc
-      --red   #c0202c -- from the CESC wordmark's red lettering
-    Both checked for WCAG AA contrast against white/light backgrounds
-    before use (navy ~13:1, red ~6:1 -- both clear AA passes for text;
-    red is used ONLY as a sparing accent -- error states, the "not
-    answerable" pill -- never decoratively, per design brief).
+  /* AI mode: the RDPR / KPCL assistant's shell (portal header, navy app bar, sidebar of grouped questions, a
+     conversation over a soft skyline) in the CESC website palette: navy #072577 / #151b54 / #121d81, amber #e38f00,
+     orange #e54825, blue #2271a0, the Karnataka flag's yellow over red as a hairline under the header.
   */
   :root{
-    --font-scale: 1;
-    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
-    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
-    --bg:#f6f7f9; --surface:#ffffff;
-    --ink:#1c2430; --muted:#4b5563; --border:#d7dce4;
-    --user-bubble:#1a2f5c; --bot-bubble:#eef1f6;
-    --warn:#8a5a00; --warn-bg:#fff6e6; --warn-border:#f0dca0;
-    --ok-dot:#2f9e58; --err-dot:#c0202c;
+    --font-scale:1;
+    --navy:#072577; --navy-deep:#151b54; --navy-mid:#121d81; --navy-soft:#eaeefa; --navy-glow:#1725a5;
+    --steel:#4a5878; --sky:#2271a0; --orange:#e54825; --on-navy:#ffd84d;
+    --gold:#e38f00; --gold-bright:#ffcd00; --gold-deep:#9a5b00; --gold-soft:#fff6e0; --gold-line:#f2d9a6;
+    --kn-yellow:#ffcd00; --kn-red:#d82221;
+    --paper:#f8f9fd; --surface:#ffffff; --bg:#f2f4fa;
+    --ink:#1a2233; --muted:#5b667a; --faint:#8a94a6; --border:#e2e6f0; --border-strong:#d0d7e6;
+    --err:#b81c1b; --err-soft:#fdeceb; --err-border:#f3c9c6;
+    --note:#7a5200; --note-bg:#fff8e8; --note-border:#f0dca0;
+    --ok:#1f9d57; --good:#1f9d57; --red:#d82221; --red-soft:#fdeceb;
+    --serif:"Noto Serif","Noto Serif Kannada",Georgia,"Times New Roman",serif;
+    --sans:"Noto Sans","Noto Sans Kannada","Segoe UI",system-ui,Arial,sans-serif;
   }
-  /* High-contrast override: plain black/white, no gradients, thicker
-     borders. Toggled by the "High contrast" button in the a11y toolbar. */
   body.hc{
-    --navy:#000000; --navy-deep:#000000; --navy-soft:#ffffff;
-    --red:#a4000c; --red-soft:#ffffff; --red-border:#000000;
-    --bg:#ffffff; --surface:#ffffff;
-    --ink:#000000; --muted:#000000; --border:#000000;
-    --user-bubble:#000000; --bot-bubble:#ffffff;
-    --warn:#000000; --warn-bg:#ffffff; --warn-border:#000000;
-    --ok-dot:#000000; --err-dot:#a4000c;
+    --navy:#000; --navy-deep:#000; --navy-mid:#000; --navy-soft:#fff; --navy-glow:#000; --steel:#000; --sky:#000; --orange:#000;
+    --gold:#000; --gold-deep:#000; --gold-soft:#fff; --gold-line:#000; --paper:#fff; --bg:#fff;
+    --ink:#000; --muted:#000; --faint:#000; --border:#000; --border-strong:#000; --err:#a4000c; --note:#000; --note-bg:#fff; --note-border:#000;
   }
+  body.hc *{box-shadow:none!important;background-image:none!important;text-shadow:none!important}
+  body.hc .bubble,body.hc .composer-box,body.hc .welcome-card,body.hc .side-item{border-width:2px!important}
   *{box-sizing:border-box}
-  html{font-size:calc(16px * var(--font-scale));}
+  button,input{font-family:inherit}
+  html{font-size:calc(16px * var(--font-scale))}
   html,body{height:100%}
-  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
-       background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100vh;overflow:hidden}
-  body.hc *{box-shadow:none !important;background-image:none !important}
-  body.hc .bubble, body.hc .sqlbox, body.hc .pill, body.hc #box, body.hc .chip,
-  body.hc .welcome-card, body.hc .composer-box{border-width:2px !important}
+  body{margin:0;font-family:var(--sans);font-size:1rem;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
+       height:100vh;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  [hidden]{display:none!important}
 
-  /* ---------- Government header ---------- */
-  .gov-header{flex:0 0 auto;background:var(--surface);border-bottom:1px solid var(--border)}
-  .gov-topbar{display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap;
-              border-bottom:1px solid var(--border)}
-  .gov-brand{display:flex;align-items:center;gap:12px;flex:1;min-width:260px}
-  .gov-brand img{height:52px;width:auto;flex:0 0 auto}
-  .gov-titles{line-height:1.3}
-  .gov-line1{font-size:.72rem;color:var(--muted);font-weight:600;letter-spacing:.2px}
-  .gov-line2{font-size:.86rem;color:var(--navy);font-weight:700}
+  /* ---------- opening splash (once per browser session) and the trip back to the dashboard ---------- */
+  .splash,.go-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+    background:radial-gradient(circle at 50% 40%,var(--navy-mid) 0%,var(--navy) 50%,var(--navy-deep) 100%);transition:opacity .5s ease,visibility .5s ease}
+  .go-overlay{animation:fadeIn .25s ease both}
+  .splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+  .splash-logos{display:flex;gap:28px}
+  .splash-halo{position:relative;display:inline-flex;border-radius:50%}
+  .splash-halo::before{content:"";position:absolute;inset:-6px;border-radius:50%;
+    background:conic-gradient(from 0deg,rgba(255,255,255,.15),var(--on-navy),rgba(255,255,255,.15),#ff6a4d,rgba(255,255,255,.15));animation:spin 2.4s linear infinite}
+  .splash-halo img{position:relative;z-index:1;width:66px;height:66px;object-fit:contain;border-radius:50%;background:#fff;padding:8px;animation:popIn .7s ease-out both}
+  .splash-halo:nth-child(2) img{animation-delay:.12s}
+  .splash-text{color:#fff;text-align:center;animation:fadeIn .6s ease-out .25s both}
+  .splash-text b{display:block;font-family:var(--serif);font-weight:600;font-size:1.25rem;letter-spacing:.3px}
+  .splash-text small{display:block;margin-top:8px;font-size:.7rem;letter-spacing:2.4px;text-transform:uppercase;color:var(--on-navy)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-  .a11y-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-left:auto}
-  .a11y-group{display:flex;align-items:center;gap:4px}
-  .a11y-label{font-size:.68rem;color:var(--muted);margin-right:4px;font-weight:600}
-  .a11y-toolbar button{background:var(--surface);border:1px solid var(--border);color:var(--ink);
-                        font-size:.78rem;font-weight:700;padding:5px 9px;border-radius:6px;cursor:pointer}
-  .a11y-toolbar button:hover{background:var(--navy-soft)}
-  .a11y-toolbar button:focus-visible{outline:3px solid var(--navy);outline-offset:1px}
-  .a11y-toolbar button[aria-pressed="true"], .lang-btn.active{
-    background:var(--navy);color:#fff;border-color:var(--navy)}
-  #fontReset{min-width:30px}
+  /* ---------- header ---------- */
+  .gov-header{flex:0 0 auto;background:var(--surface);position:relative;z-index:5}
+  .gov-topbar{display:flex;align-items:center;gap:16px;padding:10px 24px}
+  .gov-brand{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+  .logo-halo{position:relative;display:inline-flex;border-radius:50%;flex:0 0 auto}
+  .logo-halo::before{content:"";position:absolute;inset:-3px;border-radius:50%;opacity:0;background:conic-gradient(from 0deg,var(--navy),var(--gold-bright),var(--kn-red),var(--navy))}
+  .logo-halo img{position:relative;z-index:1;height:46px;width:46px;object-fit:contain;border-radius:50%;background:#fff;border:1px solid var(--border);padding:3px}
+  #govBrand.thinking .logo-halo::before{opacity:1;animation:spin 1.6s linear infinite}
+  .brand-divider{width:1px;height:36px;background:var(--border);margin:0 4px}
+  .gov-titles{line-height:1.2;min-width:0}
+  .gov-line1{font-size:.66rem;color:var(--gold-deep);font-weight:600;letter-spacing:2px;text-transform:uppercase}
+  .gov-line2{font-family:var(--serif);font-size:1.12rem;color:var(--navy);font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-tools{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .lang-switch{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden;flex:0 0 auto}
+  .lang-switch button{background:var(--surface);border:none;color:var(--muted);font-size:.78rem;font-weight:600;padding:6px 11px;cursor:pointer;transition:background .15s ease,color .15s ease}
+  .lang-switch button + button{border-left:1px solid var(--border-strong)}
+  .lang-switch button:hover{color:var(--navy);background:var(--navy-soft)}
+  .lang-switch button[aria-pressed="true"]{background:var(--navy);color:#fff}
 
-  .app-titlebar{display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:wrap}
-  .app-title{font-size:1rem;font-weight:700;color:var(--navy)}
-  .app-title .app-sub{display:block;font-size:.74rem;font-weight:500;color:var(--muted);margin-top:1px}
-  .app-actions{margin-left:auto;display:flex;align-items:center;gap:14px}
-  #statusRow{font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:6px}
-  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999}
-  #newchat{background:var(--surface);border:1px solid var(--border);color:var(--navy);
-           font-size:.8rem;font-weight:700;padding:7px 13px;border-radius:7px;cursor:pointer}
-  #newchat:hover{background:var(--navy-soft)}
+  .app-bar{display:flex;align-items:center;gap:12px;padding:9px 24px;color:#fff;background:linear-gradient(100deg,var(--navy-deep) 0%,var(--navy) 55%,var(--navy-mid) 100%)}
+  .app-bar-text{font-size:.8rem;font-weight:500;letter-spacing:.2px;color:rgba(255,255,255,.9);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-bar-text b{font-weight:700;color:#fff}
+  .app-bar-text .sep{color:var(--on-navy);margin:0 8px}
+  .ai-badge{margin-left:auto;flex:0 0 auto;position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 10px;border-radius:999px;
+    font-size:.66rem;font-weight:700;letter-spacing:1.2px;color:#fff;background:linear-gradient(135deg,rgba(255,216,77,.28),rgba(255,216,77,.08));border:1px solid rgba(255,216,77,.7);
+    animation:glow 3s ease-in-out infinite}
+  .ai-badge::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:shimmer 4s ease-in-out infinite}
+  .ai-badge svg{width:12px;height:12px;color:var(--on-navy)}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,216,77,0)}50%{box-shadow:0 0 14px 1px rgba(255,216,77,.45)}}
+  @keyframes shimmer{0%,15%{left:-60%}35%,100%{left:130%}}
+  .drawer-toggle{display:none;flex:0 0 auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.74rem;font-weight:600;padding:5px 11px;border-radius:6px;cursor:pointer}
+  .flag-rule{height:3px;background:linear-gradient(180deg,var(--kn-yellow) 0 50%,var(--kn-red) 50% 100%)}
 
-  /* Text-labeled (not icon-only, per this app's own accessibility rule)
-     drawer toggle -- hidden by default, shown only under the tablet/mobile
-     breakpoint below, where the sidebar becomes an overlay. */
-  .drawer-toggle{display:none;background:var(--surface);border:1px solid var(--border);color:var(--navy);
-                 font-size:.78rem;font-weight:700;padding:7px 12px;border-radius:7px;cursor:pointer}
-  .drawer-toggle:hover{background:var(--navy-soft)}
-
-  /* ---------- Shell: sidebar / center chat ---------- */
-  /* A dedicated right-hand chart panel existed briefly (see git history /
-     CLAUDE.md) -- removed by request in favor of charts rendered inline
-     in the conversation again, same placement as the original design. */
+  /* ---------- sidebar ---------- */
   .app-shell{flex:1;display:flex;min-height:0;overflow:hidden}
-  .sidebar{flex:0 0 auto;background:var(--surface);overflow-y:auto;padding:18px 16px}
-  .sidebar{width:260px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:22px}
+  .sidebar{flex:0 0 auto;width:290px;background:var(--paper);border-right:1px solid var(--border);overflow-y:auto;padding:20px 16px 24px;
+    display:flex;flex-direction:column;gap:20px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+  #newchat{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--navy);border:1px solid var(--navy);color:#fff;
+    font-size:.84rem;font-weight:600;letter-spacing:.2px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:background .15s ease,box-shadow .15s ease}
+  #newchat svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2}
+  #newchat:hover{background:var(--navy-deep);box-shadow:0 4px 14px rgba(7,37,119,.22)}
+  .dash-link{flex:0 0 auto;min-height:62px;position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;text-decoration:none;color:#fff;isolation:isolate;
+    background:radial-gradient(circle at 100% 0%,rgba(255,205,0,.30),transparent 55%),linear-gradient(135deg,var(--navy-deep),var(--navy) 55%,var(--navy-mid));
+    border:1px solid rgba(255,216,77,.45);box-shadow:0 6px 18px rgba(7,37,119,.22);transition:transform .2s ease,box-shadow .25s ease,border-color .2s ease}
+  .dash-link::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:45%;z-index:-1;background:linear-gradient(115deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-18deg);transition:left .7s ease}
+  .dash-link:hover{transform:translateY(-2px);border-color:var(--on-navy);box-shadow:0 12px 28px rgba(7,37,119,.32),0 0 0 3px rgba(255,216,77,.18)}
+  .dash-link:hover::after{left:130%}
+  .dash-link:focus-visible{outline:2px solid var(--on-navy);outline-offset:3px}
+  .dash-ico{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:flex;align-items:flex-end;justify-content:center;gap:3px;padding:0 0 9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)}
+  .dash-ico i{display:block;width:4px;border-radius:2px;background:linear-gradient(180deg,#ffe58a,var(--gold-bright));transition:height .35s cubic-bezier(.2,.8,.2,1)}
+  .dash-ico i:nth-child(1){height:9px}.dash-ico i:nth-child(2){height:15px}.dash-ico i:nth-child(3){height:11px}.dash-ico i:nth-child(4){height:19px}
+  .dash-link:hover .dash-ico i:nth-child(1){height:14px}.dash-link:hover .dash-ico i:nth-child(2){height:10px}.dash-link:hover .dash-ico i:nth-child(3){height:19px}.dash-link:hover .dash-ico i:nth-child(4){height:13px}
+  .dash-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+  .dash-txt b{font-family:var(--serif);font-size:1.02rem;font-weight:600;letter-spacing:.2px}
+  .dash-txt small{font-size:.66rem;color:rgba(255,255,255,.72);letter-spacing:.4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dash-go{margin-left:auto;flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffe58a,var(--gold-bright));color:var(--navy-deep);transition:transform .25s ease}
+  .dash-go svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  .dash-link:hover .dash-go{transform:translateX(3px)}
+  .side-group h3{margin:0 0 8px;display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:.8rem;font-weight:600;color:var(--navy);letter-spacing:.3px}
+  .side-group h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold-line),transparent)}
+  .side-list{display:flex;flex-direction:column}
+  .side-item{position:relative;display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;background:none;border:none;border-radius:7px;padding:8px 10px 8px 12px;color:var(--ink);font-size:.8rem;line-height:1.4;cursor:pointer;transition:background .15s ease,color .15s ease}
+  .side-item::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:2px;background:var(--gold);transform:scaleY(0);transition:transform .18s ease}
+  .side-item:hover{background:var(--surface);color:var(--navy);box-shadow:0 1px 4px rgba(7,37,119,.06)}
+  .side-item:hover::before{transform:scaleY(1)}
+  .side-item svg{flex:0 0 auto;width:15px;height:15px;margin-top:2px;stroke:var(--steel);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-  /* Reciprocal cross-link to the summary dashboard (§9) -- that page's
-     own sidebar already links back here ("Open chat"); this is the other
-     direction, styled to match its promo card. Pinned to the bottom of
-     the sidebar via margin-top:auto, same convention dashboard.html uses. */
-  .sidebar-promo{margin-top:auto;background:var(--navy-deep);color:#fff;border-radius:12px;
-                 padding:14px;display:flex;flex-direction:column;gap:6px}
-  .sidebar-promo-icon{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.14);
-                       display:flex;align-items:center;justify-content:center}
-  .sidebar-promo-icon svg{width:16px;height:16px;stroke:#fff;fill:none}
-  .sidebar-promo h4{margin:2px 0 0;font-size:.82rem;font-weight:700}
-  .sidebar-promo p{margin:0;font-size:.7rem;line-height:1.4;color:rgba(255,255,255,.78)}
-  .sidebar-promo a{display:inline-block;margin-top:4px;background:#fff;color:var(--navy-deep);
-                    font-size:.72rem;font-weight:700;padding:6px 10px;border-radius:7px;
-                    text-decoration:none;text-align:center}
-  .sidebar-section{display:flex;flex-direction:column;gap:8px}
-  .sidebar-heading{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
-                     color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
-  .sidebar-heading svg{width:14px;height:14px;stroke:var(--muted);fill:none;flex:0 0 auto}
-  .sidebar-placeholder{font-size:.82rem;color:var(--muted);line-height:1.5;font-style:italic}
   .center-col{flex:1;display:flex;flex-direction:column;min-width:0}
-
   .drawer-backdrop{display:none}
-
   @media(max-width:1024px){
     .drawer-toggle{display:inline-flex;align-items:center}
-    .sidebar{position:fixed;top:0;bottom:0;left:0;width:280px;z-index:40;
-             transition:transform .2s ease;box-shadow:0 0 24px rgba(16,32,63,.18);
-             transform:translateX(-100%)}
+    .sidebar{position:fixed;top:0;bottom:0;left:0;width:300px;max-width:88vw;z-index:40;transform:translateX(-100%);transition:transform .22s ease;box-shadow:0 0 30px rgba(21,27,84,.25)}
     body.sidebar-open .sidebar{transform:translateX(0)}
-    body.sidebar-open .drawer-backdrop{
-      display:block;position:fixed;inset:0;background:rgba(16,32,63,.35);z-index:30}
+    body.sidebar-open .drawer-backdrop{display:block;position:fixed;inset:0;background:rgba(21,27,84,.4);z-index:30}
   }
 
-  /* ---------- Conversation area ---------- */
-  main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;
-       max-width:820px;width:100%;margin:0 auto}
+  /* ---------- conversation (fixed backdrop; .chat-scroll is what scrolls) ---------- */
+  .chat-viewport{position:relative;flex:1;min-height:0;isolation:isolate}
+  .chat-viewport::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;
+    background:radial-gradient(ellipse at 85% 0%,rgba(227,143,0,.07),transparent 50%),radial-gradient(ellipse at 0% 0%,rgba(34,113,160,.12),transparent 55%),
+      linear-gradient(180deg,#f1f4fb 0%,#f5f6fa 50%,#f9f7f1 100%)}
+  .chat-viewport::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.32;mix-blend-mode:multiply;
+    background:url('/static/chat_bg_skyline.png') no-repeat bottom center/100% auto}
+  body.hc .chat-viewport::before,body.hc .chat-viewport::after{display:none}
+  .chat-scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+  main{min-height:100%;padding:26px 24px 44px;display:flex;flex-direction:column;gap:18px;max-width:900px;width:100%;margin:0 auto}
 
-  /* Welcome screen -- shown only before the first message (and again
-     after "+ New chat"), replaced by the conversation once a question is
-     sent. Script-style: a heading + subtext + a grid of clickable
-     suggestion cards, instead of a plain line of hint text. */
-  .welcome{margin:auto 0;padding:20px 8px;text-align:center;display:flex;flex-direction:column;
-           align-items:center;gap:6px}
-  .welcome h2{margin:0;font-size:1.4rem;color:var(--navy);font-weight:800}
-  .welcome p{margin:0 0 18px;font-size:.86rem;color:var(--muted);max-width:520px;line-height:1.5}
-  .welcome-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
-  .welcome-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-                padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
-                text-align:left;font-size:.84rem;font-weight:600;color:var(--ink)}
-  .welcome-card:hover{background:var(--navy-soft);border-color:var(--navy)}
-  .welcome-card-icon{width:32px;height:32px;border-radius:9px;background:var(--navy-soft);color:var(--navy);
-                      display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .welcome-card-icon svg{width:16px;height:16px;stroke:var(--navy);fill:none}
-  @media(max-width:560px){ .welcome-cards{grid-template-columns:1fr} }
+  .welcome{margin:auto 0;padding:10px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;animation:rise .5s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .eyebrow{font-size:.68rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold-deep)}
+  .welcome h2{margin:10px 0 0;font-family:var(--serif);font-size:2rem;font-weight:600;color:var(--navy);line-height:1.2;letter-spacing:-.2px}
+  .ornament{display:flex;align-items:center;gap:10px;margin:14px 0 26px}
+  .ornament i{display:block;width:56px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+  .ornament i:last-child{background:linear-gradient(90deg,var(--gold),transparent)}
+  .ornament b{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+  .welcome p{margin:0 0 22px;font-size:.9rem;color:var(--muted);max-width:620px;line-height:1.65}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:740px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 10px rgba(7,37,119,.04)}
+  .stat{padding:14px 10px}
+  .stat + .stat{border-left:1px solid var(--border)}
+  .stat b{display:block;font-family:var(--serif);font-size:1.3rem;font-weight:600;color:var(--navy);font-variant-numeric:lining-nums tabular-nums}
+  .stat span{display:block;font-size:.68rem;color:var(--muted);line-height:1.35;margin-top:3px}
+  .cards-label{align-self:stretch;max-width:800px;margin:0 auto 10px;width:100%;text-align:left;font-size:.68rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--faint)}
+  .welcome-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:800px}
+  .welcome-card{position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 14px 13px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;text-align:left;color:var(--ink);
+    transition:border-color .18s ease,box-shadow .2s ease,transform .2s ease;animation:rise .45s ease both}
+  .welcome-card:nth-child(2){animation-delay:.04s}.welcome-card:nth-child(3){animation-delay:.08s}.welcome-card:nth-child(4){animation-delay:.12s}.welcome-card:nth-child(5){animation-delay:.16s}.welcome-card:nth-child(6){animation-delay:.2s}
+  .welcome-card::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .25s ease}
+  .welcome-card:hover{border-color:var(--border-strong);box-shadow:0 10px 26px rgba(7,37,119,.10);transform:translateY(-2px)}
+  .welcome-card:hover::before{transform:scaleX(1)}
+  .welcome-card .top{display:flex;align-items:center;gap:9px;width:100%}
+  .welcome-card svg{flex:0 0 auto;width:17px;height:17px;stroke:var(--steel);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .welcome-card .title{font-size:.84rem;font-weight:600;color:var(--navy)}
+  .welcome-card .q{font-size:.76rem;color:var(--muted);line-height:1.45}
+  @media(max-width:880px){ .welcome-cards{grid-template-columns:1fr 1fr} }
+  @media(max-width:560px){ .welcome-cards{grid-template-columns:1fr} .stats{grid-template-columns:1fr 1fr}
+    .stat:nth-child(3){border-left:none} .stat:nth-child(n+3){border-top:1px solid var(--border)} .welcome h2{font-size:1.5rem} }
 
-  .msg{display:flex;gap:10px;max-width:88%;animation:msgIn .2s ease both}
+  .msg{display:flex;gap:12px;max-width:92%;animation:msgIn .25s ease both}
   @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .msg .av{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:flex;
-           align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
-  .bubble{padding:12px 16px;border-radius:14px;line-height:1.6;font-size:.94rem;
-          white-space:pre-wrap;box-shadow:0 1px 3px rgba(26,47,92,.08)}
-  .bot{align-self:flex-start}.bot .av{background:var(--navy)}
-  .bot .bubble{background:var(--bot-bubble);border:1px solid var(--border);border-top-left-radius:4px}
-  .user{align-self:flex-end;flex-direction:row-reverse}.user .av{background:#5b6472}
-  .user .bubble{background:var(--user-bubble);color:#fff;border-top-right-radius:4px}
-  .bubble.waiting{color:var(--muted);font-style:italic}
-  .bubble.err{background:var(--red-soft);border:1px solid var(--red-border);color:var(--red)}
-  .bubble.notanswerable{background:var(--warn-bg);border:1px solid var(--warn-border)}
+  .av{width:32px;height:32px;border-radius:50%;flex:0 0 32px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .bot .av{background:#fff;border:1px solid var(--border);box-shadow:0 1px 3px rgba(7,37,119,.1)}
+  .bot .av img{width:26px;height:26px;object-fit:contain}
+  .user .av{background:var(--navy-soft);border:1px solid var(--border);color:var(--navy)}
+  .user .av svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .msg > .bubble{min-width:0;max-width:100%}
+  .bubble{padding:14px 18px;border-radius:12px;line-height:1.65;font-size:.94rem;overflow-wrap:anywhere}
+  .bot{align-self:flex-start;width:92%}
+  .bot .bubble{flex:1;background:rgba(255,255,255,.97);border:1px solid var(--border);border-top-left-radius:3px;box-shadow:0 4px 18px rgba(7,37,119,.06);transition:box-shadow .3s ease,border-color .3s ease}
+  .bot.settled .bubble:hover{box-shadow:0 8px 26px rgba(7,37,119,.09);border-color:var(--border-strong)}
+  .user{align-self:flex-end;flex-direction:row-reverse}
+  .user .bubble{background:linear-gradient(135deg,var(--navy-mid),var(--navy));color:#fff;border-top-right-radius:3px;white-space:pre-wrap;box-shadow:0 4px 14px rgba(7,37,119,.22)}
+  body.hc .user .bubble{background:#000}
+  .bubble.err{background:var(--err-soft);border-color:var(--err-border);color:var(--err)}
+  .bubble.refused{background:rgba(255,248,232,.97);border-color:var(--note-border)}
+  .answer p{margin:0 0 9px}.answer p:last-child{margin:0}
+  .answer ul{margin:4px 0 10px;padding:0;list-style:none}
+  .answer li{position:relative;padding:3px 0 3px 18px}
+  .answer li::before{content:"";position:absolute;left:3px;top:.85em;width:6px;height:6px;background:var(--gold);transform:rotate(45deg)}
+  .answer strong{color:var(--navy);font-weight:700}
+  .answer p.note{font-size:.84rem;color:var(--muted);background:var(--paper);border:1px solid var(--border);border-left:3px solid var(--gold);
+    border-radius:8px;padding:8px 11px;line-height:1.55}
+  .answer .note-tag{display:inline-block;margin-right:7px;font-size:.6rem;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+    color:var(--gold-deep);background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:1px 7px;vertical-align:1px}
+  .asked-as{font-size:.78rem;color:var(--muted);margin:0 0 9px;padding:2px 0 2px 10px;border-left:3px solid var(--gold);animation:fadeIn .25s ease both}
+  .asked-as b{color:var(--navy);font-weight:600}
+  .answer > p:first-child strong:first-child{font-family:var(--serif);font-weight:600;font-size:1.02rem}
+  .answer .md-table{overflow-x:auto;margin:6px 0 10px;border:1px solid var(--border);border-radius:9px}
+  .answer table{border-collapse:collapse;min-width:100%;font-size:.8rem}
+  .answer th{background:#f4f6fc;color:var(--navy);font-weight:600;text-align:left;padding:7px 10px;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+  .answer td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  .answer.streaming > :last-child::after,.answer.streaming > ul:last-child > li:last-child::after{content:"";display:inline-block;width:2px;height:1.05em;margin-left:2px;vertical-align:-3px;background:var(--gold);animation:blink 1s steps(1) infinite}
+  .answer.streaming > ul:last-child::after,.answer.streaming > .md-table:last-child::after{content:none}
+  @keyframes blink{50%{opacity:0}}
 
-  .meta{margin-top:9px;font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-weight:600}
-  .pill.time{color:var(--navy)}
-  .pill.nf{color:var(--red);border-color:var(--red-border);background:var(--red-soft)}
-  .pill.trunc{color:var(--warn);border-color:var(--warn-border);background:var(--warn-bg)}
+  /* live pipeline stages, streamed from the server */
+  .progress{display:flex;flex-direction:column;gap:8px}
+  .progress-bar{height:2px;border-radius:2px;background:var(--navy-soft);overflow:hidden;position:relative}
+  .progress-bar::after{content:"";position:absolute;top:0;bottom:0;left:-35%;width:35%;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:sweep 1.3s ease-in-out infinite}
+  @keyframes sweep{to{left:100%}}
+  .stages{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--faint)}
+  .stage{display:inline-flex;align-items:center;gap:6px;animation:fadeIn .25s ease both}
+  .stage i{width:7px;height:7px;border-radius:50%;background:var(--border-strong)}
+  .stage.done{color:var(--muted)}
+  .stage.done i{background:var(--navy)}
+  .stage.now{color:var(--navy);font-weight:600}
+  .stage.now i{background:var(--gold);box-shadow:0 0 0 0 rgba(227,143,0,.6);animation:ping 1.2s ease-out infinite}
+  @keyframes ping{to{box-shadow:0 0 0 7px rgba(227,143,0,0)}}
+  .progress-row{display:flex;align-items:center;gap:12px}
+  .progress-row .stages{flex:1}
+  .elapsed{font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
 
-  /* Reframed as an opt-in disclosure for reviewers/auditors, not part of
-     the default conversational visual language -- collapsed by default,
-     holds both the SQL and the per-stage timing breakdown together. */
-  .sqlbox{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
-  .sqlbox > summary{cursor:pointer;padding:8px 12px;font-size:.76rem;font-weight:700;
-                     color:var(--navy);list-style:none}
-  .sqlbox > summary::-webkit-details-marker{display:none}
-  .sqlbox > summary::before{content:"▸ ";color:var(--muted)}
-  .sqlbox[open] > summary::before{content:"▾ "}
-  .sqlbox .detail-body{padding:0 12px 10px}
-  .sqlbox pre{margin:8px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
-              font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.74rem;
-              color:var(--navy-deep);white-space:pre-wrap;word-break:break-word;background:var(--navy-soft)}
-  .sqlbox .timing{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.72rem;color:var(--muted)}
+  .meta{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-weight:600}
+  .pill.nf,.pill.trunc{color:var(--note);border-color:var(--note-border);background:var(--note-bg)}
+  .pill-btn{cursor:pointer;font:inherit;font-weight:600;line-height:inherit;display:inline-flex;align-items:center;gap:5px;color:var(--steel);transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+  .pill-btn:hover{background:var(--navy-soft);border-color:var(--border-strong);color:var(--navy);transform:translateY(-1px)}
+  .pill-btn:active{transform:scale(.96)}
+  .pill-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+  .meta .spacer{flex:1}
+  .pill-btn.report-btn{color:var(--gold-deep);border-color:var(--gold-line);background:linear-gradient(180deg,#fffdf6,var(--gold-soft));padding:3px 10px;box-shadow:0 1px 4px rgba(227,143,0,.14)}
+  .pill-btn.report-btn:hover{color:var(--gold-deep);border-color:var(--gold);background:linear-gradient(180deg,#fff,#fdebc0);box-shadow:0 3px 10px rgba(227,143,0,.24)}
+  .pill-btn.report-btn svg{width:13px;height:13px}
+  .pill-btn.report-btn .xl{font-size:.56rem;font-weight:800;letter-spacing:.6px;padding:1px 5px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--gold),var(--gold-deep))}
+  .pill-btn.report-btn.busy{cursor:progress;opacity:.75}
+  .pill-btn.report-btn.busy svg{animation:spin .8s linear infinite}
+  .pill-btn.view-btn{color:var(--navy);border-color:var(--border-strong);padding:3px 10px}
+  .pill-btn.view-btn svg{width:13px;height:13px}
+  .pill-btn.report-btn.fail{color:var(--note);border-color:var(--note-border);background:var(--note-bg)}
 
-  /* Inline chart, rendered above the answer text within the same bot
-     bubble. Hidden (via [hidden]) until a real chart_data payload arrives. */
-  .chart-container{margin-bottom:10px;background:var(--surface);border:1px solid var(--border);
-                    border-radius:10px;padding:10px;height:220px}
-  .chart-container canvas{width:100% !important;height:100% !important}
+  .reveal{animation:rise .45s ease both}
+  .panel{margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden;max-width:100%;min-width:0}
+  .panel > summary{cursor:pointer;padding:9px 12px;font-size:.78rem;font-weight:600;color:var(--navy);list-style:none;display:flex;align-items:center;gap:8px}
+  .panel > summary::-webkit-details-marker{display:none}
+  .panel > summary::before{content:"";width:6px;height:6px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(-45deg);transition:transform .15s ease;margin-right:2px}
+  .panel[open] > summary::before{transform:rotate(45deg)}
+  .panel .csv{margin-left:auto;font-size:.7rem;white-space:nowrap}
+  .table-wrap{max-height:340px;overflow:auto;border-top:1px solid var(--border);scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+  .panel table{border-collapse:collapse;min-width:100%;font-size:.8rem;white-space:nowrap}
+  .panel th{position:sticky;top:0;background:#f4f6fc;color:var(--navy);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border-strong)}
+  .panel td{padding:7px 12px;border-bottom:1px solid var(--border)}
+  .panel tbody tr:hover td{background:var(--gold-soft)}
+  .panel .num{text-align:right;font-variant-numeric:tabular-nums}
+  .panel .note{padding:7px 12px;font-size:.72rem;color:var(--muted)}
+  .panel pre{margin:0 12px 10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#f4f6fc;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.74rem;color:var(--navy-deep);white-space:pre-wrap;word-break:break-word}
+  .panel .timing{margin:8px 12px 6px;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--muted)}
+  .panel[open] > .table-wrap{animation:fadeIn .3s ease both}
+  .bot .bubble > .ux-card{margin-top:14px}
+  .bot .bubble > .ux-card.reveal,.bot .bubble > .ux-card{animation-delay:.06s}
+  .bot .bubble > details.reveal{animation-delay:.14s}
+  .bot .bubble > .meta.reveal{animation-delay:.2s}
 
-  /* ---------- Suggestion chips (in the sidebar, since step 3) ---------- */
-  .chips{display:flex;flex-direction:column;gap:6px}
-  .chip{background:var(--surface);border:1px solid var(--border);color:var(--navy);
-        font-size:.78rem;font-weight:600;padding:7px 10px;border-radius:8px;cursor:pointer;
-        text-align:left;width:100%}
-  .chip:hover{background:var(--navy-soft)}
+  /* ---------- composer ---------- */
+  footer{border-top:1px solid var(--border);background:var(--surface);padding:12px 18px 8px;flex:0 0 auto}
+  .composer{max-width:900px;margin:0 auto}
+  .composer-box{display:flex;align-items:center;gap:10px;border:1px solid var(--border-strong);border-radius:12px;padding:6px 6px 6px 16px;background:var(--surface);box-shadow:0 2px 10px rgba(7,37,119,.05);transition:border-color .2s ease,box-shadow .25s ease}
+  .composer-box:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(7,37,119,.10),0 8px 24px rgba(7,37,119,.08)}
+  .composer-icon{flex:0 0 auto;width:17px;height:17px;color:var(--gold)}
+  #box{flex:1;min-width:0;border:none;padding:9px 0;font-size:.95rem;outline:none;background:none;color:var(--ink)}
+  #box::placeholder{color:var(--faint)}
+  #send{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:9px;padding:0 18px;height:40px;color:#fff;font-weight:600;font-size:.88rem;cursor:pointer;
+    background:linear-gradient(135deg,var(--navy-glow),var(--navy) 60%,var(--navy-deep));transition:box-shadow .15s ease,transform .12s ease,filter .15s ease}
+  #send svg{width:15px;height:15px;transition:transform .2s ease}
+  #send:hover{filter:brightness(1.12);box-shadow:0 4px 14px rgba(7,37,119,.25)}
+  #send:hover:not(:disabled) svg{transform:translateX(2px)}
+  #send:active:not(:disabled){transform:scale(.96)}
+  #send:disabled{opacity:.45;cursor:default;box-shadow:none}
+  .footnote{max-width:900px;margin:7px auto 0;display:flex;align-items:center;gap:12px;font-size:.67rem;color:var(--faint)}
+  .footnote .txt{flex:1;text-align:center}
+  .model-status{display:inline-flex;align-items:center;gap:5px;color:var(--faint);white-space:nowrap}
+  .model-status i{width:6px;height:6px;border-radius:50%;background:#c2c8d4}
+  .model-status.ok i{background:var(--ok)}.model-status.off i{background:var(--gold)}.model-status.bad i{background:var(--err)}
 
-  /* ---------- Composer ---------- */
-  footer{border-top:1px solid var(--border);background:var(--surface);padding:12px 16px;flex:0 0 auto}
-  .composer{max-width:820px;margin:0 auto}
-  /* One unified pill (Script-style) instead of two separately-bordered
-     controls -- same input/send behavior, just the outer border/focus
-     ring now lives on the wrapper so input+button read as one control. */
-  .composer-box{display:flex;align-items:center;gap:6px;border:1px solid var(--border);
-                border-radius:24px;padding:5px 6px 5px 16px;background:var(--surface)}
-  .composer-box:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,47,92,.14)}
-  #box{flex:1;border:none;padding:8px 0;font-size:.95rem;outline:none;font-family:inherit;
-       background:none;color:var(--ink)}
-  #send{background:var(--navy);color:#fff;border:none;border-radius:20px;padding:0 20px;height:38px;
-        font-weight:700;cursor:pointer}
-  #send:hover{background:var(--navy-deep)}
-  #send:disabled{opacity:.5;cursor:default}
-  .composer-caption{max-width:820px;margin:8px auto 0;text-align:center;font-size:.7rem;color:var(--muted)}
-
-  @media(max-width:640px){
-    .gov-brand img{height:38px}
-    .gov-line2{font-size:.78rem}
-    .a11y-toolbar{width:100%;justify-content:flex-start}
-    .app-actions{margin-left:0}
+  @media(max-width:768px){
+    .gov-topbar{padding:8px 14px;gap:10px} .app-bar{padding:8px 14px} main{padding:16px 12px 28px}
+    .msg,.bot{max-width:100%;width:100%} footer{padding:10px 10px 6px} .brand-divider{display:none}
+  }
+  @media(max-width:560px){
+    .app-bar-text .extra{display:none} .logo-halo img{height:38px;width:38px} .logo-halo + .logo-halo{display:none}
+    .gov-line2{font-size:.9rem;white-space:normal} .gov-line1{letter-spacing:1.2px}
+    #send span{display:none} #send{padding:0;width:40px;justify-content:center}
+    .footnote .txt{display:none} .footnote{justify-content:flex-end}
+    .bubble{padding:12px 13px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    .ai-badge::after,.progress-bar::after{display:none}
   }
 </style>
+<link rel="stylesheet" href="/static/ux.css?v=20261005j">
+<link rel="stylesheet" href="/static/report-viewer.css?v=20261005j">
+<link rel="stylesheet" href="/static/voice/voice.css?v=20261005v">
 </head>
 <body>
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-logos">
+      <span class="splash-halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="splash-halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
+    </div>
+    <div class="splash-text"><b data-i18n="splashTitle">DCB Assistant</b><small data-i18n="splashSub">Entering AI mode</small></div>
+  </div>
+
   <header class="gov-header">
     <div class="gov-topbar">
-      <div class="gov-brand">
-        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+      <div class="gov-brand" id="govBrand">
+        <span class="logo-halo"><img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka"></span>
+        <span class="logo-halo"><img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru"></span>
+        <span class="brand-divider"></span>
         <div class="gov-titles">
           <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
-          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysore</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
         </div>
-        <!-- cesc_logo_reference.png was cropped from a third-party source,
-             not pulled from the cescmysore.karnataka.gov.in domain itself.
-             Good enough to ship with for this POC; swap for an official
-             CESC-supplied file if one is sourced later. -->
-        <img src="/static/cesc_logo_reference.png" alt="CESC, Mysore department mark">
       </div>
-      <div class="a11y-toolbar" role="group" aria-label="Accessibility settings">
-        <div class="a11y-group" aria-label="Text size">
-          <span class="a11y-label" data-i18n="textSize">Text size</span>
-          <button type="button" id="fontDec" aria-label="Decrease text size">A−</button>
-          <button type="button" id="fontReset" aria-label="Reset text size">A</button>
-          <button type="button" id="fontInc" aria-label="Increase text size">A+</button>
-        </div>
-        <button type="button" id="contrastToggle" aria-pressed="false" data-i18n="highContrast">High contrast</button>
-        <div class="a11y-group" aria-label="Language">
-          <button type="button" id="langEn" class="lang-btn active" data-lang="en">English</button>
-          <button type="button" id="langKn" class="lang-btn" data-lang="kn">ಕನ್ನಡ</button>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
         </div>
       </div>
     </div>
-    <div class="app-titlebar">
-      <div class="app-title">
-        <span data-i18n="appTitle">DCB Assistant</span>
-        <span class="app-sub" data-i18n="appSub">Demand, Collection &amp; Balance · Holenarasipura Division</span>
-      </div>
-      <div class="app-actions">
-        <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menuToggle">Menu</button>
-        <div id="statusRow"><span class="dot" id="statusDot"></span><span id="statusText">API: checking…</span></div>
-        <button id="newchat" data-i18n="newChat">+ New chat</button>
-      </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"></div>
+      <span class="ai-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></span>
     </div>
+    <div class="flag-rule"></div>
   </header>
 
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-heading">
-          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.5 8.7 8.7 0 0 1-3.8-.8L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.9 3a8.5 8.5 0 0 1 8.1 8.5z"/></svg>
-          <span data-i18n="sidebarSuggested">Suggested questions</span>
-        </div>
-        <div class="chips" id="chips">
-          <button class="chip" data-q="What was the collection efficiency in Arkalgud in 2024-25?" data-i18n="chip1">Collection efficiency, one sub-division</button>
-          <button class="chip" data-q="Compare domestic (LT-1) vs industrial (HT-2) demand across all years." data-i18n="chip2">Compare LT-1 vs HT-2 demand (chart)</button>
-          <button class="chip" data-q="How much outstanding balance does Konanur currently carry?" data-i18n="chip3">Outstanding arrears</button>
-          <button class="chip" data-q="What's the year-over-year growth in total installations for the whole division?" data-i18n="chip4">Installations growth over time (chart)</button>
-          <button class="chip" data-q="What was the total demand for tariff code ZZ-99 in 2024-25?" data-i18n="chip5">A tariff code that doesn't exist</button>
-        </div>
-      </div>
-
-      <div class="sidebar-promo">
-        <div class="sidebar-promo-icon">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        </div>
-        <h4 data-i18n="sidebarPromoTitle">Want the bigger picture?</h4>
-        <p data-i18n="sidebarPromoSub">See KPIs, trends, and top sub-divisions on the summary dashboard.</p>
-        <a href="/dashboard" data-i18n="sidebarPromoLink">Open dashboard</a>
-      </div>
+      <a class="dash-link" href="/dashboard" id="dashLink"><span class="dash-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="dash-txt"><b data-i18n="dashLink">Dashboard</b><small data-i18n="dashSub">KPIs · sub-divisions · insights</small></span><span class="dash-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></a>
+      <button type="button" id="newchat"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg><span data-i18n="newChat">New conversation</span></button>
+      <div id="sideGroups" style="display:flex;flex-direction:column;gap:20px"></div>
     </aside>
 
     <div class="center-col">
-      <main id="chat"></main>
-
+      <div class="chat-viewport">
+        <div class="chat-scroll" id="chatScroll">
+          <main id="chat" aria-live="polite"></main>
+        </div>
+      </div>
       <footer>
         <div class="composer">
           <div class="composer-box">
-            <input id="box" data-i18n-placeholder="boxPlaceholder" placeholder="Ask about demand, collection, balance, tariffs, sub-divisions…" autocomplete="off">
-            <button id="send" data-i18n="send">Send</button>
+            <svg class="composer-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+            <input id="box" maxlength="500" autocomplete="off" data-i18n-placeholder="placeholder" aria-label="Your question"
+                   placeholder="Ask about demand, collection, arrears, tariffs, subsidy, AT&amp;C, sub-divisions…">
+            <button id="send" type="button"><span data-i18n="send">Ask</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
           </div>
         </div>
-        <div class="composer-caption" data-i18n="composerCaption">Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.</div>
+        <div class="footnote">
+          <span class="txt" data-i18n="footnote">Every figure comes from a checked, read-only query on the CESC Holenarasipura Division DCB data.</span>
+          <span class="model-status" id="modelStatus" title=""><i></i><span id="modelStatusText"></span></span>
+        </div>
       </footer>
     </div>
   </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
-<script>
-const chat = document.getElementById('chat');
-const box  = document.getElementById('box');
-const sendBtn = document.getElementById('send');
-
-// Welcome screen: shown before the first message (and again after
-// "+ New chat"), replaced by the conversation once a question is sent
-// (see send() below, which removes #welcomeScreen on the first call).
-// Icons are purely decorative alongside their own text label -- never
-// icon-only, consistent with this app's accessibility-toolbar rule.
-// chip2 and chip4 are deliberately comparison/trend-shaped (they're the
-// ones this project's own eval set -- CLAUDE.md's Q5 and Q2 -- confirmed
-// actually produce chart_data). Before this, all 5 suggestions were
-// single-value or adversarial questions, so nothing a user could click
-// from the welcome screen or sidebar ever rendered a chart at all -- the
-// feature worked, but nothing discoverable ever demonstrated it.
-const WELCOME_CARDS = [
-  { q: 'What was the collection efficiency in Arkalgud in 2024-25?', i18n: 'chip1',
-    icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' },
-  { q: 'Compare domestic (LT-1) vs industrial (HT-2) demand across all years.', i18n: 'chip2',
-    icon: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>' },
-  { q: 'How much outstanding balance does Konanur currently carry?', i18n: 'chip3',
-    icon: '<path d="M2 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/>' },
-  { q: "What's the year-over-year growth in total installations for the whole division?", i18n: 'chip4',
-    icon: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>' },
-  { q: "What was the total demand for tariff code ZZ-99 in 2024-25?", i18n: 'chip5',
-    icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.2 1.9-2.5 3.5"/><path d="M12 17h.01"/>' },
-];
-
-function renderWelcomeScreen(){
-  chat.innerHTML = '';
-  const wrap = document.createElement('div'); wrap.className = 'welcome'; wrap.id = 'welcomeScreen';
-  const h2 = document.createElement('h2'); h2.dataset.i18n = 'welcomeTitle'; h2.textContent = t('welcomeTitle');
-  const p = document.createElement('p'); p.dataset.i18n = 'welcomeSub'; p.textContent = t('welcomeSub');
-  const cards = document.createElement('div'); cards.className = 'welcome-cards';
-  WELCOME_CARDS.forEach(c => {
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'welcome-card'; btn.dataset.q = c.q;
-    btn.innerHTML = `<span class="welcome-card-icon"><svg viewBox="0 0 24 24">${c.icon}</svg></span>`
-      + `<span data-i18n="${c.i18n}">${t(c.i18n)}</span>`;
-    btn.onclick = () => { box.value = c.q; send(); };
-    cards.appendChild(btn);
-  });
-  wrap.appendChild(h2); wrap.appendChild(p); wrap.appendChild(cards);
-  chat.appendChild(wrap);
-}
-
-function addBubble(text, who){
-  const m = document.createElement('div'); m.className = 'msg ' + who;
-  const av = document.createElement('div'); av.className = 'av'; av.textContent = who === 'bot' ? 'AI' : 'U';
-  const b = document.createElement('div'); b.className = 'bubble';
-  b.textContent = text;
-  m.appendChild(av); m.appendChild(b); chat.appendChild(m);
-  chat.scrollTop = chat.scrollHeight;
-  return b;
-}
-
-function renderMeta(bubbleEl, doneEv, sqlText, clientSecs){
-  const meta = document.createElement('div'); meta.className = 'meta';
-
-  const timeP = document.createElement('span'); timeP.className = 'pill time';
-  timeP.textContent = t('respondedIn', {s: clientSecs});
-  meta.appendChild(timeP);
-
-  if (doneEv){
-    if (doneEv.answerable === false){
-      bubbleEl.classList.add('notanswerable');
-      const p = document.createElement('span'); p.className = 'pill nf';
-      p.textContent = t('notAnswerable');
-      meta.appendChild(p);
-    }
-    if (doneEv.truncated){
-      const p = document.createElement('span'); p.className = 'pill trunc';
-      p.textContent = t('resultsTruncated');
-      meta.appendChild(p);
-    }
-  }
-  bubbleEl.appendChild(meta);
-
-  // Opt-in technical disclosure for reviewers/auditors: SQL + per-stage
-  // timing breakdown, collapsed by default, not part of the default
-  // conversational visual language.
-  if (sqlText || (doneEv && doneEv.timing_ms)){
-    const det = document.createElement('details'); det.className = 'sqlbox';
-    const sum = document.createElement('summary'); sum.textContent = t('technicalDetails');
-    det.appendChild(sum);
-    const body = document.createElement('div'); body.className = 'detail-body';
-    if (doneEv && doneEv.timing_ms){
-      const t2 = doneEv.timing_ms || {};
-      const order = ['router_ms', 'llm_ms', 'safety_ms', 'db_ms', 'fill_ms'];
-      const parts = order.filter(k => k in t2).map(k => k.replace('_ms', '') + ': ' + t2[k] + 'ms');
-      if (parts.length){
-        const tp = document.createElement('div'); tp.className = 'timing';
-        tp.textContent = parts.join(' · ');
-        body.appendChild(tp);
-      }
-    }
-    if (sqlText){
-      const pre = document.createElement('pre'); pre.textContent = sqlText;
-      body.appendChild(pre);
-    }
-    det.appendChild(body);
-    bubbleEl.appendChild(det);
-  }
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// Renders chart_data (already REAL data by the time it reaches the
-// frontend -- built deterministically in app/pipeline.py::_build_chart_data
-// from the actual query result, never authored by the LLM; see
-// app/models.py::ChartSpec's docstring) into `container`, above the answer
-// text. Styled entirely from this page's navy/red/gray palette -- no
-// Chart.js default rainbow colors.
-function renderChart(container, chartData){
-  if (!chartData || !Array.isArray(chartData.values) || !chartData.values.length) return;
-  container.innerHTML = '';
-  container.hidden = false;
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-
-  const hc = document.body.classList.contains('hc');
-  const navy = hc ? '#000000' : '#1a2f5c';
-  const gridColor = hc ? '#000000' : '#e3e7ee';
-  const textColor = hc ? '#000000' : '#4b5563';
-  const isBar = chartData.type === 'bar';
-
-  new Chart(canvas.getContext('2d'), {
-    type: isBar ? 'bar' : 'line',
-    data: {
-      labels: chartData.labels,
-      datasets: [{
-        label: chartData.series_label || '',
-        data: chartData.values,
-        backgroundColor: isBar ? navy : 'rgba(26,47,92,0.12)',
-        borderColor: navy,
-        borderWidth: 2,
-        pointBackgroundColor: navy,
-        pointRadius: isBar ? 0 : 3,
-        fill: !isBar,
-        tension: 0.25,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 300 },
-      plugins: {
-        legend: { display: !!chartData.series_label, labels: { color: textColor } },
-        tooltip: { backgroundColor: navy, titleColor: '#fff', bodyColor: '#fff' },
-      },
-      scales: {
-        x: { ticks: { color: textColor }, grid: { color: gridColor } },
-        y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true },
-      },
-    },
-  });
-}
-
-// A bit longer than this app's own DB query timeout (8s default,
-// app/config.py) plus generous headroom for the LLM call -- tonight's
-// eval measured a 922-2203ms range for llm_ms, so 30s is comfortably
-// generous, not a tight guess.
-const CLIENT_TIMEOUT_MS = 30000;
-
-// Reads the SSE stream from POST /api/ask -- real event shapes, from
-// app/main.py::ask_stream (not guessed, not the same shape as the
-// sibling BESCOM project's NDJSON /chat/stream):
-//   event: status        {"stage": "thinking"}
-//   event: sql            {"sql": "..."}                (may be "" when unanswerable)
-//   event: chart           {"chart_data": {...} | null}  (real data, rendered
-//                                                          inline in this
-//                                                          message's own
-//                                                          bubble; see renderChart)
-//   event: answer_chunk   {"text": "..."}                (one or more, in order)
-//   event: done            {"answerable": bool, "timing_ms": {...}, "truncated": bool}
-async function send(){
-  const text = box.value.trim(); if (!text) return;
-  const welcome = document.getElementById('welcomeScreen');
-  if (welcome) welcome.remove();
-  addBubble(text, 'user'); box.value = ''; sendBtn.disabled = true;
-
-  // The bot bubble holds three independent children -- a chart container
-  // (hidden until/unless a real chart_data payload arrives), the answer
-  // text, then (later) the meta/technical-details block appended by
-  // renderMeta -- rather than setting the bubble's own textContent
-  // directly, which would wipe out the chart every time the text updates.
-  const bot = addBubble('', 'bot');
-  const chartContainer = document.createElement('div');
-  chartContainer.className = 'chart-container';
-  chartContainer.hidden = true;
-  const textEl = document.createElement('div');
-  textEl.textContent = t('thinking', {s: 0});
-  bot.appendChild(chartContainer);
-  bot.appendChild(textEl);
-
-  bot.classList.add('waiting');
-  const t0 = performance.now();
-  const tick = setInterval(() => {
-    if (bot.classList.contains('waiting'))
-      textEl.textContent = t('thinking', {s: Math.floor((performance.now() - t0) / 1000)});
-  }, 1000);
-
-  const ctrl = new AbortController();
-  const abortTimer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
-  const stop = () => { clearInterval(tick); clearTimeout(abortTimer); };
-  const stopWaiting = () => { if (bot.classList.contains('waiting')){ bot.classList.remove('waiting'); textEl.textContent = ''; } };
-
-  let acc = '', sqlText = '', doneEv = null;
-
-  const processFrame = (frame) => {
-    let ev = null, data = null;
-    for (const line of frame.split('\n')){
-      if (line.startsWith('event:')) ev = line.slice(6).trim();
-      else if (line.startsWith('data:')) data = line.slice(5).trim();
-    }
-    if (!ev || data === null) return;
-    let obj; try { obj = JSON.parse(data); } catch (_e) { return; }
-    if (ev === 'sql'){
-      sqlText = obj.sql || '';
-    } else if (ev === 'chart'){
-      // Render as soon as this event lands -- the answer text is still
-      // streaming in via answer_chunk after this, no reason to wait for it.
-      if (obj.chart_data) renderChart(chartContainer, obj.chart_data);
-    } else if (ev === 'answer_chunk'){
-      stopWaiting();
-      acc += obj.text;
-      textEl.textContent = acc;
-      chat.scrollTop = chat.scrollHeight;
-    } else if (ev === 'done'){
-      doneEv = obj;
-    }
-  };
-
-  try {
-    const r = await fetch('/api/ask', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: text }), signal: ctrl.signal
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const reader = r.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while (true){
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let idx;
-      while ((idx = buf.indexOf('\n\n')) >= 0){
-        const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
-        processFrame(frame);
-      }
-    }
-    buf += dec.decode();
-    if (buf.trim()) processFrame(buf);
-
-    stop();
-    stopWaiting();
-    if (!acc) textEl.textContent = t('noAnswerText');
-    const secs = ((performance.now() - t0) / 1000).toFixed(1);
-    renderMeta(bot, doneEv, sqlText, secs);
-  } catch (e) {
-    stop();
-    stopWaiting();
-    bot.classList.add('err');
-    const secs = ((performance.now() - t0) / 1000).toFixed(1);
-    textEl.textContent = (e && e.name === 'AbortError'
-      ? t('timedOut', {s: secs})
-      : t('requestFailed', {s: secs, e: e}))
-      + (acc ? '\n\n' + t('partialAnswer') + '\n' + acc : '');
-  }
-  sendBtn.disabled = false; box.focus();
-}
-
-sendBtn.onclick = send;
-box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
-document.getElementById('newchat').onclick = () => { renderWelcomeScreen(); box.focus(); };
-document.querySelectorAll('.chip').forEach(b => {
-  b.onclick = () => { box.value = b.dataset.q; send(); };
-});
-
-// Tracked separately from the DOM (rather than a static data-i18n
-// attribute) because this text reflects live health-check state, not a
-// fixed label -- a language switch must re-render whatever the current
-// status actually is, not reset it back to "checking".
-let apiStatus = 'checking';
-function renderStatus(){
-  const key = apiStatus === 'connected' ? 'apiConnected' : apiStatus === 'unreachable' ? 'apiUnreachable' : 'apiChecking';
-  document.getElementById('statusText').textContent = t(key);
-}
-fetch('/health').then(r => r.json()).then(h => {
-  const ok = h && h.status === 'ok';
-  apiStatus = ok ? 'connected' : 'unreachable';
-  document.getElementById('statusDot').style.background = ok ? '#2f9e58' : '#c0202c';
-  renderStatus();
-}).catch(() => {
-  apiStatus = 'unreachable';
-  document.getElementById('statusDot').style.background = '#c0202c';
-  renderStatus();
-});
-
-box.focus();
-
-// ---------------------------------------------------------------------
-// Accessibility toolbar: font-size stepper, high-contrast toggle,
-// EN/KN language toggle.
-//
-// SCOPE NOTE (language toggle): this is a small static UI-chrome string
-// table only -- it swaps labels, buttons, and headers between English
-// and Kannada. It does NOT translate the chatbot's own generated
-// answers, the generated SQL, or the user's typed question -- those
-// always stay in English (the LLM prompt/semantic layer/DB are English-
-// only). This is intentionally partial, not full i18n; don't mistake it
-// for one later.
-// ---------------------------------------------------------------------
-const I18N = {
-  en: {
-    govLine1: 'Government of Karnataka',
-    govLine2: 'Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysore',
-    textSize: 'Text size',
-    highContrast: 'High contrast',
-    appTitle: 'DCB Assistant',
-    appSub: 'Demand, Collection & Balance · Holenarasipura Division',
-    apiChecking: 'API: checking…',
-    apiConnected: 'API: connected',
-    apiUnreachable: 'API: unreachable',
-    newChat: '+ New chat',
-    menuToggle: 'Menu',
-    sidebarSuggested: 'Suggested questions',
-    sidebarComingSoon: 'Coming in the next pass of this build.',
-    welcomeTitle: 'Welcome to DCB Assistant',
-    welcomeSub: 'Ask a question in plain English — it becomes a real SQL query against the star-schema database, and you get the actual figures back, not a guess.',
-    sidebarPromoTitle: 'Want the bigger picture?',
-    sidebarPromoSub: 'See KPIs, trends, and top sub-divisions on the summary dashboard.',
-    sidebarPromoLink: 'Open dashboard',
-    composerCaption: 'Answers come from a real SQL query against the star-schema database — see "Technical details" under each one.',
-    chip1: 'Collection efficiency, one sub-division',
-    chip2: 'Compare LT-1 vs HT-2 demand (chart)',
-    chip3: 'Outstanding arrears',
-    chip4: 'Installations growth over time (chart)',
-    chip5: "A tariff code that doesn't exist",
-    boxPlaceholder: 'Ask about demand, collection, balance, tariffs, sub-divisions…',
-    send: 'Send',
-    thinking: (v) => 'Thinking… ' + v.s + 's',
-    respondedIn: (v) => 'Responded in ' + v.s + 's',
-    notAnswerable: 'not answerable from this data',
-    resultsTruncated: 'results truncated',
-    technicalDetails: 'Technical details (SQL & timing)',
-    noAnswerText: '(no answer text received)',
-    timedOut: (v) => 'Request timed out after ' + v.s + 's — no response from the server.',
-    requestFailed: (v) => 'Request failed after ' + v.s + 's: ' + v.e,
-    partialAnswer: 'Partial answer received:',
-  },
-  kn: {
-    govLine1: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
-    govLine2: 'ಚಾಮುಂಡೇಶ್ವರಿ ವಿದ್ಯುತ್ ಸರಬರಾಜು ನಿಗಮ ನಿಯಮಿತ (ಸಿಇಎಸ್‌ಸಿ), ಮೈಸೂರು',
-    textSize: 'ಅಕ್ಷರ ಗಾತ್ರ',
-    highContrast: 'ಹೆಚ್ಚಿನ ವ್ಯತ್ಯಾಸ',
-    appTitle: 'ಡಿಸಿಬಿ ಸಹಾಯಕ',
-    appSub: 'ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ ಮತ್ತು ಬಾಕಿ · ಹೊಳೆನರಸೀಪುರ ವಿಭಾಗ',
-    apiChecking: 'API: ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
-    apiConnected: 'API: ಸಂಪರ್ಕಿಸಲಾಗಿದೆ',
-    apiUnreachable: 'API: ತಲುಪಲಾಗುತ್ತಿಲ್ಲ',
-    newChat: '+ ಹೊಸ ಚಾಟ್',
-    menuToggle: 'ಮೆನು',
-    sidebarSuggested: 'ಸೂಚಿತ ಪ್ರಶ್ನೆಗಳು',
-    sidebarComingSoon: 'ಈ ನಿರ್ಮಾಣದ ಮುಂದಿನ ಹಂತದಲ್ಲಿ ಬರಲಿದೆ.',
-    welcomeTitle: 'DCB ಸಹಾಯಕಕ್ಕೆ ಸ್ವಾಗತ',
-    welcomeSub: 'ಸರಳ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಕೇಳಿ — ಇದು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಾಗಿ ಪರಿವರ್ತನೆಗೊಂಡು ನಿಜವಾದ ಅಂಕಿಅಂಶಗಳನ್ನು ನೀಡುತ್ತದೆ.',
-    sidebarPromoTitle: 'ಸಂಪೂರ್ಣ ಚಿತ್ರಣ ಬೇಕೇ?',
-    sidebarPromoSub: 'ಸಾರಾಂಶ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ KPI, ಪ್ರವೃತ್ತಿಗಳು ಮತ್ತು ಅಗ್ರ ಉಪ-ವಿಭಾಗಗಳನ್ನು ನೋಡಿ.',
-    sidebarPromoLink: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ',
-    composerCaption: 'ಉತ್ತರಗಳು ನಿಜವಾದ SQL ಪ್ರಶ್ನೆಯಿಂದ ಬರುತ್ತವೆ — ಪ್ರತಿ ಉತ್ತರದ ಅಡಿಯಲ್ಲಿ "Technical details" ನೋಡಿ.',
-    chip1: 'ಸಂಗ್ರಹಣೆ ದಕ್ಷತೆ, ಒಂದು ಉಪ-ವಿಭಾಗ',
-    chip2: 'LT-1 ಮತ್ತು HT-2 ಬೇಡಿಕೆ ಹೋಲಿಸಿ (ಚಾರ್ಟ್)',
-    chip3: 'ಬಾಕಿ ಉಳಿದ ಮೊತ್ತ',
-    chip4: 'ಕಾಲಾನಂತರ ಅಳವಡಿಕೆಗಳ ಬೆಳವಣಿಗೆ (ಚಾರ್ಟ್)',
-    chip5: 'ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲದ ಸುಂಕ ಸಂಕೇತ',
-    boxPlaceholder: 'ಬೇಡಿಕೆ, ಸಂಗ್ರಹಣೆ, ಬಾಕಿ, ಸುಂಕ, ಉಪ-ವಿಭಾಗಗಳ ಬಗ್ಗೆ ಕೇಳಿ…',
-    send: 'ಕಳುಹಿಸಿ',
-    thinking: (v) => 'ಯೋಚಿಸುತ್ತಿದೆ… ' + v.s + 'ಸೆ',
-    respondedIn: (v) => v.s + 'ಸೆ ನಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸಲಾಗಿದೆ',
-    notAnswerable: 'ಈ ಡೇಟಾದಿಂದ ಉತ್ತರಿಸಲಾಗುವುದಿಲ್ಲ',
-    resultsTruncated: 'ಫಲಿತಾಂಶಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತಗೊಳಿಸಲಾಗಿದೆ',
-    technicalDetails: 'ತಾಂತ್ರಿಕ ವಿವರಗಳು (SQL ಮತ್ತು ಸಮಯ)',
-    noAnswerText: '(ಯಾವುದೇ ಉತ್ತರ ಪಠ್ಯ ಸ್ವೀಕರಿಸಲಾಗಿಲ್ಲ)',
-    timedOut: (v) => v.s + 'ಸೆ ನಂತರ ವಿನಂತಿ ಸಮಯ ಮೀರಿದೆ — ಸರ್ವರ್‌ನಿಂದ ಪ್ರತಿಕ್ರಿಯೆ ಇಲ್ಲ.',
-    requestFailed: (v) => v.s + 'ಸೆ ನಂತರ ವಿನಂತಿ ವಿಫಲವಾಗಿದೆ: ' + v.e,
-    partialAnswer: 'ಭಾಗಶಃ ಉತ್ತರ ಸ್ವೀಕರಿಸಲಾಗಿದೆ:',
-  },
-};
-let currentLang = 'en';
-function t(key, vars){
-  const entry = I18N[currentLang][key];
-  if (typeof entry === 'function') return entry(vars || {});
-  return entry;
-}
-function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    el.placeholder = t(el.dataset.i18nPlaceholder);
-  });
-  renderStatus();
-  document.documentElement.lang = currentLang;
-}
-document.getElementById('langEn').onclick = () => {
-  currentLang = 'en'; applyI18n();
-  document.getElementById('langEn').classList.add('active');
-  document.getElementById('langKn').classList.remove('active');
-};
-document.getElementById('langKn').onclick = () => {
-  currentLang = 'kn'; applyI18n();
-  document.getElementById('langKn').classList.add('active');
-  document.getElementById('langEn').classList.remove('active');
-};
-
-// Font-size stepper: adjusts --font-scale on the root element. Because
-// nearly all text sizing in this page is expressed in rem, this single
-// custom property scales the whole page's typography (and anything
-// padded/sized in rem) together, not just one element.
-let fontScale = 1;
-const FONT_MIN = 0.8, FONT_MAX = 1.4, FONT_STEP = 0.1;
-function setFontScale(v){
-  fontScale = Math.min(FONT_MAX, Math.max(FONT_MIN, v));
-  document.documentElement.style.setProperty('--font-scale', fontScale.toFixed(2));
-}
-document.getElementById('fontDec').onclick = () => setFontScale(fontScale - FONT_STEP);
-document.getElementById('fontInc').onclick = () => setFontScale(fontScale + FONT_STEP);
-document.getElementById('fontReset').onclick = () => setFontScale(1);
-
-const contrastBtn = document.getElementById('contrastToggle');
-contrastBtn.onclick = () => {
-  const on = document.body.classList.toggle('hc');
-  contrastBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-};
-
-// ---------------------------------------------------------------------
-// Tablet/mobile drawer toggle for the sidebar. Only visible under the
-// CSS breakpoint where it becomes a fixed-position overlay instead of a
-// permanent column.
-document.getElementById('sidebarToggle').onclick = () => {
-  document.body.classList.toggle('sidebar-open');
-};
-document.getElementById('drawerBackdrop').onclick = () => {
-  document.body.classList.remove('sidebar-open');
-};
-
-renderWelcomeScreen();
-</script>
+<script src="/static/vendor/chart.umd.min.js?v=20261005j"></script>
+<script src="/static/ux.js?v=20261005j"></script>
+<script src="/static/report-viewer.js?v=20261005j"></script>
+<script src="/static/chat.js?v=20261005v"></script>
+<script type="module" src="/static/voice/voice-ui.js?v=20261005v"></script>
 </body>
 </html>

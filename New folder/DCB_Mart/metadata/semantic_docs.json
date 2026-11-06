@@ -1,0 +1,574 @@
+{
+  "_purpose": "Hand-written docs for every mart_* table and column. build_mart.py fails if a mart column has no entry here. 'kind': flow = adds up over places AND years; stock = a position at year end (adds up over places in one year, never over years); ratio = never summed or averaged, recompute from the sums.",
+  "tables": {
+    "mart_dim_fiscal_year": {
+      "grain": "one row per fiscal year (April-March)",
+      "doc": "The 11 fiscal years in the data, 2015-16 to 2025-26. fy_order runs 1..11; is_latest marks the most recent year."
+    },
+    "mart_dim_subdivision": {
+      "grain": "one row per sub-division, section or office (the division-wide total is not a row here)",
+      "doc": "Holenarasipura Division's reporting units. is_geographic = 1 for the 5 sub-divisions and the Konanur section (the units whose figures are real places); Division_Office is administrative (all-zero, 2020-21 to 2023-24 only). Saligrama closed after 2017-18."
+    },
+    "mart_dim_tariff": {
+      "grain": "one row per (tariff_code, description) slab as printed in the source",
+      "doc": "Every tariff slab billed in any year, with its tariff family (LT-1 ... HT-7, MISC for the 61.xxxx / 62.xxxx miscellaneous revenue codes) and voltage class."
+    },
+    "mart_dim_tariff_family": {
+      "grain": "one row per tariff family",
+      "doc": "Tariff families (LT-1 ... LT-7, HT-1 ... HT-7, LT IPP, HT IPP, AUXILIARY CONSUMPTION, MISC) with a plain-English label and the years each was billed."
+    },
+    "mart_fact_division_year": {
+      "grain": "one row per fiscal year, whole Holenarasipura Division",
+      "doc": "The division's own printed GRAND TOTAL for the year (the report's headline figure), with the printed LT, HT and miscellaneous totals alongside. Use this for any division-wide figure; never add sub-divisions up instead (see known issue KI-02)."
+    },
+    "mart_fact_subdivision_year": {
+      "grain": "one row per (fiscal year, sub-division or section)",
+      "doc": "Each sub-division's / section's own printed GRAND TOTAL for the year. Geographic units only (no Division_Total, no Division_Office)."
+    },
+    "mart_fact_family_division_year": {
+      "grain": "one row per (fiscal year, tariff family), whole division",
+      "doc": "Division-wide figures per tariff family, summed from the division's own line items. The family rows of a year add up to that year's grand total. Use this for 'LT-1 demand', 'HT-2 collection' and similar family questions."
+    },
+    "mart_fact_family_subdivision_year": {
+      "grain": "one row per (fiscal year, sub-division or section, tariff family)",
+      "doc": "Per sub-division figures per tariff family, summed from that unit's line items."
+    },
+    "mart_fact_slab_division_year": {
+      "grain": "one row per (fiscal year, tariff slab), whole division",
+      "doc": "Division-wide line items exactly as printed, one per tariff slab, with the slab's family."
+    },
+    "mart_fact_slab_subdivision_year": {
+      "grain": "one row per (fiscal year, sub-division or section, tariff slab)",
+      "doc": "Per sub-division line items exactly as printed, one per tariff slab."
+    },
+    "mart_fact_booklet_division_year": {
+      "grain": "one row per (fiscal year, tariff booklet category), whole division",
+      "doc": "Division-wide figures per CESC tariff-booklet category (LT-1, LT-2, LT-3(a), LT-3(b), LT-4(a), LT-4(b), LT-4(c), LT-5, LT-6(a), LT-6(b), LT-6(c), LT-7, HT-1, HT-2(a), HT-2(b), HT-2(c)(i), HT-2(c)(ii), HT-3 ... HT-7), summed from the line items. Old codes are mapped to today's categories (domestic LT-2(a) -> LT-1, Govt lift irrigation HT-3(a)(i) -> HT-7, HT-3b -> HT-6, hoardings LT-7(b) -> LT-3(b)), so a category is comparable across all 11 years. Use this for sub-category questions (LT-4(a), HT-2(b), LT-6(b) ...) and for domestic / Gruha Jyothi series across the 2024-25 restructuring."
+    },
+    "mart_fact_booklet_subdivision_year": {
+      "grain": "one row per (fiscal year, sub-division or section, tariff booklet category)",
+      "doc": "Per sub-division figures per tariff-booklet category (same mapping as mart_fact_booklet_division_year)."
+    },
+    "mart_tariff_booklet_category": {
+      "grain": "one row per tariff category in the CESC tariff booklet FY2025-26 to FY2027-28",
+      "doc": "The booklet's categories with who they apply to and the booklet page (KERC Tariff Order 2025 dated 27.03.2025). Source: DCB_Mart/metadata/tariff_booklet.json."
+    },
+    "mart_tariff_booklet_rate": {
+      "grain": "one row per (booklet category, fiscal year, rate component)",
+      "doc": "Every rate printed in the tariff booklet: fixed / demand charges (Rs per kW, HP or kVA per month), energy charges (paise per kWh), demand-based options, LED street-light rate, the LT-4(a) Commission Determined Tariff and its components, HT-2(a) variants."
+    },
+    "mart_tariff_booklet_rule": {
+      "grain": "one row per general rule in the tariff booklet",
+      "doc": "The booklet's general terms: late-payment interest, payment priority, reconnection charges, cheque dishonour charges, electricity tax, power factor, ToD, high-voltage rebate, prompt-payment incentive, DERS, cross-subsidy surcharge, wheeling charges and more, each with its booklet page."
+    },
+    "mart_tariff_rate_check": {
+      "grain": "one row per (fiscal year, booklet category) for the years both the data and the booklet cover",
+      "doc": "Data vs booklet: the energy rate actually billed (energy charges / units, in paise) next to the booklet's printed energy rate (the CDT for LT-4(a)), with the difference. Small differences come from ToD, power-factor surcharges, rebates and part-year billing."
+    }
+  },
+  "columns": {
+    "fiscal_year": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Fiscal year as text, e.g. '2024-25' (April 2024 - March 2025). Compare as text."
+    },
+    "start_year": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Calendar year the fiscal year starts in (2024 for 2024-25)."
+    },
+    "end_year": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Calendar year the fiscal year ends in (2025 for 2024-25)."
+    },
+    "fy_order": {
+      "unit": null,
+      "kind": "key",
+      "doc": "1 for 2015-16 up to 11 for 2025-26."
+    },
+    "is_latest": {
+      "unit": null,
+      "kind": "key",
+      "doc": "1 for the most recent fiscal year in the data."
+    },
+    "subdivision_name": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Sub-division or section name: Arkalgud, Hangarahalli, Holenarasipura, Ramanathapura, Saligrama (closed after 2017-18), Konanur (a section), Division_Office (administrative)."
+    },
+    "subdivision_type": {
+      "unit": null,
+      "kind": "key",
+      "doc": "'sub_division', 'section' (Konanur) or 'office' (Division_Office)."
+    },
+    "is_geographic": {
+      "unit": null,
+      "kind": "key",
+      "doc": "1 for sub-divisions and the Konanur section; 0 for Division_Office."
+    },
+    "first_fiscal_year": {
+      "unit": null,
+      "kind": "key",
+      "doc": "First fiscal year with data."
+    },
+    "last_fiscal_year": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Last fiscal year with data."
+    },
+    "years_with_data": {
+      "unit": "count",
+      "kind": "key",
+      "doc": "Number of fiscal years with data."
+    },
+    "is_active": {
+      "unit": null,
+      "kind": "key",
+      "doc": "1 when the unit still reports in the latest fiscal year."
+    },
+    "tariff_code": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Tariff slab code as printed, e.g. 'LT-4(a)', 'HT-2(a)(ii)', '62.9177'."
+    },
+    "description": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Slab description as printed (source spelling kept, e.g. 'EVM Vheicle Charging Station')."
+    },
+    "family_code": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Tariff family: LT-1 ... LT-7, HT-1 ... HT-7, LT IPP, HT IPP, AUXILIARY CONSUMPTION, or MISC (miscellaneous revenue codes 61.xxxx / 62.xxxx)."
+    },
+    "family_label": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Plain-English meaning of the family, e.g. LT-4 = irrigation pump sets."
+    },
+    "family_order": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Display order of the family (LT first, then HT, then special, then MISC)."
+    },
+    "voltage_class": {
+      "unit": null,
+      "kind": "key",
+      "doc": "'LT' (low tension, incl. auxiliary consumption), 'HT' (high tension) or 'MISC' (miscellaneous revenue)."
+    },
+    "is_misc": {
+      "unit": null,
+      "kind": "key",
+      "doc": "1 for miscellaneous revenue codes (fees, penalties, rentals; not consumption billing)."
+    },
+    "source_note": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Set when the source printed the slab in an unusual way; 'LT-1 A' marks the domestic lighting/heating slabs for BMA and urban local bodies that the 2024-25 and 2025-26 sheets print under code LT-1 (they were LT-2(a) in earlier years). Lines marked '(FL)' (Free Lighting) are LT-1 domestic and '(OL)' (Office Lighting) LT-3(a) commercial in the tariff booklet (KI-20)."
+    },
+    "slab_count": {
+      "unit": "count",
+      "kind": "key",
+      "doc": "Number of tariff slabs summed into this family row."
+    },
+    "total_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "Installations (connections) on the books at year end."
+    },
+    "live_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "Live (active) installations at year end."
+    },
+    "billed_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "Installations billed in the year."
+    },
+    "dc_mnr_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "DC plus MNR (meter not recording) installations, comparable across all years: the single combined column printed up to 2017-18, and the separate DC and MNR columns added together from 2018-19. DC stands for direct connection (confirmed by CESC): when a meter burns out or is faulty and no replacement of the required capacity is in stock, supply is given on a direct connection basis without a meter; under KERC rules a new meter is to be installed within 3 days, and consumption in the unmetered gap is billed pro-rata on the previous month's consumption."
+    },
+    "connected_load_kw": {
+      "unit": "kW",
+      "kind": "stock",
+      "doc": "Connected load in kW."
+    },
+    "connected_load_hp": {
+      "unit": "HP",
+      "kind": "stock",
+      "doc": "Connected load in HP (irrigation pump sets and motive power)."
+    },
+    "connected_load_kva": {
+      "unit": "kVA",
+      "kind": "stock",
+      "doc": "Connected load in kVA (HT)."
+    },
+    "consumption_metered": {
+      "unit": "units",
+      "kind": "flow",
+      "doc": "Metered energy consumption in units (kWh)."
+    },
+    "consumption_assessed": {
+      "unit": "units",
+      "kind": "flow",
+      "doc": "Assessed (unmetered, estimated) consumption in units (kWh)."
+    },
+    "consumption_total": {
+      "unit": "units",
+      "kind": "flow",
+      "doc": "Total energy consumption billed, in units (kWh)."
+    },
+    "opening_balance_total": {
+      "unit": "Rs",
+      "kind": "stock",
+      "doc": "Opening balance (arrears brought forward) at the start of the year, in rupees."
+    },
+    "demand_fixed_charges": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Fixed charges billed, in rupees."
+    },
+    "demand_energy_charges": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Energy charges billed, in rupees."
+    },
+    "demand_others": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Other charges billed, in rupees."
+    },
+    "demand_revenue_subtotal": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Revenue demand (fixed + others + energy; the whole amount for flat-fee misc codes), in rupees."
+    },
+    "demand_fac": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "FPPCA billed: the fuel and power purchase cost adjustment charge (printed as FAC), in rupees. Negative in a year when the adjustment was a refund (2021-22)."
+    },
+    "demand_tax": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Tax billed, in rupees."
+    },
+    "demand_interest": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Interest (delayed-payment) billed, in rupees."
+    },
+    "demand_pg_surcharge": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "P&G surcharge billed (2025-26 onward only; empty earlier), in rupees."
+    },
+    "demand_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Total demand (amount billed) for the year, in rupees."
+    },
+    "collection_revenue_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Revenue collected, in rupees."
+    },
+    "collection_fac_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "FPPCA (FAC) collected, in rupees (cash / cheque plus adjustments)."
+    },
+    "collection_tax_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Tax collected, in rupees."
+    },
+    "collection_interest_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Interest collected, in rupees."
+    },
+    "collection_pg_surcharge_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "P&G surcharge collected (2025-26 onward), in rupees."
+    },
+    "collection_grand_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Total collection for the year (cash, cheque and adjustments), in rupees."
+    },
+    "closing_balance_total": {
+      "unit": "Rs",
+      "kind": "stock",
+      "doc": "Closing balance (arrears outstanding) at year end = opening balance + demand - collection, in rupees. A position: never add it up over years."
+    },
+    "security_deposit_held": {
+      "unit": "Rs",
+      "kind": "stock",
+      "doc": "Security deposit held at year end, in rupees."
+    },
+    "uncollected_demand": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Demand minus collection for the year, in rupees: the year's own billed-but-not-collected amount (negative when more was collected than billed, e.g. against old arrears)."
+    },
+    "lt_demand_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed LT total demand, in rupees."
+    },
+    "ht_demand_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed HT total demand, in rupees."
+    },
+    "misc_demand_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed miscellaneous revenue total demand, in rupees."
+    },
+    "lt_collection_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed LT total collection, in rupees."
+    },
+    "ht_collection_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed HT total collection, in rupees."
+    },
+    "misc_collection_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Printed miscellaneous revenue total collection, in rupees."
+    },
+    "collection_efficiency_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Collection efficiency = collection_grand_total / demand_total x 100 for this row. For several rows recompute SUM(collection_grand_total) * 100.0 / SUM(demand_total); never AVG this column. Can exceed 100 when old arrears are collected."
+    },
+    "live_installation_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Live installations as a % of total installations for this row."
+    },
+    "arrears_to_demand_ratio": {
+      "unit": "ratio",
+      "kind": "ratio",
+      "doc": "Closing balance / demand for this row (how many years' billing is outstanding)."
+    },
+    "demand_per_unit_rs": {
+      "unit": "Rs/unit",
+      "kind": "ratio",
+      "doc": "Demand per unit of consumption (average billed rate) = demand_total / consumption_total, in rupees per unit."
+    },
+    "demand_per_installation_rs": {
+      "unit": "Rs",
+      "kind": "ratio",
+      "doc": "Average demand per installation = demand_total / total_installations, in rupees."
+    },
+    "dc_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "DC installations as printed in their own column (2018-19 onwards; NULL before, when the sheet printed DC and MNR together -- use dc_mnr_installations for a series across all years). DC stands for direct connection (confirmed by CESC): when a meter burns out or is faulty and no replacement of the required capacity is in stock, supply is given on a direct connection basis without a meter; under KERC rules a new meter is to be installed within 3 days, and consumption in the unmetered gap is billed pro-rata on the previous month's consumption."
+    },
+    "mnr_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "MNR (meter not recording) installations, printed separately from 2018-19 (NULL before; earlier years only have the combined dc_mnr_installations). Their consumption is billed on an assessed basis (see consumption_assessed)."
+    },
+    "ob_fac": {
+      "unit": "Rs",
+      "kind": "stock",
+      "doc": "FPPCA (fuel and power purchase cost adjustment, printed as FAC) outstanding at the start of the year, in rupees."
+    },
+    "closing_balance_fac": {
+      "unit": "Rs",
+      "kind": "stock",
+      "doc": "FPPCA (FAC) still outstanding at the end of the year, in rupees (part of closing_balance_total)."
+    },
+    "billed_installation_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Installations actually billed as a % of total installations (the sheet's '% of billed installations'). Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "dc_mnr_installation_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "The sheet's '% of DC/MNR': the DC column as a % of total installations (up to 2017-18 the combined DC/MNR column; from 2018-19 the DC column alone, MNR not included -- see mnr_installation_pct). Reproduces the printed figure on every grand-total row. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "mnr_installation_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "MNR (meter not recording) installations as a % of total installations, 2018-19 onwards. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "metered_consumption_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Metered consumption as a % of total consumption (the sheet's '% of metered consumption'). Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "assessed_consumption_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Assessed (estimated, not read from a meter) consumption as a % of total consumption (the sheet's '% of assessed consumption'). Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "fac_share_of_demand_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "FPPCA (FAC) billed as a % of total demand. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "fac_collection_efficiency_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "FPPCA (FAC) collected as a % of FPPCA billed. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "fac_per_unit_rs": {
+      "unit": "Rs/unit",
+      "kind": "ratio",
+      "doc": "FPPCA (FAC) billed per unit of energy consumed, in rupees per unit. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "collection_per_installation_rs": {
+      "unit": "Rs",
+      "kind": "ratio",
+      "doc": "Average collection per installation (consumer) = collection_grand_total / total_installations. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "arrears_per_installation_rs": {
+      "unit": "Rs",
+      "kind": "ratio",
+      "doc": "Average closing balance (arrears) per installation (consumer) = closing_balance_total / total_installations. Recompute from sums for several rows; never AVG or SUM this column."
+    },
+    "booklet_code": {
+      "unit": null,
+      "kind": "key",
+      "doc": "The CESC tariff booklet category (FY2025-26 structure) this slab belongs to, e.g. 'LT-1', 'LT-4(a)', 'HT-2(b)', 'LT-6(b)'. Old codes are mapped to today's category (LT-2(a) domestic -> LT-1, HT-3(a)(i) -> HT-7, HT-3b -> HT-6, LT-7(b) -> LT-3(b)). NULL for IPP, auxiliary consumption and miscellaneous revenue."
+    },
+    "booklet_name": {
+      "unit": null,
+      "kind": "key",
+      "doc": "The booklet category's name, e.g. 'Domestic', 'Irrigation pump sets up to 10 HP', 'Commercial (HT)'."
+    },
+    "booklet_order": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Display order of the booklet category (booklet order: LT-1 first, HT-7 last)."
+    },
+    "booklet_short": {
+      "unit": null,
+      "kind": "key",
+      "doc": "One-line description of who the booklet category is for."
+    },
+    "applies_to": {
+      "unit": null,
+      "kind": "key",
+      "doc": "The booklet's full 'applicable to' text for the category."
+    },
+    "booklet_page": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Page of the tariff booklet the category or rule is printed on."
+    },
+    "component": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Rate component: fixed_charge, demand_charge, energy_charge, energy_charge_led, cdt, cdt_fixed_component, cdt_variable_component, demand_based_fixed_charge, demand_based_energy_charge, ht_demand_charge, or 'variant: <name> ...' for HT-2(a) railway traction / effluent treatment plants."
+    },
+    "value": {
+      "unit": null,
+      "kind": "key",
+      "doc": "The rate as printed in the booklet: rupees for fixed / demand charges, paise per kWh for energy charges (see unit)."
+    },
+    "unit": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Unit of the rate, e.g. 'Rs per kW per month of sanctioned load', 'Rs per kVA per month of billing demand', 'paise per kWh'."
+    },
+    "rule_key": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Short key of a booklet rule, e.g. late_payment_interest, electricity_tax, reconnection_charges."
+    },
+    "title": {
+      "unit": null,
+      "kind": "key",
+      "doc": "Title of the booklet rule."
+    },
+    "text": {
+      "unit": null,
+      "kind": "key",
+      "doc": "The rule as printed in the booklet (condensed, same figures)."
+    },
+    "collection_cash_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Collection received as cheque / cash ('Chq/cash' columns, all heads), in rupees. Cash + adjustment = collection_grand_total."
+    },
+    "collection_adjust_total": {
+      "unit": "Rs",
+      "kind": "flow",
+      "doc": "Collection booked as adjustments ('Adjust' columns, all heads), in rupees: the Government subsidy (confirmed by CESC). Almost all of it is LT-1 domestic (Gruha Jyothi, from August 2023) and LT-4(a) irrigation pump sets (the tariff booklet: GoK pays their tariff); other categories carry small amounts, sometimes negative (reversals)."
+    },
+    "collection_efficiency_without_adj_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Collection efficiency without adjustments = cash / cheque collection / demand x 100 -- the formula in the sheet's own header '% of Collection Efficiency without Adjustment (34-Adj./30)'. The percentage the sheet prints in that column is inconsistent (KI-14), so this is recomputed from the printed amounts. Recompute from sums for several rows."
+    },
+    "adjustment_share_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Subsidy share of the collection = collection_adjust_total / collection_grand_total x 100 (the adjustment is the Government subsidy). Recompute from sums for several rows."
+    },
+    "billing_efficiency_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Billing efficiency as the sheet's consolidation block defines it, 'Billing Efficiency (4/3)' = installations actually billed / live installations x 100. Recompute from sums for several rows."
+    },
+    "atc_loss_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "AT&C (aggregate technical & commercial) loss = 100 - billing efficiency x collection efficiency (the standard formula), with the sheet's own billing efficiency (installations billed / live) and collection efficiency (collection / demand). The data has no energy-input (units purchased / received) figures, so the energy-based technical loss is not part of it; negative when more is collected than billed (arrears recovery). Recompute from sums for several rows."
+    },
+    "energy_charge_per_unit_paise": {
+      "unit": "paise/unit",
+      "kind": "ratio",
+      "doc": "Energy charges billed per unit = demand_energy_charges / consumption_total x 100, in paise per kWh -- comparable with the tariff booklet's energy rate. Recompute from sums for several rows."
+    },
+    "data_energy_paise": {
+      "unit": "paise/unit",
+      "kind": "ratio",
+      "doc": "Energy charges billed per unit in the data for the category and year, in paise per kWh."
+    },
+    "booklet_energy_paise": {
+      "unit": "paise/unit",
+      "kind": "ratio",
+      "doc": "The booklet's energy rate for the category and year, in paise per kWh (Commission Determined Tariff for LT-4(a))."
+    },
+    "difference_paise": {
+      "unit": "paise/unit",
+      "kind": "ratio",
+      "doc": "Data minus booklet energy rate, in paise per kWh."
+    },
+    "difference_pct": {
+      "unit": "%",
+      "kind": "ratio",
+      "doc": "Data minus booklet energy rate as a % of the booklet rate."
+    },
+    "dc_column_installations": {
+      "unit": "count",
+      "kind": "stock",
+      "doc": "The sheet's own 'DC' column: the combined DC/MNR column up to 2017-18, the DC column alone from 2018-19. It is what the sheet's printed '% of DC/MNR' divides by total installations. DC stands for direct connection (confirmed by CESC): supply given without a meter while a faulty meter awaits replacement."
+    }
+  },
+  "rules": [
+    "Division-wide figures come from mart_fact_division_year (or mart_fact_family_division_year / mart_fact_slab_division_year). Never add the sub-division tables up to get a division figure: from 2019-20 the division books some miscellaneous revenue that no sub-division carries.",
+    "Ratio columns (*_pct, *_ratio, *_per_unit_rs, *_per_installation_rs) are for one row. Over several rows recompute from sums, e.g. SUM(collection_grand_total) * 100.0 / SUM(demand_total).",
+    "Stock columns (installations, connected load, opening / closing balance, security deposit) are positions at year end: add them across places in ONE year, never across years.",
+    "Family questions ('LT-4 demand', 'HT-2 collection') read the family tables; slab questions (one tariff_code or description) read the slab tables.",
+    "Tariff sub-category questions as the CESC tariff booklet names them (LT-4(a), LT-3(b), HT-2(b), HT-2(c)(i), LT-6(b) ...) read mart_fact_booklet_division_year / mart_fact_booklet_subdivision_year (booklet_code); tariff rates and rules read mart_tariff_booklet_rate / mart_tariff_booklet_rule.",
+    "A family or sub-division missing for a year means it was not billed / did not exist that year: say so, never report 0."
+  ]
+}

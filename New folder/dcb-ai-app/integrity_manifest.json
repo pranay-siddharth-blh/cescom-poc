@@ -1,0 +1,13 @@
+{
+ "_purpose": "SHA-256 of the files the chatbot only reads; written by DCB_Mart/build_mart.py. tests/test_integrity.py fails if any of them changes.",
+ "files": {
+  "DCB_Star_Schema/dcb_star_schema.sqlite": "61be9fda6cab933e32afe79c9dcd082fa16b883e66375a90d400fce1e056af6c",
+  "DCB_Semantic_Layer/semantic_layer.json": "4959bc03aee0efaaaa981d58e3325e79b717fe5a146ef3e8180640d3ddb3419e",
+  "DCB_Semantic_Layer/example_queries.sql": "845ddc98c607489f84c21add33e2e487347f5f372f9a197effd4d05aea396556",
+  "DCB_Mart/dcb_mart.sqlite": "2859ef5d746aa5f36d1500c360c7cf99a085ad1dd6ade756487ec1917b502e34",
+  "DCB_Mart/mart_semantic_layer.json": "fc2b9a5be3b22164e9e93e48a0a04baad3133c179b3f30c5c5768ba865203358",
+  "DCB_Mart/example_queries.sql": "37124b209cefbb0eea8ce1cfa73e08067d2cdd205b9248d1ef26ecf2c13fbaea",
+  "DCB_Mart/metadata/knowledge_base.yaml": "7a230ce36bbf9ab2b62b47e37c3f9fdf51210fce338409b108b32c0988402bb8",
+  "DCB_Mart/metadata/tariff_booklet.json": "96d4148ed554106bdcb92336928e4d752570076aa027b2999fa7bcfd83909e71"
+ }
+}

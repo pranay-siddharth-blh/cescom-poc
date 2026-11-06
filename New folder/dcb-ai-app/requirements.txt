@@ -6,5 +6,15 @@ fastapi>=0.136
 uvicorn[standard]>=0.48
 pydantic>=2.13
 pydantic-settings>=2.15
-google-genai>=2.22
+# the model is the internal VPN gateway (OpenAI-compatible HTTP), called with httpx -- no vendor SDK
 httpx>=0.28
+# knowledge base (DCB_Mart/metadata/knowledge_base.yaml, app/knowledge.py)
+pyyaml>=6.0
+# Excel MIS / answer reports (app/mis_report.py, app/answer_report.py)
+openpyxl>=3.1
+# tender analyser: text of an uploaded tender PDF (app/tender.py)
+pypdf>=6.0
+# offline test suite (python -m pytest tests)
+pytest>=8.0
+# voice mode: how much of a recording is real speech (app/voice_guard.voiced_seconds)
+numpy>=1.26

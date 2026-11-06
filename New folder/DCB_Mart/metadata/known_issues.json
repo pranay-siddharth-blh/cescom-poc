@@ -1,0 +1,221 @@
+{
+  "_purpose": "Facts about the data that change how an answer reads. 'caveat' is the one-line note the chatbot attaches when an answer touches what 'affects' lists: family codes (family:LT-1), fiscal years (fy:2024-25), sub-divisions (subdivision:Saligrama), scopes (scope:division_vs_subdivisions), metrics (metric:fppca_share) or mart tables. An empty caveat is documentation only.",
+  "issues": [
+    {
+      "id": "KI-01",
+      "severity": "medium",
+      "status": "accepted",
+      "title": "Tariff restructuring from 2024-25: domestic moved into LT-1 (CESC tariff booklet)",
+      "detail": "Under the restructured tariff (in force in the 2024-25 sheet, and printed in the CESC tariff booklet FY2025-26 to FY2027-28, KERC order 27.03.2025) LT-1 is the whole domestic category: Bhagyajyothi / Kutirajyothi plus all residential lighting & heating, which the sheets up to 2023-24 printed as LT-2(a). LT-2 now means private educational institutions and hospitals only. The 2024-25 and 2025-26 sheets print the domestic slabs under code LT-1 (marked source_note 'LT-1 A'); 2024-25 prints LT-1 and LT-1 A as two subtotals with no combined row. Family figures (as printed) are therefore not comparable across 2023-24 / 2024-25 for LT-1 and LT-2; the booklet-category tables (mart_fact_booklet_*) map LT-2(a) to LT-1 in every year, so 'domestic (LT-1)' is comparable across all 11 years there. The same restructuring moved Government lift irrigation HT-3(a)(i) to HT-7 and hoardings LT-7(b) to LT-3(b); HT-3b became HT-6.",
+      "caveat": "From 2024-25 the tariff restructuring (CESC tariff booklet) puts all domestic supply under LT-1 (it was LT-2(a) before), so LT-1 and LT-2 as printed are not comparable with earlier years; the booklet-category figures (domestic LT-1) are.",
+      "affects": [
+        "family:LT-1@2024-25",
+        "family:LT-1@2025-26",
+        "family:LT-2@2024-25",
+        "family:LT-2@2025-26"
+      ]
+    },
+    {
+      "id": "KI-02",
+      "severity": "medium",
+      "status": "accepted",
+      "title": "Division total exceeds the sum of sub-divisions from 2019-20 (miscellaneous revenue)",
+      "detail": "Re-verified from the raw workbook (2026-10-01). Division GRAND TOTAL demand minus the sum of its sub-divisions' and section's GRAND TOTALs: 0 for 2015-16 to 2018-19; 2019-20 +0.503% (8,038,527); 2020-21 +0.003%; 2021-22 +0.010%; 2022-23 +0.575%; 2023-24 +1.065%; 2024-25 +3.475% (102,725,031, i.e. Rs 10.27 crore); 2025-26 +0.206%. The whole gap is miscellaneous revenue booked only in the division's own block (mainly 62.9177 'other recoveries', also 62.9327, 62.9017, 62.9027, 62.9097): LT and HT categories and installations agree to the rupee (installations except 2015-16, KI-12). Collection shows the same gap except 2025-26, where the division's collection equals the sum of its units and only demand differs.",
+      "caveat": "The division's own total includes some miscellaneous revenue booked only at division level, so it is higher than the sum of its sub-divisions (by up to 3.5%, in 2024-25).",
+      "affects": [
+        "scope:division_vs_subdivisions"
+      ]
+    },
+    {
+      "id": "KI-03",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Saligrama closed after 2017-18",
+      "detail": "Saligrama sub-division reports 2015-16 to 2017-18 only. In 2017-18 its demand is 0 while collections continued against old arrears.",
+      "caveat": "Saligrama sub-division closed after 2017-18, so it has no figures after that year.",
+      "affects": [
+        "subdivision:Saligrama"
+      ]
+    },
+    {
+      "id": "KI-04",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Division_Office is administrative",
+      "detail": "Division_Office appears only 2020-21 to 2023-24 as an administrative unit with no consumer installations. Its figures are zero except 2020-21, where it carries 2,410 of miscellaneous revenue (61.9067, other receipts) -- re-verified from the raw workbook. It is excluded from the sub-division facts.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-05",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Printed 'Sub Total of LT-5' is the LT-5(a) subtotal (0) up to 2023-24",
+      "detail": "Re-verified from the raw workbook (2026-10-01). Up to 2023-24 the LT-5 family is printed in two blocks: LT-5(a) (areas under BMA / municipal limits) and LT-5(b) (all other areas). The row printed 'Sub Total of LT-5' closes the LT-5(a) block -- it is the LT-5(a) subtotal, mislabelled -- and LT-5(a) had no installations and no demand in any block in any of those years, so it reads 0. The family total is 'Sub Total of LT-5 (a+b)' (= 'Sub Total of LT-5 b'), which equals every LT-5 line item and the mart's LT-5 in every block and year. From 2024-25 LT-5 is one block (the sub-division blocks label its subtotal 'Sub Total of LT-5 b'). Holenarasipura 2015-16 prints its LT-5(a) rows with the code 'LT-5(b)' (all zero, no effect on any figure).",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-06",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Miscellaneous revenue codes are flat fees",
+      "detail": "61.xxxx / 62.xxxx codes are fees, penalties, rentals and receipts, not consumption billing: their Fixed/Energy split is zero and the whole amount sits in revenue demand.",
+      "caveat": "Miscellaneous revenue (61.xxxx / 62.xxxx codes) is fees and receipts, not consumption billing.",
+      "affects": [
+        "family:MISC"
+      ]
+    },
+    {
+      "id": "KI-07",
+      "severity": "info",
+      "status": "accepted",
+      "title": "P&G surcharge only from 2025-26",
+      "detail": "The P&G surcharge columns exist only from 2025-26; empty in earlier years is correct.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-08",
+      "severity": "low",
+      "status": "accepted",
+      "title": "Printed FAC collection slightly below its line items, 2015-16 to 2017-18",
+      "detail": "The division's printed FAC collection is up to 0.132% below the sum of its own line items in 2015-16 to 2017-18. Division figures here use the printed total.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-09",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Collection efficiency can exceed 100%",
+      "detail": "Collection includes payments against arrears from earlier years, so a year's collection can exceed its demand (e.g. Konanur 2016-17, 119.88%).",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-10",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Source spellings kept in slab descriptions",
+      "detail": "Descriptions keep the sheet's own spelling ('EVM Vheicle Charging Station', 'Univercity'); the router matches common variants.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-11",
+      "severity": "low",
+      "status": "fixed",
+      "title": "One printed grand total leaves total consumption blank",
+      "detail": "Holenarasipura's 2023-24 GRAND TOTAL row prints metered (39,590,136) and assessed (87,991,965) consumption but leaves the total blank; the per-unit and percentage columns of that row are blank too. The mart takes the total as metered + assessed (127,582,101), which equals the sum of its line items.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-12",
+      "severity": "info",
+      "status": "accepted",
+      "title": "2015-16 division installations exceed the sub-divisions by 98",
+      "detail": "In 2015-16 the division's printed grand total shows 159,149 installations while its sub-divisions and section add up to 159,051 (98 fewer). Every later year agrees exactly. Division figures use the division's own printed total.",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-13",
+      "severity": "info",
+      "status": "accepted",
+      "title": "FPPCA was a refund in 2021-22",
+      "detail": "The FPPCA (printed as FAC) billed is negative in 2021-22 (division -24,371,573.88; collection -22,083,969.12): the adjustment was passed back to consumers that year. Shares and rates for that year are therefore negative.",
+      "caveat": "FPPCA (FAC) was a refund in 2021-22, so that year's FPPCA figures are negative.",
+      "affects": [
+        "metric:fac_demand@2021-22",
+        "metric:fppca_collected@2021-22",
+        "metric:fppca_share@2021-22",
+        "metric:fppca_per_unit@2021-22",
+        "metric:fppca_collection_efficiency@2021-22"
+      ]
+    },
+    {
+      "id": "KI-14",
+      "severity": "low",
+      "status": "accepted",
+      "title": "Collection efficiency without adjustment: shown by the sheet's own header formula",
+      "detail": "The sheet's column header defines it as (34 - Adj.) / 30, i.e. cash / cheque collection / demand; the app shows exactly that (collection_efficiency_without_adj_pct), computed from the printed cash and adjustment amounts. The percentage the sheet itself prints in that column does not follow one rule (tested on all 68 grand-total rows: cash / demand in 2015-16, 2019-20, 2020-21, 2022-23; cash plus the tax adjustment in 2016-17, 2023-24, 2024-25; neither in 2025-26), so it is not used. Every other printed percentage reproduces exactly (build check).",
+      "caveat": "Collection efficiency without adjustment is computed by the sheet's header formula (cash collection / demand); the percentage printed in that column of the sheet is inconsistent across years.",
+      "affects": [
+        "metric:collection_efficiency_without_adj_pct"
+      ]
+    },
+    {
+      "id": "KI-15",
+      "severity": "info",
+      "status": "accepted",
+      "title": "'DC' stands for direct connection (confirmed by CESC)",
+      "detail": "CESC confirmed (2026-10-01) that DC in the DCB statement means direct connection: when a meter burns out or is faulty and no replacement of the required capacity is in stock, supply is given on a direct connection basis without a meter. Under KERC rules a new meter is to be installed within 3 days, and consumption in the gap is billed pro-rata on the previous month's consumption. The sheet's 'DC installations' column is about 39,000 of 184,000 installations in 2025-26. The sheet's '% of DC/MNR' is the DC column alone over total installations (MNR not included from 2018-19).",
+      "caveat": "",
+      "affects": [
+        "metric:dc_installations",
+        "metric:dc_mnr_installation_pct",
+        "metric:dc_mnr_installations"
+      ]
+    },
+    {
+      "id": "KI-16",
+      "severity": "info",
+      "status": "accepted",
+      "title": "DC and MNR are printed separately only from 2018-19",
+      "detail": "Up to 2017-18 the sheet prints one combined DC/MNR column; from 2018-19 two columns. Separate DC or MNR figures exist from 2018-19 only; the combined figure is comparable across all years.",
+      "caveat": "DC and MNR are printed separately only from 2018-19; earlier years have one combined DC/MNR figure.",
+      "affects": [
+        "metric:mnr_installations@2015-16",
+        "metric:mnr_installations@2016-17",
+        "metric:mnr_installations@2017-18",
+        "metric:dc_installations@2015-16",
+        "metric:dc_installations@2016-17",
+        "metric:dc_installations@2017-18",
+        "metric:mnr_installation_pct@2015-16",
+        "metric:mnr_installation_pct@2016-17",
+        "metric:mnr_installation_pct@2017-18"
+      ]
+    },
+    {
+      "id": "KI-17",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Miscellaneous revenue lines: the 'Adjust' column is not part of their collection",
+      "detail": "On the 61.xxxx / 62.xxxx miscellaneous revenue lines the sheet sometimes fills the 'Adjust' (and in a few lines the 'Chq/cash') column without carrying it into the printed collection total (e.g. Division 2021-22 '62.9177 Misc., Recoveries' adjust 14.5 lakh, total 450). Their printed collection total is used, counted wholly as cash; on the printed grand totals the printed misc subtotal is used the same way. With that, cash + adjustment = printed collection on every row (build check).",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-18",
+      "severity": "info",
+      "status": "accepted",
+      "title": "Adjustment collections are the Government subsidy (confirmed by CESC)",
+      "detail": "Collections are printed as 'Chq/cash' and 'Adjust'. CESC confirmed (2026-10-01) that the adjustment is the Government subsidy. Almost all of it is LT-1 domestic (Gruha Jyothi from August 2023: the adjusted share of domestic collection was 16-31% up to 2022-23, 60% in 2023-24 and 82-84% in 2024-25 / 2025-26) and LT-4(a) irrigation pump sets up to 10 HP (collected 100% by adjustment; the tariff booklet: GoK pays their Commission Determined Tariff). Other categories carry small amounts, sometimes negative (reversals of earlier adjustments).",
+      "caveat": "",
+      "affects": []
+    },
+    {
+      "id": "KI-19",
+      "severity": "medium",
+      "status": "accepted",
+      "title": "AT&C loss uses the sheet's billing efficiency (no energy input in the data)",
+      "detail": "AT&C loss = 100 - billing efficiency x collection efficiency. The official MoP / PFC formula uses an energy-based billing efficiency (units billed / units input); the DCB workbook has no energy-input (units purchased / received at the sub-station) figures anywhere, so the app uses the billing efficiency the sheet's own consolidation block prints, 'Billing Efficiency (4/3)' = installations billed / live installations, with collection efficiency = collection / demand. It is negative in years when more was collected than billed (arrears recovered). Adding feeder / sub-station energy input would turn it into the full energy-based AT&C.",
+      "caveat": "AT&C loss here = 100 - billing efficiency x collection efficiency, using the sheet's billing efficiency (installations billed / live); the data has no energy-input figures, so energy (technical) loss is not included.",
+      "affects": [
+        "metric:atc_loss_pct",
+        "metric:billing_efficiency_pct"
+      ]
+    },
+    {
+      "id": "KI-20",
+      "severity": "info",
+      "status": "accepted",
+      "title": "LT-5(b), Free Lighting (FL) and Office Lighting (OL) lines, placed by the tariff booklet",
+      "detail": "The DCB sheets print some lines the tariff booklet does not name separately; the booklet places each in its category. LT-5(b) 'Heating & Motive Power - other than BMA' is LT-5 Industrial: The booklet has only LT-5, with no sub-categories (no (a) / (b)); up to 2023-24 all of this division's LT-5 is printed as LT-5(b) (LT-5(a) has no installations here), and from 2024-25 LT-5 and LT-5(b) are billed at the same rate (464 paise in 2025-26). '(OL) Office Lighting' lines under LT-3 are LT-3(a) Commercial ('all offices'): 13-15 installations at the LT-3 rate, paid 99-100% by adjustment (subsidy) every year. '(FL) Free Lighting' lines (LT-2(a) up to 2023-24, LT-1 from 2024-25) are LT-1 Domestic: 1-8 installations at the domestic rate, 85-95% paid by adjustment even before Gruha Jyothi.",
+      "caveat": "",
+      "affects": []
+    }
+  ]
+}

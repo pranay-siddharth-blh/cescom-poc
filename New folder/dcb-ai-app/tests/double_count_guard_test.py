@@ -111,6 +111,20 @@ SAFE_CASES = [
         "SELECT demand_total AS demand_total FROM fact_dcb_grand_totals "
         "WHERE fiscal_year = '2025-26' AND subdivision_id = 1",
     ),
+    (
+        "two side-by-side SUM(CASE WHEN subdivision_name = '...' ...) "
+        "columns -- the real shape a 'compare X and Y' question produces "
+        "when X and Y are two subdivisions (e.g. #38's Holenarasipura "
+        "sub-division vs Division_Total comparison) -- each aggregate is "
+        "independently scoped to one subdivision by its own CASE WHEN",
+        "SELECT f.fiscal_year, "
+        "SUM(CASE WHEN s.subdivision_name = 'Holenarasipura' THEN f.demand_total ELSE 0 END) AS subdivision_demand, "
+        "SUM(CASE WHEN s.subdivision_name = 'Division_Total' THEN f.demand_total ELSE 0 END) AS division_demand "
+        "FROM fact_dcb f "
+        "JOIN dim_subdivision s ON f.subdivision_id = s.subdivision_id "
+        "JOIN dim_tariff_category t ON f.tariff_category_id = t.tariff_category_id "
+        "WHERE t.tariff_code LIKE 'LT-3%' GROUP BY f.fiscal_year",
+    ),
 ]
 
 

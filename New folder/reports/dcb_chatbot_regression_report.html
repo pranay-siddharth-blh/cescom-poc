@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCB Chatbot Regression Report</title>
+<style>
+  :root{
+    --navy:#1a2f5c; --navy-deep:#10203f; --navy-soft:#e8ecf3;
+    --red:#c0202c; --red-soft:#fbe9ea; --red-border:#eec3c6;
+    --green:#1f7a3d; --green-soft:#e7f6ec; --green-border:#bfe3cc;
+    --bg:#f6f7f9; --surface:#ffffff;
+    --ink:#1c2430; --muted:#5b6472; --border:#dfe3ea;
+    --code-bg:#0f1b33; --code-ink:#dbe4f5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Calibri,system-ui,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:36px 24px 80px}
+  header.doc-head{border-bottom:3px solid var(--navy);padding-bottom:18px;margin-bottom:28px}
+  header.doc-head h1{margin:0 0 6px;font-size:1.55rem;color:var(--navy-deep)}
+  header.doc-head .meta{font-size:.86rem;color:var(--muted);line-height:1.7}
+  header.doc-head .meta code{background:var(--navy-soft);padding:1px 6px;border-radius:5px}
+
+  h2{color:var(--navy-deep);font-size:1.2rem;border-bottom:1px solid var(--border);
+     padding-bottom:8px;margin:38px 0 16px}
+  h3{color:var(--navy);font-size:1.02rem;margin:26px 0 10px}
+  h4{color:var(--navy);font-size:.92rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  a{color:var(--navy)}
+
+  .callout{background:var(--navy-soft);border-left:4px solid var(--navy);
+           border-radius:6px;padding:12px 16px;margin:0 0 18px;font-size:.88rem}
+  .verdict{background:#fff6e6;border:1px solid #f0dca0;border-radius:8px;
+           padding:14px 18px;margin:14px 0;font-size:.92rem}
+  .verdict b{color:#8a5a00}
+
+  table{border-collapse:collapse;width:100%;margin:14px 0 22px;font-size:.84rem}
+  table caption{caption-side:top;text-align:left;font-weight:700;margin-bottom:6px}
+  th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--navy-soft);color:var(--navy-deep);font-weight:700}
+  tr:nth-child(even) td{background:#fbfcfd}
+  .tblwrap{overflow-x:auto}
+
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.74rem;font-weight:700}
+  .ok{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border)}
+  .fail{background:var(--red-soft);color:var(--red);border:1px solid var(--red-border)}
+
+  code{font-family:"Cascadia Code","Consolas",monospace;font-size:.82em;
+       background:#eef1f6;padding:1px 5px;border-radius:4px;color:#1a2f5c}
+  pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;
+      overflow-x:auto;font-size:.8rem;line-height:1.5;margin:10px 0 16px}
+  pre code{background:none;padding:0;color:inherit}
+
+  .finding{border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:0 0 16px;background:var(--surface)}
+  .finding h4{margin-top:0}
+  .finding .q{font-style:italic;color:var(--navy-deep)}
+  .finding .tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+                padding:2px 8px;border-radius:5px;margin-left:8px}
+  .tag.fixed{background:var(--green-soft);color:var(--green)}
+  .tag.notfixed{background:var(--red-soft);color:var(--red)}
+  .kv{font-size:.82rem;color:var(--muted);margin:4px 0}
+  .kv b{color:var(--ink)}
+
+  .rootcause{border-left:4px solid var(--navy);background:var(--surface);border:1px solid var(--border);
+             border-left:4px solid var(--navy);border-radius:0 8px 8px 0;padding:14px 18px;margin:0 0 18px}
+  .rootcause h4{margin-top:0}
+
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat-card{flex:1 1 160px;background:var(--surface);border:1px solid var(--border);
+             border-radius:10px;padding:14px 16px;text-align:center}
+  .stat-card .num{font-size:1.7rem;font-weight:800;color:var(--navy-deep)}
+  .stat-card .lbl{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .stat-card.before .num{color:#8a5a00}
+  .stat-card.after .num{color:var(--green)}
+
+  ul{margin:0 0 14px;padding-left:22px}
+  li{margin-bottom:6px}
+
+  footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--border);
+         font-size:.76rem;color:var(--muted)}
+
+  @media(max-width:640px){
+    .wrap{padding:22px 14px 60px}
+    table{font-size:.76rem}
+    th,td{padding:5px 6px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc-head">
+  <h1>DCB Chatbot Regression Report — Holenarasipura Division</h1>
+  <div class="meta">
+    Target: <code>dcb-ai-app</code> (FastAPI + Gemini NL2SQL chatbot), chat UI at <code>/chat</code>, live SQLite star schema (<code>DCB_Star_Schema/dcb_star_schema.sqlite</code>)<br>
+    Test set: <code>test_questions.json</code> (49 questions, 14 categories) &nbsp;·&nbsp; Driver: <code>run_frontend_tests.py</code> (Playwright, real browser, headless Chromium)
+  </div>
+</header>
+
+<div class="callout">
+  <b>Note on the database engine.</b> The test brief described the backend as running "over Neon Postgres." The actual, running <code>dcb-ai-app</code> in this repo connects to a local, read-only SQLite file via <code>app/db.py</code>, not Postgres/Neon. This report tests the app as it actually runs; every number below is against that SQLite backend.
+</div>
+
+<h2>1. Executive summary</h2>
+<div class="stat-row">
+  <div class="stat-card before"><div class="num">26/49</div><div class="lbl">Passing before</div></div>
+  <div class="stat-card after"><div class="num">47/49</div><div class="lbl">Passing after</div></div>
+  <div class="stat-card"><div class="num">4</div><div class="lbl">Distinct root causes fixed</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="lbl">Files changed</div></div>
+</div>
+<p>The regression suite was run against the live chat UI twice: once before any changes, and once after four rounds of fixes to the NL2SQL entity-extraction and prompt logic. All 21 fixes were to how the backend grounds a question's tariff category against the real database before handing it to the LLM — no fixes touched the database, the schema, or the test set itself. The two questions still failing after all fixes (#16, #30) are a distinct, narrower problem — the model refusing a <i>comparison</i> between two named tariff categories — confirmed to fail consistently across repeated fresh samples, not a one-off.</p>
+<div class="verdict"><b>Verdict:</b> substantially improved and ready for the common case (a single named or paraphrased tariff category), not yet ready for two-way tariff-category comparison questions, which need a separate, targeted fix (see §6).</div>
+<p style="font-size:.86rem;color:var(--muted)"><i>The automated harness's own keyword-based pass/fail heuristic reported 28/49 before and 49/49 after; both of those numbers are wrong in one direction each — see the methodology note in §2 for why, and how the 26/49 and 47/49 figures above were verified by hand instead.</i></p>
+
+<h2>2. Methodology</h2>
+<p><b>What was tested.</b> 49 natural-language questions against the Holenarasipura DCB dataset, spanning 14 categories: abbreviated tariff-category names, Free-Lighting/Office-Lighting suffix variants, tariff code vs. free-text description phrasing, IP-set metered/rural/urban splits, a deliberate tariff-code collision (LT-6 reused for both "Water Supply" and "Public Lighting"), miscellaneous LT categories, the full HT-category family, miscellaneous non-tariff revenue heads, Division-vs-Sub-Division name ambiguity, section-level (no-sub-division) queries, metric variety (KW/KVA/consumption/arrears), typo tolerance, year-trend queries, and cross-subdivision aggregation/ranking.</p>
+<p><b>How it was tested.</b> <code>run_frontend_tests.py</code> drives a real, headless Chromium browser via Playwright against the actual running chat UI at <code>http://127.0.0.1:8000/chat</code> — it types into the real <code>&lt;input id="box"&gt;</code>, clicks the real <code>&lt;button id="send"&gt;</code>, and reads the real rendered <code>.msg.bot .bubble</code> reply out of the DOM. This is not a mocked API call; every question went through the full stack: browser → <code>POST /api/ask</code> (SSE) → <code>app/pipeline.py</code> → live Gemini call → SQLite.</p>
+
+<p><b>Two things about the test harness itself had to be fixed/accounted for before its numbers could be trusted:</b></p>
+<ol>
+<li><b>Original <code>CONFIG</code> selectors didn't match this app's DOM at all.</b> <code>chat_input_selector</code> looked for <code>input[type='text']</code>, but this app's <code>&lt;input id="box"&gt;</code> has no <code>type</code> attribute; <code>response_bubble_selector</code> looked for <code>[data-role='assistant'], .assistant-message, .bot-message</code>, none of which exist in <code>app/static/chat.html</code>. Fixed by reading the actual template and setting <code>chat_input_selector: "#box"</code>, <code>send_button_selector: "#send"</code>, <code>response_bubble_selector: ".msg.bot .bubble"</code>.</li>
+<li><b>The original wait strategy resolved almost instantly, before the answer had streamed in.</b> <code>send()</code> in <code>chat.html</code> creates the empty bot-reply bubble <i>synchronously</i>, before the network request even starts, so the original "wait until the response-bubble count increases" check would fire while the SSE answer was still streaming in (sometimes 2-6+ seconds later), capturing a blank or half-written answer. Replaced with a wait on the send button's own <code>disabled</code> state, which <code>chat.html</code> only clears once the SSE stream has fully ended and the meta/technical-details block has been rendered — the one DOM signal that actually means "this answer is complete." Both fixes are in <code>run_frontend_tests.py</code>, not in the app itself.</li>
+<li><b>The harness's <code>looks_like_failure()</code> keyword list has real blind spots</b>, on both sides:
+  <ul>
+    <li>It missed genuine refusals that don't happen to contain one of its trigger phrases — e.g. <i>"those exact sub-slabs do not appear as distinct codes... Please clarify"</i> and <i>"could not be uniquely matched or does not exist"</i> were both marked <b>OK</b> by the harness despite the app's own UI showing a <b>"not answerable from this data"</b> badge on them.</li>
+    <li>Conversely, two genuinely-correct refusals (#40 "section number 8" doesn't exist; #46 no monthly granularity in an annual dataset) could just as easily have been misread as failures by the same style of keyword match — it happened not to this time, but the point stands: keyword matching on free-text LLM output isn't a reliable oracle in either direction.</li>
+  </ul>
+  Every FAIL/OK boundary in this report was therefore <b>re-verified by reading the actual captured answer text</b> (and, for the two still-failing questions, by re-querying the live API three additional times each to rule out a one-off sampling fluke) rather than trusted from the harness's own <code>status</code> field. This is why the headline numbers here (26/49 → 47/49) differ from the harness's own summary line (28/49 → 49/49).
+</li>
+</ol>
+<p><b>Non-determinism.</b> Every question is answered by a live Gemini call with no fixed seed — the same question can occasionally generate different SQL on different runs. Where that mattered to a finding below, it's called out explicitly.</p>
+
+<h2>3. Results by category</h2>
+<div class="tblwrap"><table>
+<tr><th>Category</th><th># Questions</th><th>Passed Before</th><th>Passed After</th><th>Notes</th></tr>
+<tr><td>abbreviated-category</td><td>8</td><td>3</td><td>8</td><td>Paraphrased/abbreviated slab names (Root Cause B)</td></tr>
+<tr><td>fl-ol-suffix</td><td>4</td><td>3</td><td>4</td><td>Free/Office-Lighting suffix variants (Root Cause B)</td></tr>
+<tr><td>code-vs-description</td><td>4</td><td>0</td><td>3</td><td>Direct code truncation (Root Cause A) <b>+ #16 still fails</b></td></tr>
+<tr><td>ip-sets-splits</td><td>4</td><td>1</td><td>4</td><td>Metered/rural/urban slab paraphrases (Root Cause B)</td></tr>
+<tr><td>code-collision</td><td>2</td><td>2</td><td>2</td><td>Already passing before and after</td></tr>
+<tr><td>misc-lt</td><td>2</td><td>0</td><td>2</td><td>Obscure LT-7/LT-7b description paraphrases (Root Cause B)</td></tr>
+<tr><td>ht-category</td><td>9</td><td>4</td><td>8</td><td>Mix of A/B causes <b>+ #30 still fails</b></td></tr>
+<tr><td>misc-receipts</td><td>3</td><td>2</td><td>3</td><td>Numeric misc-revenue codes only reachable by description (Root Cause B)</td></tr>
+<tr><td>location-ambiguity</td><td>2</td><td>2</td><td>2</td><td>Already passing before and after</td></tr>
+<tr><td>section-level</td><td>2</td><td>2</td><td>2</td><td>Already passing before and after</td></tr>
+<tr><td>metric-variety</td><td>3</td><td>2</td><td>3</td><td>#41 was a harness false-negative (Root Cause A)</td></tr>
+<tr><td>typo-tolerance</td><td>1</td><td>1</td><td>1</td><td>Already passing before and after</td></tr>
+<tr><td>time-trend</td><td>2</td><td>1</td><td>2</td><td>#45 direct-code truncation (Root Cause A)</td></tr>
+<tr><td>aggregation-ranking</td><td>3</td><td>3</td><td>3</td><td>Already passing before and after</td></tr>
+<tr style="font-weight:700"><td>TOTAL</td><td>49</td><td>26</td><td>47</td><td></td></tr>
+</table></div>
+
+<h2>4. Detailed findings</h2>
+<h3>4.1 Root causes and fixes</h3>
+<p>Every one of the 21 questions that got fixed traces back to one of four root causes, all inside the router that runs <i>before</i> the LLM call (<code>app/semantic_layer.py::extract_entities</code>) or the system prompt that consumes its output (<code>app/prompts.py::SYSTEM_INSTRUCTIONS</code>). Nothing outside these two files changed.</p>
+
+<div class="rootcause">
+<h4>Root Cause A — tariff-<i>code</i> entity extraction only recognized the 14 generic family codes</h4>
+<p><code>extract_entities()</code> matched a question's tariff code against a hardcoded tuple of 14 family codes (<code>LT-1</code>..<code>LT-7</code>, <code>HT-1</code>..<code>HT-7</code>) via plain substring containment. A question naming a real, more specific sub-code — <code>LT-3(i)</code>, <code>HT-2(b)(ii)</code>, <code>LT-5(a)</code> — still contains its family prefix as a substring (<code>"LT-3"</code> <i>is</i> a substring of <code>"LT-3(i)"</code>), so the router silently truncated it to the family code and handed the LLM the <i>wrong</i> value as if it were verified ground truth.</p>
+<pre><code>Q: "LT-3(i) collection efficiency in Arkalgud"
+entities = {"subdivision_name": "Arkalgud", "tariff_code": "LT-3"}   # truncated!
+SQL:  ... WHERE t.tariff_code = 'LT-3' ...   -- no such row; there is no bare 'LT-3'
+rows: 0  ->  "No matching data was found for that question."</code></pre>
+<p><b>Fix</b> — <code>app/semantic_layer.py::extract_entities</code>, replaced the 14-code hardcoded list with a scan against every real, distinct <code>tariff_code</code> in <code>dim_tariff_category</code>, keeping only the most specific match when a shorter and longer real code both appear:</p>
+<pre><code>&#35; before
+tariff_codes_found = [code for code in ("LT-1","LT-2",...,"HT-7") if code.lower() in q_lower]
+
+&#35; after
+all_codes = {code for code, _ in index.tariff_categories}
+raw_code_matches = [code for code in all_codes if _code_in_question(code)]
+tariff_codes_found = [
+    code for code in raw_code_matches
+    if not any(other != code and other.lower().startswith(code.lower())
+               for other in raw_code_matches)
+]</code></pre>
+<p><code>_code_in_question</code> also does a whitespace-collapsed comparison, which incidentally fixed a real DB spacing quirk too — the row literally coded <code>HT - 3b</code> now matches a question typed as <code>HT-3b</code>.</p>
+<p>Fixed: <b>#13, #14, #41, #45</b>, and resolved the code-collision half of <b>#16</b> (both codes now correctly extracted) — though #16 still fails for an unrelated reason (§4.2).</p>
+</div>
+
+<div class="rootcause">
+<h4>Root Cause B — no fuzzy matching for paraphrased tariff <i>descriptions</i></h4>
+<p>A slab-level tariff category (e.g. <code>LT-2(b)(i)</code> = <i>"Ltng. ,heating &amp; Motive Power , Pvt. Institu. in ULB's &amp; CC"</i>) can only be identified by its free-text <code>description</code>. A prior fix in this session already grounded the LLM when a question quotes that description <b>verbatim</b>, but most real questions <i>paraphrase or abbreviate</i> it instead (<i>"Pvt institutions lighting in ULB's and CC"</i>), which the verbatim check can never catch. With zero grounding, the LLM either refused outright or guessed its own pattern from the question's wording — which essentially never matches the DB's actual text.</p>
+<p><b>Fix</b> — added a deterministic bag-of-words overlap scorer (no LLM, no embeddings) ranking every one of the 106 distinct descriptions by what fraction of its own words appear in the question, after normalizing and mapping known DB abbreviations/typos:</p>
+<pre><code>_SYNONYMS = {
+    "ltng": "lighting", "comme": "commercial", "pvt": "private",
+    "govt": "government", "institu": "institution", "univercity": "university",
+    "chartable": "charitable", "then": "than", "basses": "basis",
+    "pan": "panchayat", "panchayats": "panchayat",
+}
+_LOW_SIGNAL_WORDS = {"lighting", "heating", "motive", "power"}
+
+def _content_tokens(text):
+    words = _normalize(text).split()
+    mapped = (_SYNONYMS.get(w, w) for w in words)
+    return {w for w in mapped if w not in _STOPWORDS and w not in _LOW_SIGNAL_WORDS}
+
+&#35; score = |description tokens &cap; question tokens| / |description tokens|,  keep &ge; 0.5,
+&#35; top 6, entities["tariff_category_candidates"] = [{tariff_code, description, match_score}, ...]</code></pre>
+<p>Two refinements were needed once real questions were run through it:</p>
+<ul>
+<li><b>DB-typo/abbreviation synonyms.</b> <code>Ltng.</code>&rarr;lighting, <code>Comme.</code>&rarr;commercial, <code>Pvt.</code>&rarr;private are the sheet's own abbreviations; <code>Univercity</code>, <code>Chartable</code>, "Less <i>then</i> one week", "permanent connection <i>Basses</i>" are the sheet's own <b>misspellings</b> (verified against the live DB, not guessed).</li>
+<li><b>Low-signal boilerplate.</b> 17-19 of the 106 descriptions share the same "Ltng ,heating &amp; Motive Power" boilerplate. Counting those words toward every sibling's score diluted the ratio enough that a natural question omitting them fell under threshold — found live: <b>#4</b> returned <i>zero</i> candidates and the LLM hallucinated a plausible-but-wrong description rather than admitting it didn't know. Excluding these four words from the scoring token set (never from the exact-match check) fixed it.</li>
+</ul>
+<p>Fixed: <b>#3, #4, #5, #6, #8, #12, #18, #19, #20, #23, #24, #25, #26, #28, #31, #35</b>.</p>
+</div>
+
+<div class="rootcause">
+<h4>Root Cause C — SQL apostrophe escaping</h4>
+<p>Several real descriptions contain a literal apostrophe (<code>...in ULB's &amp; CC</code>). SQLite requires doubling an embedded apostrophe inside a single-quoted literal (<code>'ULB''s'</code>); on one live sample the model instead substituted an underscore (<code>'...in ULB_s &amp; CC'</code>), matching no row.</p>
+<p><b>Fix</b> — added an explicit hard rule to <code>SYSTEM_INSTRUCTIONS</code> spelling out SQLite's escaping convention with a worked example:</p>
+<pre><code>- Several real dim_tariff_category.description values ... contain a literal
+apostrophe... SQLite's escape for an apostrophe INSIDE a single-quoted string
+literal is to DOUBLE it (''), not to drop it or substitute an underscore/space
+— e.g. WHERE description = 'Comme. Ltng ,heating &amp; Motive Power , in ULB''s &amp; CC'.</code></pre>
+<p>Fixed: <b>#5</b> (also independently blocking it, alongside Root Cause B).</p>
+</div>
+
+<div class="rootcause">
+<h4>Root Cause D — no guidance on family-level vs. slab-level questions</h4>
+<p>Introducing <code>tariff_category_candidates</code> (Root Cause B's fix) created a new failure mode: for a question naming the whole tariff <i>family</i> in general terms (<i>"Residential apartments HT category billing efficiency"</i>), the fuzzy matcher still surfaces its single best-matching <i>slab</i> as a candidate, and the model narrowed to that one slab instead of the whole <code>HT-4</code> family — even though the semantic layer already says family-level questions should <code>GROUP BY tariff_code</code>. The one slab the matcher offered happens to have zero demand in the latest year, so narrowing to it turned a real question into an all-N/A answer.</p>
+<p><b>Fix</b> — added guidance to check for family-level phrasing first and prefer <code>GROUP BY tariff_code</code> over any listed candidate in that case.</p>
+<p>Fixed: <b>#32</b> (a regression introduced by Root Cause B's own fix, caught and corrected within the same work before being reported).</p>
+</div>
+
+<h3>4.2 Per-question findings</h3>
+<p style="font-size:.86rem;color:var(--muted)">Each card below is one of the 23 questions that failed (by manually-verified status) in the before-run. "Fix" references the root cause in §4.1 that resolved it.</p>
+
+<div class="finding"><h4>#3 — abbreviated-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Pvt institutions lighting in ULB's and CC — connected load in Hangarahalli"</p>
+<div class="kv"><b>Target:</b> LT-2(b)(i) / Hangarahalli (Sub-Division)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — no candidate returned; LLM's own guess never matched real text.</div>
+<div class="kv"><b>After (verified):</b> 11 rows of real connected_load_kw data, 2015-16→2025-26.</div>
+</div>
+
+<div class="finding"><h4>#4 — abbreviated-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Private institutions in Village Panchayats — collection efficiency in Arkalgud"</p>
+<div class="kv"><b>Target:</b> LT-2(b)(ii) / Arkalgud</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — the low-signal-boilerplate + "Pan."&rarr;panchayat gap; this was the case that motivated the second B refinement.</div>
+<div class="kv"><b>After (verified, re-sampled 3&times;):</b> 11 rows of real collection_efficiency_pct data, stable across samples.</div>
+</div>
+
+<div class="finding"><h4>#5 — abbreviated-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Comme. Ltng heating and motive power in ULB's and CC — closing balance in Holenarasipura"</p>
+<div class="kv"><b>Target:</b> LT-3(i) / Holenarasipura (Division)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B and C together — even once grounded, the first attempt mis-escaped the apostrophe (ULB_s).</div>
+<div class="kv"><b>After (verified):</b> real closing_balance figure; SQL now correctly reads '...ULB''s &amp; CC'.</div>
+</div>
+
+<div class="finding"><h4>#6 — abbreviated-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Commercial lighting heating motive power in Village Panchayats, Saligrama"</p>
+<div class="kv"><b>Target:</b> LT-3(ii) / Saligrama</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 3 rows (Saligrama's real data range is FY2015-16→2017-18 only — it closed after that, a documented fact, not a bug).</div>
+</div>
+
+<div class="finding"><h4>#8 — abbreviated-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Bhagyajyothi Kutirajyothi metered 6 to 18 units installations in Holenarasipura division"</p>
+<div class="kv"><b>Target:</b> LT-1</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — LLM had guessed an exact-equality string reconstructed from the question, not the DB's real spelling.</div>
+<div class="kv"><b>After (verified):</b> real billed_installations figures.</div>
+</div>
+
+<div class="finding"><h4>#12 — fl-ol-suffix <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Office lighting for commercial Village Panchayat category in Ramanathapura"</p>
+<div class="kv"><b>Target:</b> LT-3(ii)(OL)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 11 rows of real demand_total/collection_grand_total.</div>
+</div>
+
+<div class="finding"><h4>#13 — code-vs-description <span class="tag fixed">FIXED</span></h4>
+<p class="q">"LT-3(i) collection efficiency in Arkalgud"</p>
+<div class="kv"><b>Target:</b> LT-3(i)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question." — entities extracted tariff_code: "LT-3" (truncated).</div>
+<div class="kv"><b>Root cause:</b> A, the canonical case.</div>
+<div class="kv"><b>After (verified):</b> correctly filters on LT-3(i) (answer is N/A% because latest-year demand happens to be 0 for this slab in Arkalgud — a genuine data fact; earlier years have real values).</div>
+</div>
+
+<div class="finding"><h4>#14 — code-vs-description <span class="tag fixed">FIXED</span></h4>
+<p class="q">"HT-2(b)(ii) demand for FY 2020-21"</p>
+<div class="kv"><b>Target:</b> HT-2(b)(ii)</div>
+<div class="kv"><b>Before:</b> "No matching data was found" — entities extracted "HT-2"; LLM tried stuffing the rest into description as a workaround.</div>
+<div class="kv"><b>Root cause:</b> A.</div>
+<div class="kv"><b>After (verified):</b> correct scalar demand figure for FY2020-21.</div>
+</div>
+
+<div class="finding"><h4>#15 — code-vs-description <span class="tag fixed">FIXED</span></h4>
+<p class="q">"What is LT-5(b) heating and motive power, 5 to 40 HP slab, in Saligrama"</p>
+<div class="kv"><b>Target:</b> LT-5(b)</div>
+<div class="kv"><b>Before:</b> "No matching data was found" — code truncated to LT-5, collapsing LT-5(a) and LT-5(b) together.</div>
+<div class="kv"><b>Root cause:</b> A.</div>
+<div class="kv"><b>After (verified):</b> 12 rows, correctly scoped to LT-5(b)'s four HP-band descriptions.</div>
+</div>
+
+<div class="finding"><h4>#16 — code-vs-description <span class="tag notfixed">NOT FIXED</span></h4>
+<p class="q">"Same heating and motive power 5 to 40 HP slab but under LT-5(a) instead of LT-5(b), Holenarasipura"</p>
+<div class="kv"><b>Target:</b> LT-5(a) &mdash; <i>"tests whether the code, not just the text, drives the match"</i></div>
+<div class="kv"><b>Before:</b> refused — "those exact sub-slabs do not appear as distinct codes... Please clarify" (harness mislabeled this OK; the UI's own "not answerable" badge says otherwise).</div>
+<div class="kv"><b>Root cause:</b> A is fixed — extract_entities now correctly returns both LT-5(a) and LT-5(b) as distinct real codes. But "X instead of Y" phrasing reads to the model as a two-way comparison request, and it refuses rather than just answering for X.</div>
+<div class="kv"><b>After:</b> <b>still refuses.</b> Re-sampled 3 additional times post-fix — refused all 3, different wording each time, same "please specify/clarify" shape. See §6.</div>
+</div>
+
+<div class="finding"><h4>#18 — ip-sets-splits <span class="tag fixed">FIXED</span></h4>
+<p class="q">"IP sets up to 10HP on urban feeders, metered — connected load in Konanur"</p>
+<div class="kv"><b>Target:</b> LT-4(a)</div>
+<div class="kv"><b>Before:</b> "I could not find a tariff category matching..."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned (all connected_load_hp=0 — Konanur genuinely has no connected load recorded against this metered/urban slab; a real, correctly-empty result, not a refusal).</div>
+</div>
+
+<div class="finding"><h4>#19 — ip-sets-splits <span class="tag fixed">FIXED</span></h4>
+<p class="q">"IP sets for private horticulture nurseries, coffee and tea, 10HP and below, in Saligrama"</p>
+<div class="kv"><b>Target:</b> LT-4(c)(i)</div>
+<div class="kv"><b>Before:</b> "I could not find a tariff code or description matching..."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 3 rows returned (Saligrama's real data window).</div>
+</div>
+
+<div class="finding"><h4>#20 — ip-sets-splits <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Above 10HP horticulture nurseries coffee tea IP sets demand in Ramanathapura"</p>
+<div class="kv"><b>Target:</b> LT-4(c)(ii)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#23 — misc-lt <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Temporary supply less than one week — revenue in Konanur"</p>
+<div class="kv"><b>Target:</b> LT-7</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — plus the DB's own typo "Less then one week", requiring the then&rarr;than synonym.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#24 — misc-lt <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Power supply for hoardings and advertisement boards on permanent connection basis, Ramanathapura"</p>
+<div class="kv"><b>Target:</b> LT-7 b</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — plus the DB's own typo "permanent connection Basses", requiring basses&rarr;basis.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#25 — ht-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Industrial other than BMA at 11 KV — connected load in Hangarahalli"</p>
+<div class="kv"><b>Target:</b> HT-2(a)(ii)</div>
+<div class="kv"><b>Before:</b> "I could not find a matching tariff code or description..."</div>
+<div class="kv"><b>Root cause:</b> B — best demonstrates the scorer discriminating between 6 near-identical HT-2(a)(ii) rows by KV tier.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#26 — ht-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Industrial other than BMA — Railway Traction and ET Plant billing in Holenarasipura division"</p>
+<div class="kv"><b>Target:</b> HT-2(a)(ii)</div>
+<div class="kv"><b>Before:</b> "I could not find a tariff code or description matching..."</div>
+<div class="kv"><b>Root cause:</b> B.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#28 — ht-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Govt charitable university and ESI hospital hostels — demand in Saligrama"</p>
+<div class="kv"><b>Target:</b> HT-2(c)(i)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — the real description contains two DB typos at once ("Univercity", "Chartable"), both requiring synonym entries.</div>
+<div class="kv"><b>After (verified):</b> 3 rows returned, correctly matched against the misspelled real description.</div>
+</div>
+
+<div class="finding"><h4>#30 — ht-category <span class="tag notfixed">NOT FIXED</span></h4>
+<p class="q">"Private LI schemes connected to urban express feeders versus other private LI schemes — compare demand in Hangarahalli"</p>
+<div class="kv"><b>Target:</b> HT-3(a)(ii) vs HT-3(a)(iii)</div>
+<div class="kv"><b>Before:</b> "I could not find tariff categories matching... Please specify the exact tariff codes or descriptions."</div>
+<div class="kv"><b>Root cause:</b> B gets the model to the right single candidate (HT-3(a)(ii), confirmed in its own reasoning), but the question asks for comparison against "other" schemes — an open-ended complement, not a second named category anything grounded can point at.</div>
+<div class="kv"><b>After:</b> <b>still refuses</b>, consistently — re-sampled 3 additional times, refused all 3 with materially the same reasoning. See §6.</div>
+</div>
+
+<div class="finding"><h4>#31 — ht-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Irrigation and agricultural farms and horticulture HT category consumption in Saligrama"</p>
+<div class="kv"><b>Target:</b> HT-3b</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — plus the same DB-spacing quirk as Root Cause A (HT-3b vs DB's "HT - 3b"); scored a clean 1.0 match regardless since tokenizing ignores punctuation anyway.</div>
+<div class="kv"><b>After (verified):</b> 3 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#32 — ht-category <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Residential apartments HT category billing efficiency across all sub-divisions"</p>
+<div class="kv"><b>Target:</b> HT-4</div>
+<div class="kv"><b>Before:</b> (harness said OK — a genuine pass at the time): real per-sub-division percentages.</div>
+<div class="kv"><b>Root cause:</b> D — a regression introduced, then fixed, within this same work: once Root Cause B's matcher existed, it narrowed this family-level question to one specific (currently zero-demand) slab, producing an all-N/A answer. Caught by diffing against the original passing run before being reported as fixed.</div>
+<div class="kv"><b>After (verified):</b> real per-sub-division percentages restored; SQL now uses tariff_code LIKE 'HT-4%' with no description filter.</div>
+</div>
+
+<div class="finding"><h4>#35 — misc-receipts <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Rental income from staff quarters across all sub-divisions combined"</p>
+<div class="kv"><b>Target:</b> 62.9017</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> B — a user has no way to know 62.9017 exists; the only path in is the description ("Rental from Staff Qtrs"), now handled by the paraphrase matcher.</div>
+<div class="kv"><b>After (verified):</b> 11 rows returned.</div>
+</div>
+
+<div class="finding"><h4>#41 — metric-variety <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Connected load in KVA for HT-2(a)(ii) industrial category in Hangarahalli"</p>
+<div class="kv"><b>Target:</b> HT-2(a)(ii)</div>
+<div class="kv"><b>Before:</b> (harness false negative): "...could not be uniquely matched or does not exist..." with a "not answerable" badge — same Root Cause A truncation as #13/#14.</div>
+<div class="kv"><b>Root cause:</b> A.</div>
+<div class="kv"><b>After (verified):</b> real scalar KVA figure returned — previously mis-reported as passing by the harness; genuinely broken before, genuinely fixed now.</div>
+</div>
+
+<div class="finding"><h4>#45 — time-trend <span class="tag fixed">FIXED</span></h4>
+<p class="q">"Show the year-on-year demand trend for LT-3(i) in Holenarasipura from FY2015-16 to FY2025-26"</p>
+<div class="kv"><b>Target:</b> LT-3(i)</div>
+<div class="kv"><b>Before:</b> "No matching data was found for that question."</div>
+<div class="kv"><b>Root cause:</b> A — same LT-3(i)&rarr;LT-3 truncation as #13.</div>
+<div class="kv"><b>After (verified):</b> multi-year trend data returned with a line chart.</div>
+</div>
+
+<h2>5. Full results appendix</h2>
+<div class="tblwrap"><table>
+<tr><th>ID</th><th>Question</th><th>Category</th><th>Status</th></tr>
+<tr><td>1</td><td>Ltng heating and motive power BMA and Municipal Corp collections in Arkalgud</td><td>abbreviated-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>2</td><td>Urban Local Bodies lighting heating motive power collections in Saligrama</td><td>abbreviated-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>3</td><td>Pvt institutions lighting in ULB's and CC — connected load in Hangarahalli</td><td>abbreviated-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>4</td><td>Private institutions in Village Panchayats — collection efficiency in Arkalgud</td><td>abbreviated-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>5</td><td>Comme. Ltng heating and motive power in ULB's and CC — closing balance in Holenarasipura</td><td>abbreviated-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>6</td><td>Commercial lighting heating motive power in Village Panchayats, Saligrama</td><td>abbreviated-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>7</td><td>IP sets above 10 HP total consumption in Hangarahalli</td><td>abbreviated-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>8</td><td>Bhagyajyothi Kutirajyothi metered 6 to 18 units installations in Holenarasipura division</td><td>abbreviated-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>9</td><td>Free lighting demand under BMA and Municipal Corporation category in Hangarahalli</td><td>fl-ol-suffix</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>10</td><td>Free lighting for Urban Local Bodies category in Ramanathapura</td><td>fl-ol-suffix</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>11</td><td>Office lighting under commercial ULB's and CC category in Hangarahalli</td><td>fl-ol-suffix</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>12</td><td>Office lighting for commercial Village Panchayat category in Ramanathapura</td><td>fl-ol-suffix</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>13</td><td>LT-3(i) collection efficiency in Arkalgud</td><td>code-vs-description</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>14</td><td>HT-2(b)(ii) demand for FY 2020-21</td><td>code-vs-description</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>15</td><td>What is LT-5(b) heating and motive power, 5 to 40 HP slab, in Saligrama</td><td>code-vs-description</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>16</td><td>Same heating and motive power 5 to 40 HP slab but under LT-5(a) instead of LT-5(b), Holenarasipura</td><td>code-vs-description</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill fail">FAIL</span></td></tr>
+<tr><td>17</td><td>IP sets up to 10 HP on rural feeders — compare metered vs unmetered installations in Arkalgud</td><td>ip-sets-splits</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>18</td><td>IP sets up to 10HP on urban feeders, metered — connected load in Konanur</td><td>ip-sets-splits</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>19</td><td>IP sets for private horticulture nurseries, coffee and tea, 10HP and below, in Saligrama</td><td>ip-sets-splits</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>20</td><td>Above 10HP horticulture nurseries coffee tea IP sets demand in Ramanathapura</td><td>ip-sets-splits</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>21</td><td>Water supply CMC TMC TP category collections in Arkalgud</td><td>code-collision</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>22</td><td>Public lighting Grampanchayath collection efficiency in Saligrama</td><td>code-collision</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>23</td><td>Temporary supply less than one week — revenue in Konanur</td><td>misc-lt</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>24</td><td>Power supply for hoardings and advertisement boards on permanent connection basis, Ramanathapura</td><td>misc-lt</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>25</td><td>Industrial other than BMA at 11 KV — connected load in Hangarahalli</td><td>ht-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>26</td><td>Industrial other than BMA — Railway Traction and ET Plant billing in Holenarasipura division</td><td>ht-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>27</td><td>Commercial other than under BMA — collection efficiency in Arkalgud</td><td>ht-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>28</td><td>Govt charitable university and ESI hospital hostels — demand in Saligrama</td><td>ht-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>29</td><td>Lift irrigation government department at 33KV — arrears in Konanur</td><td>ht-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>30</td><td>Private LI schemes connected to urban express feeders versus other private LI schemes — compare demand in Hangarahalli</td><td>ht-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill fail">FAIL</span></td></tr>
+<tr><td>31</td><td>Irrigation and agricultural farms and horticulture HT category consumption in Saligrama</td><td>ht-category</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>32</td><td>Residential apartments HT category billing efficiency across all sub-divisions</td><td>ht-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>33</td><td>Temporary supply 67 HP and above — revenue in Ramanathapura</td><td>ht-category</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>34</td><td>Reconnection fee D&amp;R total for Holenarasipura division</td><td>misc-receipts</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>35</td><td>Rental income from staff quarters across all sub-divisions combined</td><td>misc-receipts</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>36</td><td>Delayed payment charges collected in Ramanathapura</td><td>misc-receipts</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>37</td><td>Total demand for Holenarasipura — I mean the division level, not the sub-division</td><td>location-ambiguity</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>38</td><td>Compare commercial lighting demand between Holenarasipura sub-division and Holenarasipura division</td><td>location-ambiguity</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>39</td><td>Konanur section water supply collections</td><td>section-level</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>40</td><td>Show DCB data for section number 8</td><td>section-level</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span> <i>(correct refusal — no such section)</i></td></tr>
+<tr><td>41</td><td>Connected load in KVA for HT-2(a)(ii) industrial category in Hangarahalli</td><td>metric-variety</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>42</td><td>Assessed vs metered consumption for Water Supply CMC/TMC/TP in Saligrama</td><td>metric-variety</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>43</td><td>Closing balance arrears for Public Lighting Grampanchayath in Arkalgud</td><td>metric-variety</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>44</td><td>commercial lighting in ulb and cc for holenarsipura</td><td>typo-tolerance</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>45</td><td>Show the year-on-year demand trend for LT-3(i) in Holenarasipura from FY2015-16 to FY2025-26</td><td>time-trend</td><td><span class="pill fail">FAIL</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>46</td><td>What was the collection efficiency for HT-4 residential apartments in March 2016?</td><td>time-trend</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span> <i>(correct refusal — no monthly data)</i></td></tr>
+<tr><td>47</td><td>Total connected load in KW across all LT categories for Konanur section</td><td>aggregation-ranking</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>48</td><td>Which of the five sub-divisions has the lowest percentage collection efficiency with adjustment?</td><td>aggregation-ranking</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+<tr><td>49</td><td>Sum of HT category collections across all five sub-divisions</td><td>aggregation-ranking</td><td><span class="pill ok">OK</span> &rarr; <span class="pill ok">OK</span></td></tr>
+</table></div>
+<p style="font-weight:700">26/49 &rarr; 47/49.</p>
+
+<h2>6. Remaining risks / recommendations</h2>
+<p><b>Still broken — two-way tariff-category comparison (#16, #30).</b> Both failures share a shape: the question asks to compare/substitute between two specific tariff categories, and the model refuses even when one or both categories are correctly grounded. This is distinct from Root Causes A-D and wasn't addressed by any of this session's fixes. <code>example_queries.sql</code> already has one worked comparison example (#5, domestic LT-1 vs industrial HT-2 demand, at the family-code level with a <code>SUM(CASE WHEN...)</code> pattern) — the model generalizes that pattern fine for family-level and location-level comparisons (#38 passes reliably), just not for slab/description-level ones. Recommended next step: add a worked example demonstrating the same pattern at the description level, and add explicit prompt guidance that "X instead of Y" phrasing (a substitution) differs from "X vs Y" phrasing (a genuine comparison) — the former should just answer for X.</p>
+
+<p><b>Thin coverage.</b> Every LT/HT family got at least one question, but several rare corners have zero direct coverage: the "AUXILIARY CONSUMPTION" / "HT IPP" / "LT IPP" special accounting categories the semantic layer explicitly flags as near-zero-installation and worth treating with caution; the FY2025-26-only P&amp;G Surcharge columns; and the pre-/post-FY2018-19 DC/MNR installation-column split (covered by this app's automated <code>tests/double_count_guard_test.py</code> and worked example #8, but not by this 49-question set).</p>
+
+<p><b>Data-quality issues in the source data itself</b> (not app bugs, but real landmines for future questions outside this test set):</p>
+<ul>
+<li><b>LT-5(a) and LT-5(b) share byte-for-byte identical description text</b> for every HP-band slab. Description-only matching can never tell them apart; only the <code>tariff_code</code> column can. This is exactly what surfaced Root Cause A.</li>
+<li><b>LT-6 is reused across two semantically unrelated row groups</b> — "Water Supply" and "Public Lighting" — same code, different business meaning. #21/#22 cover both sides and both already passed even before this session's fixes.</li>
+<li><b>The same description text repeats under genuinely different codes</b> beyond LT-5(a)/(b) — e.g. the "( Free Lighting)" BMA text under both LT-1 and LT-2(a)(i)(FL); the "Comme. Ltng..." ULB's &amp; CC text under both LT-3(i) and LT-3 a (i); the hoardings/advertisement text under both LT-3 b and LT-7 b. The app's matching surfaces every matching row rather than silently picking one — the safe behavior — but a question naming only the description is inherently ambiguous about which code it means unless the code itself is also stated.</li>
+<li><b>At least one section row (section number 8) has no name in the source data at all</b> (#40 exercises it) — the app refuses gracefully rather than guessing, which is correct, but section-level questions for that row can never resolve by name.</li>
+<li><b>Several descriptions carry typos from the original spreadsheet</b>, now baked into the database: "Univercity", "Chartable", "Less then one week", "Basses" (for "Basis"). These are now specifically synonym-mapped in the fuzzy matcher (§4.1, Root Cause B), but any new typo pattern introduced by a future data refresh won't be covered until found and added the same way — this is a hand-maintained list, not general typo correction.</li>
+<li><b>Case-variant duplicate codes exist too</b> ("LT-6 C" vs "LT-6 c" as distinct rows) — not exercised by this test set, but the same category of risk as the "HT - 3b" spacing quirk this session already fixed for.</li>
+</ul>
+
+<p><b>Non-determinism is inherent, not a bug to chase to zero.</b> Every answer comes from one live, unseeded Gemini call. §4.2's #16/#30 findings were confirmed by re-sampling 3&times; each specifically to distinguish "consistently broken" from "occasionally unlucky" — that distinction matters more than a single pass/fail run ever can, and is worth keeping in mind for any future regression pass over this app.</p>
+
+<footer>Generated from live runs of <code>run_frontend_tests.py</code> against the running <code>dcb-ai-app</code> chat UI, and from the actual code diffs made in <code>app/semantic_layer.py</code> and <code>app/prompts.py</code> during this session. Raw data: <code>test_run_results_before/</code>, <code>test_run_results_after/</code>.</footer>
+
+</div>
+</body>
+</html>

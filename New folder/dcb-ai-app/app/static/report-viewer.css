@@ -1,0 +1,84 @@
+/* View report: the Excel-style preview dialog (report-viewer.js), ported from the KPCL POC.
+   Colours are the Cescom palette used by chat.html / dashboard.html (navy primary, red only for errors). */
+.rv{--rv-navy:#072577;--rv-navy-deep:#151b54;--rv-navy-soft:#eaeefa;--rv-red:#d82221;--rv-ink:#1c2430;--rv-muted:#4b5563;--rv-border:#d0d7e6;--rv-bg:#f6f7f9;
+  position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;transition:opacity .18s ease}
+.rv[hidden]{display:none}
+.rv.in{opacity:1}
+.rv-backdrop{position:absolute;inset:0;background:rgba(21,27,84,.55)}
+.rv-panel{position:relative;display:flex;flex-direction:column;width:min(1380px,100%);height:min(900px,100%);background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 24px 70px rgba(21,27,84,.4);transform:translateY(10px) scale(.985);transition:transform .2s ease}
+.rv.in .rv-panel{transform:none}
+body.rv-open{overflow:hidden}
+
+.rv-top{display:flex;align-items:center;gap:12px;padding:12px 16px;color:#fff;background:var(--rv-navy);border-bottom:1px solid var(--rv-navy-deep)}
+.rv-ico{flex:0 0 auto;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12)}
+.rv-ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rv-head{min-width:0;flex:1}
+.rv-eyebrow{display:block;font-size:.68rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#c9d3e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-title{display:block;margin-top:2px;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-zoom{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.35);border-radius:8px;overflow:hidden}
+.rv-zoom button{background:transparent;border:none;color:#fff;width:32px;height:32px;font-size:1.05rem;cursor:pointer}
+.rv-zoom button:hover{background:rgba(255,255,255,.14)}
+.rv-zval{min-width:46px;text-align:center;font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums}
+.rv-dl{display:inline-flex;align-items:center;gap:7px;border:1px solid #fff;border-radius:8px;padding:8px 14px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer;
+  color:var(--rv-navy);background:#fff;transition:background .15s ease}
+.rv-dl:hover{background:var(--rv-navy-soft)}
+.rv-dl:disabled{opacity:.6;cursor:default}
+.rv-dl svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2}
+.rv-dl.busy svg{animation:rv-spin .8s linear infinite}
+.rv-dl.done{background:#e7f6ec;color:#1d6b3a;border-color:#e7f6ec}
+.rv-x{flex:0 0 auto;width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:1.35rem;line-height:1;cursor:pointer}
+.rv-x:hover{background:rgba(255,255,255,.14)}
+.rv button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+.rv-body{position:relative;flex:1;overflow:auto;background:var(--rv-bg)}
+.rv-sheet{position:relative;background:#fff;margin:0;transform-origin:0 0;min-width:100%;min-height:100%}
+.rv-state{display:none;position:absolute;inset:0;align-items:center;justify-content:center;gap:12px;color:var(--rv-ink);font-size:.95rem;font-weight:600;background:rgba(246,247,249,.92)}
+.rv-state.on{display:flex}
+.rv-state.error{color:var(--rv-red);padding:24px;text-align:center}
+.rv-spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--rv-border);border-top-color:var(--rv-navy);animation:rv-spin .8s linear infinite}
+@keyframes rv-spin{to{transform:rotate(360deg)}}
+
+/* the grid, drawn like Excel */
+.xv-grid{border-collapse:collapse;table-layout:fixed;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;font-size:13.3px;color:#1a2233;background:#fff}
+.xv-grid td{padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:clip;border:1px solid #e6e8ee;line-height:1.25}
+.xv-grid.nogrid td{border-color:transparent}
+.xv-grid th{font:600 11px "Segoe UI",Arial,sans-serif;color:var(--rv-muted);background:#f1f3f6;border:1px solid #dcdfe6;text-align:center;padding:0}
+.xv-grid thead th{position:sticky;top:0;z-index:3;height:22px}
+.xv-grid .xv-row{position:sticky;left:0;z-index:2}
+.xv-grid .xv-corner{position:sticky;left:0;top:0;z-index:4}
+.xv-grid tr.xv-sticky > td{position:sticky;top:22px;z-index:1}
+.xv-grid tr.xv-sticky > th{position:sticky;top:22px;z-index:3}
+.xv-img{position:absolute;object-fit:contain;pointer-events:none}
+.rv-chart{position:absolute;margin:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--rv-border);border-radius:6px;padding:8px 10px 6px}
+.rv-chart figcaption{font:700 12.5px Calibri,Carlito,"Segoe UI",Arial,sans-serif;color:#1a2233;text-align:center;margin-bottom:4px}
+.rv-cv{position:relative;flex:1;min-height:0}
+.rv-nochart{display:flex;height:100%;align-items:center;justify-content:center;color:var(--rv-muted);font-size:.8rem}
+
+.rv-foot{display:flex;gap:10px;align-items:center;padding:6px 16px;font-size:.75rem;color:var(--rv-muted);background:var(--rv-navy-soft);border-top:1px solid var(--rv-border)}
+.rv-foot[hidden]{display:none}
+.rv-foot b{font-weight:700;letter-spacing:.4px;text-transform:uppercase;font-size:.66rem;color:var(--rv-navy)}
+
+/* sheet tabs, like the bottom of an Excel window */
+.rv-tabs{display:flex;gap:2px;overflow-x:auto;padding:0 10px;background:#f1f3f6;border-top:1px solid var(--rv-border)}
+.rv-tabs button{flex:0 0 auto;position:relative;border:none;background:transparent;padding:10px 16px 9px;font:600 .8rem "Segoe UI",Arial,sans-serif;
+  color:var(--rv-muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.rv-tabs button::before{content:"";position:absolute;left:8px;right:8px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--tab);opacity:.55}
+.rv-tabs button:hover{color:var(--rv-navy);background:#eaeefa}
+.rv-tabs button[aria-selected="true"]{color:var(--rv-navy);background:#fff;border-bottom-color:var(--rv-navy)}
+.rv-tabs button[aria-selected="true"]::before{opacity:1}
+
+/* high-contrast mode (chat.html body.hc) */
+body.hc .rv-top{background:#000;border-color:#000}
+body.hc .rv-panel{border:2px solid #000}
+body.hc .xv-grid td{border-color:#000}
+
+@media(max-width:700px){
+  .rv{padding:0}
+  .rv-panel{width:100%;height:100%;border-radius:0}
+  .rv-top{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  .rv-head{flex-basis:calc(100% - 90px)}
+  .rv-zoom{order:3}
+  .rv-dl{order:4;margin-left:auto}
+}
+@media (prefers-reduced-motion: reduce){ .rv,.rv-panel{transition:none} }

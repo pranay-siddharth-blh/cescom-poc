@@ -1,0 +1,1682 @@
+{
+  "_purpose": "CESC Electricity Tariff FY2025-26, FY2026-27 & FY2027-28 as printed in the booklet 'CESCOM Tariff Categories.pdf' (KERC Tariff Order 2025 dated 27.03.2025, Corrigendum 26.05.2025, Amendment 18.07.2025). Hand-transcribed from the 49 scanned pages (full text: '../../CESCOM Tariff Categories - transcription.md'). This file is the single source for every tariff category, rate and rule the app shows: the mart's mart_tariff_booklet_* tables (build_mart.py), the chatbot's tariff answers (app/tariff_booklet.py), the About glossary and the Tariffs page. Page numbers are the booklet's own.",
+  "source": {
+    "title": "Electricity Tariff for FY2025-26, FY2026-27 & FY2027-28",
+    "issuer": "Chamundeshwari Electricity Supply Corporation Limited (CESC), Mysuru",
+    "order": "KERC Tariff Order 2025 dated 27.03.2025; Corrigendum dated 26.05.2025; Amendment dated 18.07.2025",
+    "effective": "Electricity consumed from the first meter reading date on or after 01.04.2025 (FY2025-26), 01.04.2026 (FY2026-27) and 01.04.2027 (FY2027-28).",
+    "area": "All CESC consumers in Mysuru, Mandya, Chamarajanagara, Kodagu and Hassan districts.",
+    "caveat": "CESC with other ESCOMs filed Review Petition No. 08/2025 before KERC seeking revision of tariff for LT-4(a), LT & HT industries and commercial categories; the booklet's rates are subject to the outcome.",
+    "fiscal_years": [
+      "2025-26",
+      "2026-27",
+      "2027-28"
+    ],
+    "file": "CESCOM Tariff Categories.pdf"
+  },
+  "parts": {
+    "LT": "Part I - Low Tension supply (400 V three-phase and 230 V single-phase). LT supply is given where the requisitioned load is less than 150 kW / 201 HP (page 5, para 9).",
+    "HT": "Part II - High Tension supply: bulk supply at 11 kV (including 2.3/4.6 kV) and above, at standard high or extra-high voltage, when the contract demand is 50 kW / 67 HP and above (page 30). Minimum HT contract demand 25 kVA (page 5)."
+  },
+  "categories": [
+    {
+      "code": "LT-1",
+      "family": "LT-1",
+      "voltage": "LT",
+      "page": 17,
+      "name": "Domestic",
+      "short": "Homes (including Bhagyajyothi / Kutirajyothi), Government hospitals and schools, religious and charitable institutions",
+      "applies_to": "Lighting / combined lighting, heating and motive power installations of residential houses, including the installations serviced under Bhagyajyothi / Kutirjyothi, and houses where a portion is used by the occupant for (a) handloom weaving, (b) silk rearing and reeling and artisans using motors up to 200 W, (c) consultancy in engineering, architecture, medicine, astrology, legal matters, income tax, chartered accountancy, (d) job typing, (e) tailoring, (f) post office, (g) gold smithy, (h) chawki rearing, (i) paying guests / home stay guests, (j) personal computers, (k) dhobis, (l) hand-operated printing press, (m) beauty parlours, (n) water supply installations and lifts independently serviced for bona fide use of residential complexes / residences, (o) farm houses and yard lighting limited to 120 W, (p) fodder choppers, arecanut cutting machines and milking machines with a connected load up to 1 HP. Also: (i) hospitals, dispensaries and health centres run by State / Central Government and local bodies; (ii) houses, schools and hostels meant for handicapped, aged, destitute and orphans; (iii) rehabilitation centres run by charitable institutions, AIDS and drug-addict rehabilitation centres; (iv) railway staff quarters with a single meter; (v) fire service station offices. Also: (a) temples, mosques, churches, gurudwaras, ashrams, mutts and religious / charitable institutions; (b) hospitals, dispensaries and health centres run by charitable institutions including X-ray units; (c) jails and prisons; (d) schools, colleges and educational institutions run by State / Central Government / local bodies; (e) seminaries; (f) hostels run by Government, educational, cultural, scientific and charitable institutions; (g) guest houses / travellers bungalows run in Government buildings or by State / Central Government / religious / charitable institutions; (h) public libraries; (i) museums; (j) installations of historical monuments of Archaeology Departments; (k) public telephone booths without STD/ISD/FAX run by handicapped people; (l) Sulabh / Nirmal Souchalayas; (m) Viswa sheds having lighting loads only; (n) gaushalas.",
+      "keywords": [
+        "domestic",
+        "house",
+        "home",
+        "residence",
+        "residential house",
+        "bhagyajyothi",
+        "kutirajyothi",
+        "kutirjyothi",
+        "bj/kj",
+        "handloom",
+        "silk rearing",
+        "artisan",
+        "consultancy",
+        "job typing",
+        "tailoring at home",
+        "post office",
+        "goldsmith",
+        "gold smithy",
+        "chawki",
+        "paying guest",
+        "home stay",
+        "homestay",
+        "dhobi",
+        "beauty parlour at home",
+        "farm house",
+        "fodder chopper",
+        "milking machine",
+        "arecanut cutting",
+        "government hospital",
+        "govt hospital",
+        "dispensary",
+        "health centre",
+        "orphanage",
+        "old age home",
+        "rehabilitation centre",
+        "railway staff quarters",
+        "fire service station office",
+        "temple",
+        "mosque",
+        "church",
+        "gurudwara",
+        "ashram",
+        "mutt",
+        "religious",
+        "charitable institution",
+        "jail",
+        "prison",
+        "government school",
+        "govt school",
+        "government college",
+        "seminary",
+        "government hostel",
+        "public library",
+        "library",
+        "museum",
+        "monument",
+        "sulabh",
+        "souchalaya",
+        "toilet",
+        "viswa shed",
+        "gaushala"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 145,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 580
+        },
+        "2026-27": {
+          "fixed": 150,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 580
+        },
+        "2027-28": {
+          "fixed": 160,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 575
+        }
+      },
+      "notes": [
+        "Single slab: one energy charge per unit for all consumption ('in view of introduction of single slab for energy charges', general terms para 19).",
+        "Temples, churches, mosques, gurudwaras, ashrams, mutts and religious / charitable institutions using power for kalyana mantapas / marriage halls, restaurants or any other commercial activity not related to religious activities: that consumption is billed under LT-3.",
+        "Rebate for LT domestic installations with a rooftop solar (SRTPV) system: installations with sanctioned load up to 10 kW get a rebate of Rs 25/kW in fixed charges for the installed SRTPV capacity.",
+        "'Home Stay' means a privately owned residence (including one in a farm / plantation) where the owner or immediate family (spouse / children) lives and lets out 1 to 6 rooms to tourists for boarding and lodging charges: billed under LT-1. If the owners do not live there and an agent / operator provides the services, it is billed under LT-3(a).",
+        "A rebate of 25 paise per unit for houses / schools / hostels meant for handicapped, aged, destitute and orphans, and rehabilitation centres run by charitable institutions.",
+        "Use of power within the premises for bona fide temporary purposes is permitted if the total load does not exceed the sanctioned load; portable equipment (floor polishing etc.) needs an earth leakage circuit breaker.",
+        "Laboratory installations in educational institutions may install connected machinery up to 4 times the sanctioned load; fixed charges are on the sanctioned load.",
+        "Reconnection charges: single-phase domestic Rs 20, three-phase domestic Rs 50 per installation."
+      ]
+    },
+    {
+      "code": "LT-2",
+      "family": "LT-2",
+      "voltage": "LT",
+      "page": 19,
+      "name": "Private educational institutions and hospitals",
+      "short": "Private professional and other private educational institutions, nursing homes and private hospitals",
+      "applies_to": "Installations of private professional and other private educational institutions including aided and unaided institutions, nursing homes and private hospitals having only lighting or combined lighting & heating, and motive power.",
+      "keywords": [
+        "private school",
+        "private college",
+        "private educational institution",
+        "aided institution",
+        "unaided institution",
+        "private university",
+        "nursing home",
+        "private hospital",
+        "private clinic hospital",
+        "professional college",
+        "engineering college",
+        "medical college"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 190,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 675
+        },
+        "2026-27": {
+          "fixed": 195,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 655
+        },
+        "2027-28": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 625
+        }
+      },
+      "notes": [
+        "Rebate of 25 paise per unit for installations of houses / schools / hostels meant for handicapped, aged, destitute and orphans, and rehabilitation centres run by charitable institutions (note common to LT-1 & LT-2).",
+        "Bona fide temporary use within the premises is permitted if the total load does not exceed the sanctioned load.",
+        "Portable equipment used temporarily (floor polishing etc.) needs an earth leakage circuit breaker of adequate capacity.",
+        "Laboratory installations in educational institutions may install connected machinery up to 4 times the sanctioned load; fixed charges are on the sanctioned load."
+      ]
+    },
+    {
+      "code": "LT-3(a)",
+      "family": "LT-3",
+      "voltage": "LT",
+      "page": 19,
+      "name": "Commercial",
+      "short": "Shops, hotels, offices, banks, cinemas, clinics and other commercial premises",
+      "applies_to": "Commercial lighting, heating and motive power installations of clinics, diagnostic centres, X-ray units, shops, stores, hotels / restaurants / boarding and lodging homes, bars, private guest houses, mess, clubs, kalyana mantaps / choultry, permanent cinemas / semi-permanent cinemas, theatres, petrol bunks, petrol, diesel and oil storage plants, service stations / garages, banks, telephone exchanges, TV stations, microwave stations, All India Radio, dish antenna, public telephone booths / STD, ISD, FAX communication centres, stud farms, race course, ice cream parlours, computer centres, photo studio / colour laboratory, photo copiers, railway installations excepting railway workshops, KSRTC bus stations excepting workshops, all offices, police stations, commercial complexes, lifts of commercial complexes, battery charging units, tyre vulcanizing centres, post offices, bakery shops, beauty parlours, stadiums other than those maintained by Government and local bodies. Also water supply pumps and street lights not covered under LT-6, cyber cafes, internet surfing cafes, call centres, BPO / KPO, telecom, IT-based medical transcription centres, private hostels not covered under LT-1, home stay / paying guest accommodation provided in an independent / exclusive premise, ready-mix concrete units.",
+      "keywords": [
+        "commercial",
+        "shop",
+        "store",
+        "hotel",
+        "restaurant",
+        "lodge",
+        "lodging",
+        "boarding",
+        "bar",
+        "private guest house",
+        "mess",
+        "club",
+        "kalyana mantap",
+        "marriage hall",
+        "choultry",
+        "cinema",
+        "theatre",
+        "petrol bunk",
+        "petrol pump",
+        "fuel station",
+        "service station",
+        "garage",
+        "bank",
+        "atm",
+        "telephone exchange",
+        "tv station",
+        "microwave station",
+        "all india radio",
+        "dish antenna",
+        "std booth",
+        "clinic",
+        "diagnostic centre",
+        "x-ray",
+        "stud farm",
+        "race course",
+        "ice cream parlour",
+        "computer centre",
+        "photo studio",
+        "photocopier",
+        "xerox",
+        "office",
+        "police station",
+        "commercial complex",
+        "battery charging",
+        "tyre vulcanizing",
+        "bakery shop",
+        "beauty parlour",
+        "stadium",
+        "cyber cafe",
+        "internet cafe",
+        "call centre",
+        "bpo",
+        "kpo",
+        "telecom",
+        "medical transcription",
+        "private hostel",
+        "pg accommodation",
+        "ready mix concrete",
+        "rmc",
+        "home stay run by agent",
+        "mobile tower",
+        "cell tower",
+        "telecom tower"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 215,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 700,
+          "demand_based": {
+            "fixed": 235,
+            "fixed_unit": "per kW per month of sanctioned load",
+            "energy_paise": 700,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        },
+        "2026-27": {
+          "fixed": 215,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 680,
+          "demand_based": {
+            "fixed": 235,
+            "fixed_unit": "per kW per month of sanctioned load",
+            "energy_paise": 680,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        },
+        "2027-28": {
+          "fixed": 215,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 660,
+          "demand_based": {
+            "fixed": 235,
+            "fixed_unit": "per kW per month of sanctioned load",
+            "energy_paise": 660,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        }
+      },
+      "notes": [
+        "A rebate of 20 paise per unit for consumers in village panchayat areas, excluding village panchayats within the jurisdiction of Urban Development Authorities.",
+        "Besides lighting, heating and motive power, the supply may also be used for yard lighting / air conditioning / water supply in the premises.",
+        "Semi-permanent cinemas must have a semi-permanent structure with permanent wiring and a licence of not less than one year.",
+        "Touring cinemas (apparatus taken from place to place) and outdoor shooting units are billed under LT-7.",
+        "A rebate of 20% on fixed and energy charges for telephone booths with STD / ISD / FAX run by handicapped people.",
+        "Demand-based tariff is optional (para 1 of the LT billing conditions): billing demand is the sanctioned load or the maximum demand recorded, whichever is higher; demand above the sanctioned load is charged at two times the normal rate."
+      ]
+    },
+    {
+      "code": "LT-3(b)",
+      "family": "LT-3",
+      "voltage": "LT",
+      "page": 21,
+      "name": "Hoardings and advertisement boards",
+      "short": "Hoardings, advertisement boards, bus shelters with advertising, sign boards (permanent connection)",
+      "applies_to": "Hoardings & advertisement boards, bus shelters with advertising boards, private advertising posts / sign boards in the interest of the public such as police canopy direction boards, and other sign boards sponsored by private advertising agencies / firms, on permanent connection basis.",
+      "keywords": [
+        "hoarding",
+        "advertisement board",
+        "advertising board",
+        "billboard",
+        "bus shelter",
+        "sign board",
+        "signboard",
+        "advertising post",
+        "canopy direction board"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 950
+        },
+        "2026-27": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 950
+        },
+        "2027-28": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 950
+        }
+      },
+      "notes": [
+        "Hoardings of 67 HP and above, and temporary hoardings, fall under HT-5 (temporary)."
+      ]
+    },
+    {
+      "code": "LT-4(a)",
+      "family": "LT-4",
+      "voltage": "LT",
+      "page": 21,
+      "name": "Irrigation pump sets up to 10 HP",
+      "short": "Agricultural pump sets (including sprinklers) of sanctioned load 10 HP and below - Government-subsidised",
+      "applies_to": "Agricultural pump sets including sprinklers up to a sanctioned load of 10 HP and below (applicable to all areas). Also applicable to coconut and arecanut plantations.",
+      "keywords": [
+        "ip set",
+        "ip sets",
+        "irrigation pump",
+        "agricultural pump",
+        "pump set",
+        "farm pump",
+        "borewell pump",
+        "sprinkler",
+        "coconut plantation",
+        "arecanut plantation",
+        "farmer",
+        "agriculture pump up to 10 hp"
+      ],
+      "rates": {
+        "2025-26": {
+          "cdt_paise": 830,
+          "cdt_fixed_component_paise": 417,
+          "cdt_variable_component_paise": 413
+        },
+        "2026-27": {
+          "cdt_paise": 856,
+          "cdt_fixed_component_paise": 424,
+          "cdt_variable_component_paise": 432
+        },
+        "2027-28": {
+          "cdt_paise": 899,
+          "cdt_fixed_component_paise": 442,
+          "cdt_variable_component_paise": 457
+        }
+      },
+      "notes": [
+        "CDT = Commission Determined Tariff per kWh; it comprises a fixed-charge and a variable-charge component per unit.",
+        "If the Government of Karnataka does not release the subsidy in advance (Clause 6.1, KERC (Manner of Payment of Subsidy) Regulations 2008), the CDT shall be demanded and collected from these consumers.",
+        "The GoK shall release full subsidy to meet the revenue requirement on the approved quantum of IP-set sales (Section 65, Electricity Act 2003). On any shortfall, sales to IP sets of 10 HP and below are proportionately regulated or the ESCOMs collect the CDT from the IP consumers.",
+        "Electricity tax (9%) does not apply to agricultural IP sets up to and including 10 HP.",
+        "Energy only for pumping water to irrigate the consumer's own land (per the IP application / water-right certificate) and bona fide agriculture; otherwise billed under LT-3 / LT-5.",
+        "During disconnection only the fixed charges of the metered IP-set schedule are collected (LT-4(a), (b), (c), metered or not).",
+        "Billing at least once a quarter for all IP sets; capacitors per Clause 23 of the Conditions of Supply are mandatory (PF surcharge Rs 100/HP/year if missing)."
+      ]
+    },
+    {
+      "code": "LT-4(b)",
+      "family": "LT-4",
+      "voltage": "LT",
+      "page": 23,
+      "name": "Irrigation pump sets above 10 HP",
+      "short": "Agricultural pump sets (including sprinklers) of sanctioned load above 10 HP",
+      "applies_to": "Agricultural pump sets including sprinklers of sanctioned load above 10 HP.",
+      "keywords": [
+        "ip set above 10 hp",
+        "pump set above 10 hp",
+        "irrigation pump above 10 hp",
+        "large pump set"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 140,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 410
+        },
+        "2026-27": {
+          "fixed": 145,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 400
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 400
+        }
+      },
+      "notes": [
+        "LT-4 notes (own-land irrigation, alternate drives, 2 lighting points, quarterly billing, 2 p/unit capacitor rebate, fixed charges during disconnection) apply."
+      ]
+    },
+    {
+      "code": "LT-4(c)",
+      "family": "LT-4",
+      "voltage": "LT",
+      "page": 23,
+      "name": "Pump sets of nurseries, gardens and plantations",
+      "short": "Pump sets in forest / horticulture nurseries, grass farms and gardens, plantations, saffron, mushroom raising",
+      "applies_to": "Pump sets used in (i) nurseries of forest and horticultural departments; (ii) grass farms and gardens; (iii) plantations other than coffee, tea, rubber and private horticulture nurseries; (iv) saffron cultivation; (v) mushroom raising installations. (Rate-schedule box: private horticultural nurseries, coffee, nurseries of forest and horticultural departments, grass farms and gardens, tea and rubber plantations, saffron cultivation, mushroom raising installations.)",
+      "keywords": [
+        "nursery",
+        "horticulture nursery",
+        "forest nursery",
+        "grass farm",
+        "garden",
+        "plantation pump",
+        "coffee plantation",
+        "tea plantation",
+        "rubber plantation",
+        "saffron",
+        "mushroom"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 140,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 365
+        },
+        "2026-27": {
+          "fixed": 145,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 345
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 325
+        }
+      },
+      "notes": [
+        "The seasonal-industry terms also apply to LT-4(c) installations on a written request to opt for seasonal benefits (general terms para 24)."
+      ]
+    },
+    {
+      "code": "LT-5",
+      "family": "LT-5",
+      "voltage": "LT",
+      "page": 24,
+      "name": "Industrial (LT)",
+      "short": "Heating and motive power of industries including MSMEs, workshops, mills, IT units",
+      "applies_to": "Heating & motive power (including lighting) installations of industrial units including Micro, Small and Medium Enterprises (MSME), workshops, poultry farms, sugarcane crushers, coffee pulping, cardamom drying, flour, huller & rice mills, wet grinders, milk dairies, ironing, dry cleaners and laundries having washing, drying, ironing etc., tailoring shops, bulk ice cream and ice cream manufacturing units (including storage within the premises), coffee roasting and grinding works, cold storage plants, bakery product manufacturing units, KSRTC workshops / depots, railway workshops, drug manufacturing units and testing laboratories, printing presses, garment manufacturing units, bulk milk vending booths, swimming pools of local bodies, tyre retreading units, stone crushers, stone cutting, chilly grinders, phova mills, pulverizing mills, decorticators, iron & red-oxide crushing units, crematoriums, hatcheries, tissue culture, saw mills, toy / wood industries, Viswa sheds with mixed load sanctioned under the Viswa scheme, cinematic activities such as processing, printing, developing, recording theatres, dubbing theatres and film studios, agarbathi manufacturing, water supply installations of KIADB & industrial units, gem & diamond cutting, floriculture (including lighting for photoperiod elongation), green house, biotech labs, hybrid seed processing, IT industries engaged in development of hardware & software, IT-enabled services / start-ups (GoI notification 17.04.2015) / animation / gaming / computer graphics / Global Capacity Centre units (certified by the IT & BT Department of GoK / GoI), silk filature, aqua culture, prawn culture, brick manufacturing, silk / cotton colour dyeing, stadiums maintained by Government and local bodies, fire service stations, gold / silver ornament manufacturing, effluent treatment plants and drainage water treatment plants independently serviced outside the premises, LPG bottling plants and petroleum pipeline projects, piggery farms, analytical labs for ore metals, satellite communication centres, mineral water processing / drinking water bottling plants, soda fountain units, solid waste processing plants, animal husbandry, transformer repair centres, data centres (with the certificate of the Department of Electronics, IT, BT and S&T).",
+      "keywords": [
+        "industry",
+        "industrial",
+        "factory",
+        "msme",
+        "small scale industry",
+        "ssi",
+        "workshop",
+        "poultry farm",
+        "sugarcane crusher",
+        "coffee pulping",
+        "cardamom drying",
+        "flour mill",
+        "rice mill",
+        "huller",
+        "wet grinder",
+        "milk dairy",
+        "dairy",
+        "ironing",
+        "dry cleaner",
+        "laundry",
+        "tailoring shop",
+        "ice cream factory",
+        "coffee roasting",
+        "cold storage",
+        "bakery factory",
+        "printing press",
+        "garment",
+        "milk booth",
+        "swimming pool",
+        "tyre retreading",
+        "stone crusher",
+        "stone cutting",
+        "chilly grinder",
+        "pulverizing",
+        "saw mill",
+        "crematorium",
+        "hatchery",
+        "tissue culture",
+        "agarbathi",
+        "gem cutting",
+        "diamond cutting",
+        "floriculture",
+        "green house",
+        "greenhouse",
+        "biotech lab",
+        "seed processing",
+        "it company",
+        "software company",
+        "start-up",
+        "startup",
+        "animation",
+        "gaming",
+        "gcc",
+        "silk filature",
+        "aqua culture",
+        "prawn culture",
+        "brick",
+        "dyeing",
+        "fire service station",
+        "gold ornament",
+        "effluent treatment",
+        "lpg bottling",
+        "piggery",
+        "satellite communication",
+        "mineral water",
+        "water bottling",
+        "soda",
+        "solid waste",
+        "animal husbandry",
+        "transformer repair",
+        "data centre",
+        "data center"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 450,
+          "demand_based": {
+            "fixed": 200,
+            "fixed_unit": "per HP per month of sanctioned load",
+            "energy_paise": 450,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        },
+        "2026-27": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 440,
+          "demand_based": {
+            "fixed": 200,
+            "fixed_unit": "per HP per month of sanctioned load",
+            "energy_paise": 440,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 430,
+          "demand_based": {
+            "fixed": 200,
+            "fixed_unit": "per HP per month of sanctioned load",
+            "energy_paise": 430,
+            "applies": "optional, where sanctioned load is above 5 kW but below 150 kW"
+          }
+        }
+      },
+      "notes": [
+        "A rebate of 20 paise per unit for consumers in village panchayat areas, excluding village panchayats within the jurisdiction of Urban Development Authorities.",
+        "A rebate of Re 1 per unit in energy charges for ice manufacturing units / cold storage plants used for fisheries in the coastal belt within 5 km of the sea (beyond 5 km with a Fisheries Department certificate).",
+        "LT-5 consumers may use electricity within the premises for internal modifications and expansion provided the total load does not exceed the sanctioned load.",
+        "Optional ToD tariff: July-November 0; December-June +100 paise/unit 06:00-09:00 and 18:00-22:00, 0 at 09:00-18:00, -100 paise/unit 22:00-06:00.",
+        "Demand-based tariff (optional): billing demand is the sanctioned load or the MD recorded in the tri-vector / smart meter, whichever is higher; MD above the sanctioned load is charged at two times the normal rate.",
+        "Seasonal industries per para 26 of the LT general terms; welding transformers: connected load = half the maximum kVA (IS 1851 nameplate) or half the maximum kVA as rated by the licensee, whichever is higher."
+      ]
+    },
+    {
+      "code": "LT-6(a)",
+      "family": "LT-6",
+      "voltage": "LT",
+      "page": 27,
+      "name": "Water supply (LT)",
+      "short": "Water supply and sewerage pumping and water purifying plants of Government, urban local bodies and gram panchayats",
+      "applies_to": "Water supply and sewerage pumping installations and water purifying plants maintained by Government and urban local bodies / grama panchayats for supplying pure drinking water to residential areas. Also applicable to water supply installations in residential layouts.",
+      "keywords": [
+        "water supply",
+        "drinking water",
+        "sewerage pumping",
+        "water purifying plant",
+        "ro plant",
+        "panchayat water",
+        "municipal water"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 180,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        },
+        "2026-27": {
+          "fixed": 180,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        },
+        "2027-28": {
+          "fixed": 180,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        }
+      },
+      "notes": []
+    },
+    {
+      "code": "LT-6(b)",
+      "family": "LT-6",
+      "voltage": "LT",
+      "page": 27,
+      "name": "Public lighting",
+      "short": "Street lights, park lights, traffic signals of local bodies and Government",
+      "applies_to": "Public street lights / park lights of village panchayats, town panchayats, town municipalities, city municipalities / corporations, State and Central Government, APMC; traffic signals; surveillance cameras at traffic locations belonging to Government departments; subways; water fountains of local bodies. Also streetlights of residential campuses of universities, other educational institutions, housing colonies approved by local bodies / development authorities, religious institutions, organisations run on a charitable basis, industrial areas / estates and notified areas; street lights with signal lights including the gateman's shed at railway level crossings; high-mast street lights; lifts / escalators at pedestrian road crossings maintained by Government and urban local bodies / grama panchayats, independently serviced.",
+      "keywords": [
+        "street light",
+        "streetlight",
+        "street lighting",
+        "public lighting",
+        "park light",
+        "traffic signal",
+        "surveillance camera",
+        "subway",
+        "water fountain",
+        "high mast",
+        "level crossing",
+        "pedestrian escalator",
+        "skywalk lift"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 180,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 700,
+          "energy_led_paise": 600
+        },
+        "2026-27": {
+          "fixed": 180,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 700,
+          "energy_led_paise": 600
+        },
+        "2027-28": {
+          "fixed": 180,
+          "fixed_unit": "per kW per month of sanctioned load",
+          "energy_paise": 700,
+          "energy_led_paise": 600
+        }
+      },
+      "notes": [
+        "LED / induction lighting is charged 600 paise per unit instead of 700.",
+        "LED fittings for villages under the licensee's electrification programme are provided by the licensee initially; otherwise the requesting organisation pays for fittings and labour at the licensee's standard rates; lamps and replacements are supplied by the panchayats / municipalities (LT billing conditions 21-22).",
+        "Street lighting: fraction of kW rounded to the nearest quarter kW, minimum billing a quarter kW."
+      ]
+    },
+    {
+      "code": "LT-6(c)",
+      "family": "LT-6",
+      "voltage": "LT/HT",
+      "page": 28,
+      "name": "EV charging stations",
+      "short": "Electric vehicle charging and battery swapping stations (LT and HT)",
+      "applies_to": "Electric Vehicle Charging Stations / Battery Swapping Stations, for both LT and HT supply.",
+      "keywords": [
+        "ev charging",
+        "electric vehicle",
+        "charging station",
+        "battery swapping",
+        "ev station"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 70,
+          "fixed_unit": "per kW per month of sanctioned load (LT)",
+          "ht_demand": 200,
+          "ht_demand_unit": "per kVA per month of billing demand (HT)",
+          "energy_paise": 450
+        },
+        "2026-27": {
+          "fixed": 70,
+          "fixed_unit": "per kW per month of sanctioned load (LT)",
+          "ht_demand": 200,
+          "ht_demand_unit": "per kVA per month of billing demand (HT)",
+          "energy_paise": 450
+        },
+        "2027-28": {
+          "fixed": 70,
+          "fixed_unit": "per kW per month of sanctioned load (LT)",
+          "ht_demand": 200,
+          "ht_demand_unit": "per kVA per month of billing demand (HT)",
+          "energy_paise": 450
+        }
+      },
+      "notes": [
+        "ToD (optional) for EV charging stations in the depots of BMTC / KSRTC / NEKRTC / NWKRTC on HT supply: July-November 0; December-June +100 paise/unit 06:00-09:00 and 18:00-22:00, 0 at 09:00-18:00, -100 paise/unit 22:00-06:00."
+      ]
+    },
+    {
+      "code": "LT-7",
+      "family": "LT-7",
+      "voltage": "LT",
+      "page": 29,
+      "name": "Temporary supply (LT)",
+      "short": "Temporary power supply below 67 HP, touring cinemas",
+      "applies_to": "Temporary supply of less than 67 HP; also touring cinemas having a licence for a duration of less than one year, and outdoor shooting units.",
+      "keywords": [
+        "temporary supply",
+        "temporary connection",
+        "temporary power",
+        "touring cinema",
+        "outdoor shooting",
+        "construction power small",
+        "function lighting",
+        "event lighting"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 1050
+        },
+        "2026-27": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 1050
+        },
+        "2027-28": {
+          "fixed": 200,
+          "fixed_unit": "per kW per month of sanctioned load (less than 67 HP)",
+          "energy_paise": 1050
+        }
+      },
+      "notes": [
+        "Billed monthly like other categories, subject to the Conditions of Supply of Electricity (Eleventh Amendment) 2023.",
+        "Temporary supply with or without extension of the distribution main is arranged through a prepaid energy meter (Clause 12 of the Conditions of Supply); all Clause 12 conditions must be met before service."
+      ]
+    },
+    {
+      "code": "HT-1",
+      "family": "HT-1",
+      "voltage": "HT",
+      "page": 34,
+      "name": "Water supply (HT)",
+      "short": "HT water supply, drainage / sewerage treatment and pumping of KUWS&DB, local bodies and Government",
+      "applies_to": "Water supply, drainage / sewerage water treatment plants and sewerage pumping installations belonging to the Karnataka Urban Water Supply and Sewerage Board, other local bodies, State and Central Government.",
+      "keywords": [
+        "ht water supply",
+        "kuwsdb",
+        "water board",
+        "sewerage treatment plant",
+        "stp",
+        "drainage treatment",
+        "water supply",
+        "sewerage pumping",
+        "drinking water"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 340,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 625
+        },
+        "2026-27": {
+          "demand": 340,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 625
+        },
+        "2027-28": {
+          "demand": 340,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 625
+        }
+      },
+      "notes": [
+        "ToD tariff (optional): July-November 0; December-June +100 paise/unit 06:00-09:00 and 18:00-22:00, 0 at 09:00-18:00, -100 paise/unit 22:00-06:00.",
+        "Residential quarters on bulk supply from this category are metered separately at a single point and billed at HT-4; no reduction in the demand recorded in the main HT meter."
+      ]
+    },
+    {
+      "code": "HT-2(a)",
+      "family": "HT-2",
+      "voltage": "HT",
+      "page": 35,
+      "name": "Industrial (HT)",
+      "short": "HT industries including MSMEs, factories, IT, data centres, railway traction",
+      "applies_to": "Industries including MSME, factories, industrial workshops, research & development centres, industrial estates, milk dairies, rice mills, poha mills, roller flour mills, newspapers, printing press, railway workshops / KSRTC workshops / depots, crematoriums, cold storage, ice & ice-cream manufacturing units, swimming pools of local bodies, water supply installations of KIADB and other industries, all defence establishments, hatcheries, poultry farms, museum, floriculture (including lighting for photoperiod elongation), green house, bio-technical laboratory, hybrid seeds processing, stone crushers, stone cutting, bakery product manufacturing, Mysuru Palace illumination, film studios, dubbing theatres, processing, printing, developing and recording theatres, tissue culture, aqua culture, prawn culture, IT industries (hardware & software), IT-enabled services / start-ups (GoI notification 17.04.2015) / animation / gaming / computer graphics / Global Capacity Centre units (IT & BT certified), drug manufacturing, garment manufacturing, tyre retreading, nuclear power projects, stadiums maintained by Government and local bodies, Railway Traction, effluent and drainage water treatment plants owned other than by local bodies and independently serviced outside the premises, LPG bottling plants, petroleum pipeline projects, piggery farms, analytical labs for ore metals, saw mills, toy / wood industries, satellite communication centres, mineral water / drinking water bottling plants, solid waste processing plants, data centres (certified), bulk ice cream manufacturing units (including storage within the premises).",
+      "keywords": [
+        "ht industry",
+        "ht industrial",
+        "large industry",
+        "factory ht",
+        "defence establishment",
+        "railway traction",
+        "data centre ht",
+        "mysuru palace",
+        "nuclear power project",
+        "research and development centre",
+        "industry",
+        "industrial",
+        "factory",
+        "msme",
+        "data centre",
+        "data center",
+        "it company",
+        "software company",
+        "cold storage",
+        "rice mill",
+        "dairy",
+        "milk dairy",
+        "hatchery",
+        "stone crusher",
+        "garment",
+        "printing press",
+        "start-up",
+        "startup"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 345,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 660
+        },
+        "2026-27": {
+          "demand": 350,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 660
+        },
+        "2027-28": {
+          "demand": 355,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 650
+        }
+      },
+      "variants": [
+        {
+          "name": "Railway Traction",
+          "rates": {
+            "2025-26": {
+              "demand": 345,
+              "energy_paise": 660
+            },
+            "2026-27": {
+              "demand": 350,
+              "energy_paise": 660
+            },
+            "2027-28": {
+              "demand": 355,
+              "energy_paise": 650
+            }
+          }
+        },
+        {
+          "name": "Effluent treatment plants independently serviced outside the premises of any installation",
+          "rates": {
+            "2025-26": {
+              "demand": 345,
+              "energy_paise": 635
+            },
+            "2026-27": {
+              "demand": 350,
+              "energy_paise": 620
+            },
+            "2027-28": {
+              "demand": 355,
+              "energy_paise": 610
+            }
+          }
+        }
+      ],
+      "notes": [
+        "ToD: compulsory for HT-2(a), HT-2(b), HT-2(c) with contract demand of 500 kVA and above, optional below 500 kVA; July-November 0; December-June +100 paise/unit 06:00-09:00 and 18:00-22:00, 0 at 09:00-18:00, -100 paise/unit 22:00-06:00. Not applicable to BMRCL & Railway Traction.",
+        "Energy may be used for all purposes of the installation (offices, stores, canteens, yard lighting, water pumping, advertisement within the premises) and for construction, modification and expansion within the premises.",
+        "Energy for effluent / drainage treatment plants within the premises (main meter or sub-meter) is billed at the installation's own tariff."
+      ]
+    },
+    {
+      "code": "HT-2(b)",
+      "family": "HT-2",
+      "voltage": "HT",
+      "page": 36,
+      "name": "Commercial (HT)",
+      "short": "HT commercial complexes, hotels, cinemas, offices, banks, airports, bus and railway stations",
+      "applies_to": "Commercial complexes, cinemas, hotels, boarding & lodging, amusement parks, telephone exchanges, race course, all clubs, TV station, All India Radio, railway stations, airport, KSRTC bus stations, all offices, banks, commercial multi-storied buildings, APMC yards, stadiums other than those maintained by Government and local bodies, construction power for irrigation, power projects and Konkan Railway Project, petrol / diesel and oil storage plants, IT-based medical transcription centres, telecom, call centres, BPO / KPO, diagnostic centres, ready mix concrete units, private guest houses / travellers bungalows. All activities listed under LT-3 and not included under HT-2(b) are classified under HT-2(b) if they avail power under HT supply.",
+      "keywords": [
+        "ht commercial",
+        "mall",
+        "shopping mall",
+        "multiplex",
+        "star hotel",
+        "amusement park",
+        "airport",
+        "railway station",
+        "bus station",
+        "apmc yard",
+        "commercial multi-storied",
+        "konkan railway",
+        "commercial",
+        "hotel",
+        "cinema",
+        "office",
+        "bank",
+        "commercial complex",
+        "club",
+        "telecom",
+        "call centre",
+        "bpo"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 370,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 595
+        },
+        "2026-27": {
+          "demand": 375,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 570
+        },
+        "2027-28": {
+          "demand": 380,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 540
+        }
+      },
+      "notes": [
+        "HT-2(b) is not applicable for construction of new industries; such supply is availed only under the temporary category HT-5.",
+        "ToD as for HT-2(a)."
+      ]
+    },
+    {
+      "code": "HT-2(c)(i)",
+      "family": "HT-2",
+      "voltage": "HT",
+      "page": 37,
+      "name": "Government hospitals and educational institutions (HT)",
+      "short": "Government, charitable and ESI hospitals, universities, Government / aided educational institutions and hostels",
+      "applies_to": "Government hospitals, hospitals run by charitable institutions and ESI hospitals, universities, educational institutions belonging to Government and local bodies, aided educational institutions and hostels of all educational institutions.",
+      "keywords": [
+        "government hospital ht",
+        "esi hospital",
+        "university",
+        "government university",
+        "aided college",
+        "educational hostel",
+        "charitable hospital ht",
+        "government hospital",
+        "govt hospital",
+        "government school",
+        "govt school",
+        "government college",
+        "hostel",
+        "charitable hospital"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 295,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 710
+        },
+        "2026-27": {
+          "demand": 300,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 710
+        },
+        "2027-28": {
+          "demand": 305,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 710
+        }
+      },
+      "notes": [
+        "ToD as for HT-2(a)."
+      ]
+    },
+    {
+      "code": "HT-2(c)(ii)",
+      "family": "HT-2",
+      "voltage": "HT",
+      "page": 37,
+      "name": "Other hospitals and educational institutions (HT)",
+      "short": "Private hospitals and educational institutions on HT supply",
+      "applies_to": "Hospitals and educational institutions other than those covered under HT-2(c)(i). (The booklet misprints this table's title as HT-2(c)(I).)",
+      "keywords": [
+        "private hospital ht",
+        "private college ht",
+        "private university ht",
+        "corporate hospital",
+        "private hospital",
+        "private college",
+        "private school",
+        "nursing home",
+        "private university"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 350,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 720
+        },
+        "2026-27": {
+          "demand": 355,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 700
+        },
+        "2027-28": {
+          "demand": 360,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 700
+        }
+      },
+      "notes": [
+        "ToD as for HT-2(a)."
+      ]
+    },
+    {
+      "code": "HT-3",
+      "family": "HT-3",
+      "voltage": "HT",
+      "page": 38,
+      "name": "Lift irrigation (private, HT)",
+      "short": "All lift irrigation schemes other than Government schemes (HT-7)",
+      "applies_to": "All lift irrigation schemes other than Government schemes covered in the HT-7 tariff schedule.",
+      "keywords": [
+        "private lift irrigation",
+        "lift irrigation society private",
+        "pvt li"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 150
+        },
+        "2026-27": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 150
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 150
+        }
+      },
+      "notes": []
+    },
+    {
+      "code": "HT-4",
+      "family": "HT-4",
+      "voltage": "HT",
+      "page": 38,
+      "name": "Residential apartments and colonies (HT)",
+      "short": "Residential apartments and colonies, religious institutions, jails on HT supply",
+      "applies_to": "Residential apartments and colonies (inside or outside the premises of the main HT installation) availing power supply independently or by tapping the main HT line; power may be used for residences, theatres, shopping facility, club, hospital, guest house, yard / street lighting, canteen within the colony; temples, churches, mosques, gurudwaras, ashrams, mutts and religious / charitable institutions using power for religious activities; jails & prisons.",
+      "keywords": [
+        "apartment",
+        "residential apartment",
+        "gated community",
+        "housing colony",
+        "residential colony",
+        "ht residential",
+        "temple ht",
+        "jail ht",
+        "temple",
+        "religious",
+        "church",
+        "mosque",
+        "jail",
+        "prison"
+      ],
+      "rates": {
+        "2025-26": {
+          "demand": 290,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 690
+        },
+        "2026-27": {
+          "demand": 290,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 700
+        },
+        "2027-28": {
+          "demand": 290,
+          "demand_unit": "per kVA per month of billing demand",
+          "energy_paise": 715
+        }
+      },
+      "notes": [
+        "Colonies tapping the main HT supply, metered at a single point, are billed at this rate; no reduction in the recorded demand of the main HT supply.",
+        "Commercial use inside colonies (canteens, clubs, shops, auditorium) is allowed if it is less than 10% of the contract demand.",
+        "Residential apartments: commercial use (shops, hotels) is billed under the appropriate schedule (energy charges only), deducted from the main HT bill; common areas are billed at the tariff of the predominant consumer category. Common areas = water pumping, lift, motor, parking lighting, sewage treatment plant, firefighting, swimming pool, gym, clubhouse - for bona fide use only, never commercial.",
+        "Religious / charitable institutions on HT: kalyana mantapa / marriage hall / restaurant / other commercial use is billed under HT-2(b) energy charges through a sub-meter, deducted from the main meter; no reduction in demand charges."
+      ]
+    },
+    {
+      "code": "HT-5",
+      "family": "HT-5",
+      "voltage": "HT",
+      "page": 40,
+      "name": "Temporary supply (HT)",
+      "short": "Temporary supply of 67 HP and above, hoardings, construction power",
+      "applies_to": "Sanctioned load of 67 HP and above for power supply availed on a temporary basis, hoardings and advertisement boards, and construction power for all categories.",
+      "keywords": [
+        "ht temporary",
+        "construction power",
+        "temporary 67 hp",
+        "construction of new industry",
+        "temporary supply",
+        "temporary connection",
+        "temporary power",
+        "hoarding"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 400,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 1050
+        },
+        "2026-27": {
+          "fixed": 400,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 1050
+        },
+        "2027-28": {
+          "fixed": 400,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 1050
+        }
+      },
+      "notes": [
+        "Through a prepaid energy meter per Clause 12 of the Conditions of Supply; also applies to touring cinemas with a licence of less than one year."
+      ]
+    },
+    {
+      "code": "HT-6",
+      "family": "HT-6",
+      "voltage": "HT",
+      "page": 40,
+      "name": "Irrigation, agriculture farms and plantations (HT)",
+      "short": "Irrigation and agricultural farms, horticultural farms and nurseries, coffee / tea / rubber / coconut / arecanut plantations, mushroom raising",
+      "applies_to": "Irrigation and agricultural farms, Government horticultural farms, private horticultural nurseries, coffee, tea, rubber, coconut & arecanut plantations, mushroom raising installations.",
+      "keywords": [
+        "ht agriculture",
+        "agricultural farm",
+        "horticultural farm",
+        "plantation ht",
+        "coffee estate",
+        "tea estate",
+        "plantation",
+        "nursery",
+        "coffee plantation",
+        "tea plantation",
+        "rubber plantation",
+        "mushroom"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        },
+        "2026-27": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 550
+        }
+      },
+      "notes": []
+    },
+    {
+      "code": "HT-7",
+      "family": "HT-7",
+      "voltage": "HT",
+      "page": 41,
+      "name": "Government lift irrigation (HT)",
+      "short": "Government lift irrigation schemes / societies",
+      "applies_to": "Government lift irrigation schemes / societies.",
+      "keywords": [
+        "government lift irrigation",
+        "govt lift irrigation",
+        "lift irrigation",
+        "lis",
+        "irrigation department"
+      ],
+      "rates": {
+        "2025-26": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 475
+        },
+        "2026-27": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 475
+        },
+        "2027-28": {
+          "fixed": 150,
+          "fixed_unit": "per HP per month of sanctioned load",
+          "energy_paise": 475
+        }
+      },
+      "notes": []
+    }
+  ],
+  "rules": [
+    {
+      "key": "late_payment_interest",
+      "page": 5,
+      "title": "Interest on late payment",
+      "aliases": [
+        "late payment",
+        "delayed payment",
+        "belated payment",
+        "interest on arrears",
+        "penal interest",
+        "dpc",
+        "delayed payment charges",
+        "interest rate on dues"
+      ],
+      "text": "Simple interest at 1% per month on the actual number of days of delay, subject to a minimum of Re 1 for LT and Rs 100 for HT installations. No interest is levied on arrears of Rs 10 or less. The bill must be paid within 15 days of presentation, failing which interest becomes payable (para 18)."
+    },
+    {
+      "key": "payment_priority",
+      "page": 6,
+      "title": "Order in which a payment is adjusted",
+      "aliases": [
+        "payment adjustment order",
+        "payment priority",
+        "order of adjustment",
+        "which dues are cleared first",
+        "adjusted in the following order"
+      ],
+      "text": "All payments are adjusted in this order: (a) interest on arrears of electricity tax, (b) arrears of electricity tax, (c) arrears of interest on electricity charges, (d) arrears of electricity charges, (e) the current month's dues."
+    },
+    {
+      "key": "reconnection_charges",
+      "page": 7,
+      "title": "Reconnection charges",
+      "aliases": [
+        "reconnection",
+        "reconnection fee",
+        "reconnection charge",
+        "d&r fee",
+        "disconnection and reconnection"
+      ],
+      "text": "Levied in case of disconnection and included in the monthly bill: (a) single-phase domestic installations under LT-1: Rs 20 per installation; (b) three-phase domestic installations under LT-1 and single-phase commercial & power installations: Rs 50; (c) all LT installations with three-phase supply other than LT-1: Rs 100; (d) all HT & EHT installations: Rs 500."
+    },
+    {
+      "key": "cheque_dishonour",
+      "page": 5,
+      "title": "Charges for a dishonoured cheque",
+      "aliases": [
+        "cheque bounce",
+        "cheque dishonour",
+        "dishonoured cheque",
+        "bounced cheque",
+        "non-realization of cheque",
+        "cheque return"
+      ],
+      "text": "For each cheque not realised: up to Rs 10,000 - 5% of the amount (minimum Rs 100); Rs 10,001 to Rs 1,00,000 - 3% (minimum Rs 500); above Rs 1 lakh - 2% (minimum Rs 3,000)."
+    },
+    {
+      "key": "payment_modes",
+      "page": 7,
+      "title": "How bills can be paid",
+      "aliases": [
+        "cash payment limit",
+        "pay by cash",
+        "pay by cheque",
+        "how can i pay",
+        "ways to pay",
+        "how to pay the bill",
+        "cash limit",
+        "pay the bill"
+      ],
+      "text": "Payments up to and including Rs 10,000 by cash, DD or digital payment; above Rs 10,000 by cheque, DD or digital payment. Bills can also be paid by ECS, debit / credit cards, RTGS / NEFT, net banking, the Karnataka One website and other RBI-compliant digital modes where the licensee provides them."
+    },
+    {
+      "key": "electricity_tax",
+      "page": 49,
+      "title": "Electricity tax",
+      "aliases": [
+        "electricity tax",
+        "electricity duty",
+        "tax on electricity",
+        "9% tax",
+        "ad valorem tax"
+      ],
+      "text": "Electricity tax at 9% ad valorem only on the consumption (energy) charges - excluding arrears, fixed charges / contract demand, D&R fee etc. - for all consumers except agricultural IP sets up to and including 10 HP (GoK notification DPAL 17 Shasana dated 19.07.2018; CESC circular dated 09.08.2018)."
+    },
+    {
+      "key": "hp_kw_conversion",
+      "page": 4,
+      "title": "HP / kW / kVA conversion",
+      "aliases": [
+        "hp to kw",
+        "kw to hp",
+        "conversion table",
+        "hp to kva",
+        "1 hp"
+      ],
+      "text": "For the tariffs: 1 HP = 0.746 kW; 1 HP = 0.878 kVA. Fractions of kW / HP are rounded to the nearest quarter kW / HP for billing, with a minimum of 1 kW / 1 HP for all LT categories including IP sets (street lighting: minimum a quarter kW)."
+    },
+    {
+      "key": "bill_rounding",
+      "page": 4,
+      "title": "Rounding of the bill",
+      "aliases": [
+        "bill rounding",
+        "rounding of the bill",
+        "how is the bill rounded",
+        "bill amount rounded",
+        "electricity bill rounded",
+        "is the bill rounded"
+      ],
+      "text": "The bill amount is rounded off to the nearest rupee: 50 paise and above to the next rupee; less than 50 paise ignored."
+    },
+    {
+      "key": "lt_ht_limit",
+      "page": 5,
+      "title": "When supply is LT and when HT",
+      "aliases": [
+        "lt or ht",
+        "lt limit",
+        "ht limit",
+        "150 kw",
+        "201 hp",
+        "minimum contract demand",
+        "who gets ht supply"
+      ],
+      "text": "LT supply is given where the requisitioned load is less than 150 kW / 201 HP; the applicant may opt for HT supply for lesser loads. The minimum contract demand for HT supply is 25 kVA. HT tariffs apply to bulk supply at 11 kV and above when the contract demand is 50 kW / 67 HP and above. LT loads of 50 kW to 150 kW at 400 V need HT-class metering in a metering cubicle (para 31)."
+    },
+    {
+      "key": "ht_billing_demand",
+      "page": 31,
+      "title": "HT billing demand",
+      "aliases": [
+        "billing demand",
+        "contract demand",
+        "90% of contract demand",
+        "excess demand",
+        "over drawal",
+        "exceeding contract demand"
+      ],
+      "text": "The billing demand is the maximum demand recorded during the month or 90% of the contract demand, whichever is higher. Demand above the contract demand is charged at two times the normal rate per kVA per month (deterrent charges, Section 126(6) of the Electricity Act 2003); over-drawal is penalised at two times the normal rate. During a disconnection lasting the whole billing month the billing demand is 90% of the contract demand. Billing demand of 0.5 kVA and above is rounded up to the next kVA; below 0.5 kVA it is ignored."
+    },
+    {
+      "key": "power_factor",
+      "page": 13,
+      "title": "Power factor surcharge",
+      "aliases": [
+        "power factor",
+        "pf surcharge",
+        "pf penalty",
+        "capacitor",
+        "low power factor"
+      ],
+      "text": "HT: the consumer must keep an average PF of at least 0.90; a surcharge of 3 paise per unit for every 0.01 below 0.90 lag. LT (LT-3, LT-4, LT-5, LT-6 with motive power): specified PF 0.85; surcharge of 2 paise per unit for every 0.01 below 0.85 lag, subject to a maximum of 30 paise per unit; 30 paise/unit if capacitors are below the Conditions-of-Supply requirement on inspection. PF = kWh / kVAh to 3 decimals then rounded to 2 (e.g. 0.8449 -> 0.84). Existing IP sets without adequate capacitors: PF surcharge Rs 100 per HP per year. Metered IP sets with capacitors get a 2 paise/unit rebate."
+    },
+    {
+      "key": "tod",
+      "page": 8,
+      "title": "Time-of-Day (ToD) tariff",
+      "aliases": [
+        "time of day",
+        "tod",
+        "peak hour",
+        "off peak",
+        "night rebate"
+      ],
+      "text": "Compulsory for HT-2(a), HT-2(b) and HT-2(c) consumers with contract demand of 500 kVA and above; optional below 500 kVA, optional for HT-1, LT-5, and HT EV charging in KSRTC / NEKRTC / NWKRTC depots; not applicable to Railway Traction and BMRCL. Rates: July-November (monsoon) 0 in all hours; December-June: 06:00-09:00 +100 paise/unit, 09:00-18:00 0, 18:00-22:00 +100 paise/unit, 22:00-06:00 -100 paise/unit. ToD does not apply to energy billed under the Discounted Energy Rate Scheme beyond the base consumption."
+    },
+    {
+      "key": "high_voltage_rebate",
+      "page": 32,
+      "title": "Rebate for supply at high voltage",
+      "aliases": [
+        "high voltage rebate",
+        "voltage rebate",
+        "33 kv rebate",
+        "66 kv rebate",
+        "110 kv",
+        "220 kv",
+        "ehv rebate"
+      ],
+      "text": "For supply above 13.2 kV: 33/66 kV - 2 paise per unit; 110 kV - 3 paise per unit; 220 kV - 5 paise per unit of energy consumed. Applies to normal energy (including ToD), not to wheeled energy or energy under SIS / DERS / other concessional schemes. Not applicable to BMRCL and Railway Traction."
+    },
+    {
+      "key": "prompt_payment_incentive",
+      "page": 9,
+      "title": "Incentive for prompt / advance payment",
+      "aliases": [
+        "prompt payment",
+        "advance payment",
+        "early payment incentive",
+        "payment incentive",
+        "rebate for early payment"
+      ],
+      "text": "An incentive of 0.25% of the bill, adjusted in the next month's bill: (i) for monthly bills above Rs 1,00,000 paid 10 days before the due date; (ii) for advance payments above Rs 10,000 towards monthly bills."
+    },
+    {
+      "key": "rural_rebate",
+      "page": 20,
+      "title": "Village panchayat rebate",
+      "aliases": [
+        "village panchayat rebate",
+        "rural rebate",
+        "20 paise rebate"
+      ],
+      "text": "A rebate of 20 paise per unit for LT-3(a) commercial and LT-5 industrial consumers in village panchayat areas, excluding village panchayats within the jurisdiction of Urban Development Authorities."
+    },
+    {
+      "key": "srtpv_rebate",
+      "page": 18,
+      "title": "Rooftop solar (SRTPV) rebate",
+      "aliases": [
+        "rooftop solar rebate",
+        "srtpv",
+        "solar rebate",
+        "solar rooftop"
+      ],
+      "text": "LT domestic installations with sanctioned load up to 10 kW that have a solar rooftop PV system get a rebate of Rs 25/kW in fixed charges for the installed SRTPV capacity."
+    },
+    {
+      "key": "seasonal_industries",
+      "page": 7,
+      "title": "Seasonal industries",
+      "aliases": [
+        "seasonal industry",
+        "off season",
+        "working season",
+        "seasonal benefit"
+      ],
+      "text": "Needs an electronic tri-vector / smart meter. Working and off-season months are fixed by an order of the EE of the O&M division on the consumer's request and continue year to year (one month's notice to change). Off-season monthly consumption must not exceed 25% of the previous working season's average; off-season up to six months a year in at most two spells. HT: working season - demand charges on 90% of CD or recorded MD (higher); off season - on recorded MD or 50% of CD (higher). LT: off-season months pay energy charges plus 25% of the fixed charges. Fisheries ice / cold-storage plants within 5 km of the sea get 50% demand charges off season and a Re 1/unit rebate."
+    },
+    {
+      "key": "ders",
+      "page": 42,
+      "title": "Discounted Energy Rate Scheme (DERS)",
+      "aliases": [
+        "ders",
+        "discounted energy rate",
+        "special incentive scheme",
+        "sis",
+        "rs 5 per unit scheme",
+        "base consumption"
+      ],
+      "text": "The Special Incentive Scheme was withdrawn from 01.04.2025. Under DERS, eligible HT-2a, HT-2b, HT-2c(i), HT-2c(ii), LT-3 (50 kW and above) and LT-5 (50 kW and above) consumers who opt in pay Rs 5 per unit for consumption above their base level. New opt-ins: base = average monthly consumption of FY2022-23 and FY2023-24 (or at least six months' data; new installations 67 units/kVA for HT, 57 units/kW for LT). Opted consumers get an additional 20% contract demand; consumption above base is outside FPPCA and ToD and is excluded when computing additional security deposit; open access must be relinquished. Extended for FY2025-26 at Rs 5/unit."
+    },
+    {
+      "key": "cross_subsidy_surcharge",
+      "page": 44,
+      "title": "Cross-subsidy surcharge (open access)",
+      "aliases": [
+        "cross subsidy surcharge",
+        "css",
+        "open access surcharge",
+        "open access"
+      ],
+      "text": "Open-access consumers buying from generators / traders other than the ESCOMs pay a cross-subsidy surcharge in addition to wheeling charges (not for captive use). FY2025-26 paise/unit, e.g.: HT-1 112 (66 kV+) / 60 (HT); HT-2a 187; HT-2b 196 / 197; HT-2(c)(i) 185; HT-2(c)(ii) 191; HT-3 0; HT-4 179; HT-5 332; HT-6 204; HT-7 173; LT-1 83; LT-2 188; LT-3(a) 170; LT-3(b) 306; LT-4a 26; LT-4b 113; LT-4c 194; LT-5 148; LT-6 0; LT-7 321. The full three-year table is on booklet pages 45-47."
+    },
+    {
+      "key": "wheeling_charges",
+      "page": 48,
+      "title": "Wheeling charges",
+      "aliases": [
+        "wheeling",
+        "wheeling charge",
+        "network charges",
+        "green tariff",
+        "additional surcharge"
+      ],
+      "text": "FY2025-26 wheeling (paise/unit, loss % in brackets): HT to HT 38 (0.48%), HT to LT or LT to HT 126 (7.44%), LT to LT 88 (6.96%); FY2026-27: 39 / 129 / 90; FY2027-28: 40 / 132 / 92. Additional surcharge is not levied until the Commission decides on BESCOM's petition. Green tariff: 50 paise per unit over the normal tariff for consumers opting for green power."
+    },
+    {
+      "key": "multiple_connections",
+      "page": 6,
+      "title": "Multiple connections and the single slab",
+      "aliases": [
+        "single slab",
+        "slab system",
+        "multiple connections",
+        "slab rate",
+        "telescopic"
+      ],
+      "text": "With the introduction of a single slab for energy charges, LT consumers may avail multiple connections to their premises; all meters of a building must be at one easily accessible place on the ground floor. The Commission also encourages self-reading of meters through digital modes (the licensee reads at least once in six months and reconciles)."
+    },
+    {
+      "key": "charitable_status",
+      "page": 8,
+      "title": "Who counts as a charitable institution",
+      "aliases": [
+        "form 10ac",
+        "charity status",
+        "charitable status",
+        "who is charitable",
+        "is it charitable",
+        "counted as charitable",
+        "considered charitable"
+      ],
+      "text": "Whether an institution is charitable is decided by the licensee on production of the Income Tax Form-10AC certificate."
+    },
+    {
+      "key": "temporary_illumination",
+      "page": 4,
+      "title": "Temporary illumination in permanent premises",
+      "aliases": [
+        "temporary illumination",
+        "marriage lighting",
+        "decorative lighting",
+        "exhibition lighting"
+      ],
+      "text": "Use of power for temporary illumination (marriages, exhibitions in hotels, sales promotions etc.) in premises that already have permanent supply is limited to the sanctioned load at the permanent tariff; temporary rates apply if the load exceeds the sanctioned load."
+    },
+    {
+      "key": "unclassified",
+      "page": 7,
+      "title": "Installations not covered by any schedule",
+      "aliases": [
+        "not covered",
+        "unclassified installation",
+        "which category if not listed"
+      ],
+      "text": "If an installation is not covered under any tariff schedule, the licensee may classify it under an appropriate schedule with intimation to and approval of KERC. The Conditions of Supply and the regulations under the Electricity Act 2003 prevail over the booklet in case of any discrepancy."
+    }
+  ],
+  "data_code_map": {
+    "_purpose": "How each tariff code printed in the DCB sheets maps to the booklet's category (current structure, in force since the 2024-25 restructuring). Matched in order; 'match' is a case-insensitive regex on the printed code, 'desc' (optional) on the printed description.",
+    "rules": [
+      {
+        "match": "^LT-1$",
+        "booklet": "LT-1"
+      },
+      {
+        "match": "^LT-2\\s*\\(a\\)",
+        "booklet": "LT-1",
+        "note": "Up to 2023-24 the domestic lighting & heating slabs were LT-2(a); since 2024-25 they are LT-1."
+      },
+      {
+        "match": "^LT-2",
+        "booklet": "LT-2"
+      },
+      {
+        "match": "^LT-3\\s*b",
+        "booklet": "LT-3(b)"
+      },
+      {
+        "match": "^LT-3",
+        "booklet": "LT-3(a)"
+      },
+      {
+        "match": "^LT-4\\s*\\(a\\)",
+        "booklet": "LT-4(a)"
+      },
+      {
+        "match": "^LT-4\\s*\\(b\\)",
+        "booklet": "LT-4(b)"
+      },
+      {
+        "match": "^LT-4\\s*\\(c\\)",
+        "booklet": "LT-4(c)"
+      },
+      {
+        "match": "^LT-5",
+        "booklet": "LT-5"
+      },
+      {
+        "match": "^LT-6",
+        "desc": "water",
+        "booklet": "LT-6(a)"
+      },
+      {
+        "match": "^LT-6",
+        "desc": "light",
+        "booklet": "LT-6(b)"
+      },
+      {
+        "match": "^LT-6",
+        "desc": "vheicle|vehicle|charging",
+        "booklet": "LT-6(c)"
+      },
+      {
+        "match": "^LT-7\\s*b",
+        "booklet": "LT-3(b)",
+        "note": "Hoardings were printed as LT-7(b) up to 2023-24 and as LT-3(b) from 2023-24."
+      },
+      {
+        "match": "^LT-7",
+        "booklet": "LT-7"
+      },
+      {
+        "match": "^HT-1",
+        "booklet": "HT-1"
+      },
+      {
+        "match": "^HT-2\\s*\\(a\\)",
+        "booklet": "HT-2(a)"
+      },
+      {
+        "match": "^HT-2\\s*\\(b\\)",
+        "booklet": "HT-2(b)"
+      },
+      {
+        "match": "^HT-2\\s*\\(c\\)\\s*\\(i\\)",
+        "booklet": "HT-2(c)(i)"
+      },
+      {
+        "match": "^HT-2\\s*\\(c\\)\\s*\\(ii\\)",
+        "booklet": "HT-2(c)(ii)"
+      },
+      {
+        "match": "^HT-3\\s*\\(a\\)\\s*\\(i\\)$",
+        "booklet": "HT-7",
+        "note": "Government lift irrigation was HT-3(a)(i) up to 2023-24; HT-7 from 2024-25."
+      },
+      {
+        "match": "^HT\\s*-\\s*3\\s*b",
+        "booklet": "HT-6",
+        "note": "Irrigation & agricultural farms were HT-3b up to 2023-24; HT-6 from 2023-24."
+      },
+      {
+        "match": "^HT-3",
+        "booklet": "HT-3"
+      },
+      {
+        "match": "^HT-4",
+        "booklet": "HT-4"
+      },
+      {
+        "match": "^HT-5",
+        "booklet": "HT-5"
+      },
+      {
+        "match": "^HT-6",
+        "booklet": "HT-6"
+      },
+      {
+        "match": "^HT-7",
+        "booklet": "HT-7"
+      }
+    ]
+  },
+  "data_lines": {
+    "_purpose": "Lines the DCB sheets print that the booklet does not name separately, and the booklet category each belongs to.",
+    "lines": [
+      {
+        "line": "LT-5(b)",
+        "printed_as": "LT-5(b) 'Heating & Motive Power - other than BMA' (by HP band)",
+        "booklet": "LT-5",
+        "meaning": "LT-5 Industrial. The booklet has only LT-5, with no sub-categories (no (a) / (b)); LT-5(b) is only how the DCB sheets print this division's industrial lines (LT-5(a) has no installations here). From 2024-25 LT-5 and LT-5(b) lines are billed at the same rate."
+      },
+      {
+        "line": "(FL) Free Lighting",
+        "printed_as": "LT-2(a)(i)(FL) / LT-2(a)(ii)(FL) up to 2023-24; LT-1 '( Free Lighting)' from 2024-25",
+        "booklet": "LT-1",
+        "meaning": "LT-1 Domestic (single slab). A handful of installations (1-8) billed at the domestic rate and paid 85-95% by the Government subsidy (adjustment), even before Gruha Jyothi."
+      },
+      {
+        "line": "(OL) Office Lighting",
+        "printed_as": "LT-3(i)(OL) / LT-3(ii)(OL) up to 2023-24; LT-3 a (i)(OL) / (ii)(OL) from 2024-25",
+        "booklet": "LT-3(a)",
+        "meaning": "LT-3(a) Commercial, which covers 'all offices' (p.20). 13-15 installations billed at the LT-3 rate and paid 99-100% by adjustment every year."
+      },
+      {
+        "line": "(i) / (ii) area lines",
+        "printed_as": "LT-2(i)/(ii), LT-3 a (i)/(ii): 'in ULB's & CC' / 'in Village Pan.'",
+        "booklet": "LT-2 / LT-3(a)",
+        "meaning": "The same category split by area: (i) urban local bodies and city corporations, (ii) village panchayats - the areas that get the booklet's 20 paise per unit village-panchayat rebate for LT-3(a) and LT-5."
+      }
+    ]
+  }
+}

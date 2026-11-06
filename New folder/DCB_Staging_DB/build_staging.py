@@ -5,8 +5,22 @@ import os
 import re
 import csv
 
-SRC = r"C:\Users\Dell\OneDrive\Desktop\New folder\HNPURA DIVISION DCB FY 2015 TO 2026.xlsx"
-OUT_DIR = r"C:\Users\Dell\OneDrive\Desktop\New folder\DCB_Staging_DB"
+# Resolved relative to this script's own location (not a machine-specific
+# absolute path) so the pipeline is re-runnable after the project folder is
+# moved/zipped/handed off to a different machine -- see CLAUDE.md "How to
+# run this from scratch". Both are still override-able via env var so the
+# standing reconciliation regression test (test_grand_total_reconciliation.py)
+# can redirect output to a scratch directory without touching the real,
+# checked-in staging DB.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.environ.get(
+    "DCB_SRC_WORKBOOK",
+    os.path.join(_PROJECT_ROOT, "HNPURA DIVISION DCB FY 2015 TO 2026.xlsx"),
+)
+OUT_DIR = os.environ.get(
+    "DCB_STAGING_OUT_DIR",
+    os.path.join(_PROJECT_ROOT, "DCB_Staging_DB"),
+)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 SHEET_ORDER = ["Division_Total", "Holenarasipura", "Arkalgud", "Hangarahalli",
@@ -332,24 +346,53 @@ def canonical_field(h2, h3, h4, label, sub=""):
     return None
 
 
+_COMPACT_WS_HYPHEN_RE = re.compile(r"[\s\-]+")
+# "Total of <category>" (bare, no "Sub" prefix) is a DIFFERENT, distinct
+# label from "Sub Total of <category>" -- confirmed live in the 2025-26
+# sheet, which prints both "Sub Total of LT-1" (35,357,859.15) AND
+# "Sub Total of LT-1 A" (168,063,582.60) as two separate per-group
+# subtotals, THEN a bare "Total of LT-1" (203,421,441.74) that is exactly
+# their sum -- the source's own explicit combined figure, not a duplicate.
+# 2024-25 has the first two groups but never prints a combined "Total of
+# LT-1" at all. Classified separately (combined_total, not sub_total) so a
+# downstream category-total lookup can prefer the sheet's own explicit
+# combined total when one exists, without ever silently manufacturing one
+# by adding sibling subtotals together on its own.
+# '\s*' (not '\s+') between "of" and the category text -- a real source
+# variant is 'Sub Total ofIPP' with NO space at all before the category
+# name (confirmed in the 2025-26 sheet).
+_TOTAL_OF_RE = re.compile(r"\btotal\s+of\s*(.+)$", re.IGNORECASE)
+
+
+def _compact(text):
+    """Collapse whitespace/hyphen runs and lowercase, so row-type
+    classification is robust to real spacing variants seen across years
+    ('HT - TOTAL' vs 'HT-TOTAL' vs 'HT TOTAL', 'Sub  Total of...') instead
+    of whack-a-mole-matching each variant as a separate literal string."""
+    return _COMPACT_WS_HYPHEN_RE.sub("", text.lower())
+
+
 def classify_row_type(sl_no, tariff_category, description):
-    text = " ".join(str(x) for x in (sl_no, tariff_category, description) if x is not None).lower()
-    if "grand total" in text:
+    text = " ".join(str(x) for x in (sl_no, tariff_category, description) if x is not None)
+    compact = _compact(text)
+    if "grandtotal" in compact:
         return "grand_total"
-    if "lt+ht" in text or "lt +ht" in text:
+    if "lt+httotal" in compact or "lt+ht" in compact:
         # "LT+HT - TOTAL" is LT+HT only, excluding Miscellaneous revenue codes --
         # a distinct, genuinely different figure from "GRAND TOTAL (LT+HT+Misc.)"
         # above, not a duplicate of it.
         return "lt_ht_total"
-    if "ht-total" in text or "ht total" in text:
+    if "httotal" in compact:
         return "ht_total"
-    if "lt-total" in text or "lt total" in text:
+    if "lttotal" in compact:
         return "lt_total"
-    if "miscellaneous" in text and "total" in text:
+    if "miscellaneous" in compact and "total" in compact:
         return "misc_total"
-    if "sub total" in text or "subtotal" in text:
-        return "sub_total"
-    if "total" in text:
+    m = _TOTAL_OF_RE.search(text)
+    if m:
+        prefix = text[: m.start()].lower()
+        return "sub_total" if "sub" in prefix else "combined_total"
+    if "total" in compact:
         return "other_total"
     return "line_item"
 

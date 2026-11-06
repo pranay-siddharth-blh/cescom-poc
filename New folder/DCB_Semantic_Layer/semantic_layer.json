@@ -74,7 +74,7 @@
         "collection": ["collection_revenue_chq_cash", "collection_revenue_adjust", "collection_revenue_total", "collection_interest_*", "collection_tax_*", "collection_fac_*", "collection_pg_surcharge_* (2025-26+ only)", "collection_grand_total"],
         "opening_balance_plus_demand": ["ob_plus_demand_revenue", "ob_plus_demand_interest", "ob_plus_demand_tax", "ob_plus_demand_fac", "ob_plus_demand_pg_surcharge", "ob_plus_demand_total"],
         "closing_balance": ["closing_balance_revenue", "closing_balance_interest", "closing_balance_tax", "closing_balance_fac", "closing_balance_pg_surcharge", "closing_balance_total"],
-        "non_additive_ratios": ["pct_live_installations", "pct_billed_installations", "pct_dc_mnr", "pct_metered_consumption", "pct_assessed_consumption", "pct_collection_efficiency_with_adj", "pct_collection_efficiency_without_adj", "pct_recovery_of_avg_cost", "ratio_arrears_to_demand", "demand_per_unit", "demand_per_unit_only", "collection_per_unit_with_adj", "collection_per_unit_without_adj", "consumption_per_installation"]
+        "non_additive_ratios": ["pct_live_installations", "pct_billed_installations", "pct_dc_mnr", "pct_metered_consumption", "pct_assessed_consumption", "pct_collection_efficiency_with_adj", "pct_collection_efficiency_without_adj", "pct_recovery_of_avg_cost", "ratio_arrears_to_demand", "demand_per_unit", "demand_per_unit_only", "collection_per_unit_with_adj", "collection_per_unit_without_adj", "consumption_per_installation", "revised_arr"]
       }
     },
     "fact_dcb_rollups": {
@@ -82,9 +82,9 @@
       "safe_to_sum": false,
       "note": "Has the same numeric columns as fact_dcb but no tariff_category_id (a rollup spans multiple categories by definition)",
       "key_columns": {
-        "rollup_type": "'sub_total' | 'lt_total' | 'ht_total' | 'lt_ht_total' (LT+HT, excludes Misc.) | 'misc_total' | 'grand_total' (= lt_ht_total + misc_total, the true official total)",
-        "tariff_code_summarized": "for rollup_type='sub_total' only: which tariff_code it subtotals, as free text (not an FK)",
-        "sl_no_text": "the original printed label, e.g. 'GRAND TOTAL (LT+HT+Misc.)'"
+        "rollup_type": "'sub_total' | 'combined_total' | 'lt_total' | 'ht_total' | 'lt_ht_total' (LT+HT, excludes Misc.) | 'misc_total' | 'grand_total' (= lt_ht_total + misc_total, the true official total)",
+        "tariff_code_summarized": "for rollup_type IN ('sub_total','combined_total') only: which tariff_code/family it totals, as free text (not an FK), whitespace-normalized at ingestion but NOT case-normalized -- match case-insensitively. Some tariff families (LT-2, LT-3, LT-4, LT-5, LT-6, HT-2, HT-3) NEVER appear as their own row in fact_dcb/dim_tariff_category -- only their lettered sub-splits do (e.g. HT-2(a)/(b)/(c)) -- their combined total exists ONLY here, never by summing fact_dcb. 'combined_total' is rarer: the source sheet's OWN explicit combined figure when the same family label was printed as more than one separate 'sub_total' group in one year (e.g. 2025-26's 'Total of LT-1' = 'Sub Total of LT-1' + 'Sub Total of LT-1 A' printed separately that year only) -- when both a 'combined_total' and one-or-more 'sub_total' rows exist for the exact same tariff_code_summarized/fiscal_year/subdivision, the 'combined_total' row is the correct one to use; never add sub_total rows together yourself to approximate it.",
+        "sl_no_text": "the original printed label, e.g. 'GRAND TOTAL (LT+HT+Misc.)', 'Sub Total of HT-2', 'Total of LT-1'"
       }
     },
     "reconciliation_report": {
@@ -114,13 +114,14 @@
     "Percentage/ratio/per-unit columns (see non_additive_ratios) cannot be summed or averaged across rows meaningfully -- recompute from the underlying totals (e.g. collection_grand_total / demand_total) instead of aggregating the stored ratio column.",
     "Saligrama only exists FY2015-16 to 2017-18; Division_Office only exists FY2020-21 to 2023-24 -- absence outside those ranges is correct, not a bug.",
     "tariff_code repeats across multiple dim_tariff_category rows (different usage-slab descriptions) -- GROUP BY tariff_code for a tariff-class-level question, by tariff_category_id/description for a slab-level question.",
+    "A tariff FAMILY total (e.g. 'HT-2 total demand', 'LT-6 collection') for a family that has lettered sub-splits (LT-2, LT-3, LT-4, LT-5, LT-6, HT-2, HT-3) must be read from fact_dcb_rollups WHERE tariff_code_summarized = '<family code>' (case-insensitive exact match) AND rollup_type IN ('sub_total','combined_total') -- never by SUM()-ing or GROUP BY-ing fact_dcb rows filtered/LIKE-matched on tariff_code, and never by exact-matching a bare family code against fact_dcb/dim_tariff_category.tariff_code (it will never be found there -- only the lettered sub-splits are, e.g. HT-2(a)(ii)). If the router's parent_category_matches entity lists a match, use its exact tariff_code_summarized value as the filter. If a WHERE with that filter returns zero rows, the family genuinely does not exist for that fiscal_year/subdivision (some families, e.g. LT-7/HT-6/HT-7/IPP/HT IPP/AUXILIARY CONSUMPTION, only start appearing in certain years) -- set answerable=false rather than defaulting to 0 or wrapping the lookup in COALESCE(...,0)/SUM(...), which would fabricate a zero for a category that was never billed that year.",
     "demand_revenue_subtotal = demand_fixed_charges + demand_others + demand_energy_charges holds on ~99% of rows (per the source sheet's own header formula), EXCEPT the Misc. revenue tariff codes (61.xxxx / 62.xxxx, e.g. '61.9047' Service Connections, '61.9067' Other Receipts) -- those are flat fees, not consumption-based tariffs, so the source correctly puts the full amount directly in demand_revenue_subtotal with Fixed/Others/Energy all zero. This is correct source data, not an extraction bug -- do not 'fix' or flag these rows; exclude tariff_code LIKE '6_.%' from any automated check of this formula, and allow a small rounding tolerance (a ~1-unit-on-2-million mismatch can occur on an otherwise normal row from ordinary source-side rounding)."
   ],
 
   "common_metrics": {
     "collection_efficiency_pct": "SUM(collection_grand_total) * 100.0 / SUM(demand_total)",
     "outstanding_arrears": "SUM(closing_balance_total)",
-    "domestic_demand": "SUM(demand_total) WHERE tariff_code LIKE 'LT-1%'",
+    "domestic_demand": "fact_dcb_rollups WHERE tariff_code_summarized = 'LT-1' AND rollup_type IN ('sub_total','combined_total') -- NOT SUM(demand_total) WHERE tariff_code LIKE 'LT-1%' over fact_dcb, which double-counts a real 2024-25/2025-26 source mislabeling (see rules above)",
     "industrial_demand": "SUM(demand_total) WHERE tariff_code LIKE 'HT-2%'",
     "low_tension_total": "SUM(demand_total) WHERE tariff_code LIKE 'LT%'",
     "high_tension_total": "SUM(demand_total) WHERE tariff_code LIKE 'HT%'"

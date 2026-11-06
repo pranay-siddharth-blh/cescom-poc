@@ -1,0 +1,944 @@
+{
+  "_purpose": "One definition per KPI. Read by the router (synonyms), the prompt (formulas), the SQL guard (formula check and non-averageable columns), the deterministic metric lookup (expressions) and the answer writer (unit, precision). Expressions are over mart_* columns and work on any mart fact table. kind: flow (sums over places and years), stock (sums over places within one year only), ratio (recomputed from sums).",
+  "version": "1.2",
+  "non_averageable_columns": [
+    "collection_efficiency_pct",
+    "live_installation_pct",
+    "arrears_to_demand_ratio",
+    "demand_per_unit_rs",
+    "demand_per_installation_rs",
+    "pct_live_installations",
+    "pct_billed_installations",
+    "pct_dc_mnr",
+    "pct_metered_consumption",
+    "pct_assessed_consumption",
+    "pct_collection_efficiency_with_adj",
+    "pct_collection_efficiency_without_adj",
+    "pct_recovery_of_avg_cost",
+    "ratio_arrears_to_demand",
+    "demand_per_unit",
+    "demand_per_unit_only",
+    "collection_per_unit_with_adj",
+    "collection_per_unit_without_adj",
+    "consumption_per_installation",
+    "revised_arr",
+    "approved_avg_cost_of_supply",
+    "billed_installation_pct",
+    "dc_mnr_installation_pct",
+    "mnr_installation_pct",
+    "metered_consumption_pct",
+    "assessed_consumption_pct",
+    "fac_share_of_demand_pct",
+    "fac_collection_efficiency_pct",
+    "fac_per_unit_rs",
+    "collection_per_installation_rs",
+    "arrears_per_installation_rs",
+    "collection_efficiency_without_adj_pct",
+    "adjustment_share_pct",
+    "billing_efficiency_pct",
+    "atc_loss_pct",
+    "energy_charge_per_unit_paise",
+    "data_energy_paise",
+    "booklet_energy_paise",
+    "difference_paise",
+    "difference_pct"
+  ],
+  "non_summable_columns": [
+    "collection_efficiency_pct",
+    "live_installation_pct",
+    "arrears_to_demand_ratio",
+    "demand_per_unit_rs",
+    "demand_per_installation_rs",
+    "pct_live_installations",
+    "pct_billed_installations",
+    "pct_dc_mnr",
+    "pct_metered_consumption",
+    "pct_assessed_consumption",
+    "pct_collection_efficiency_with_adj",
+    "pct_collection_efficiency_without_adj",
+    "pct_recovery_of_avg_cost",
+    "ratio_arrears_to_demand",
+    "demand_per_unit",
+    "demand_per_unit_only",
+    "collection_per_unit_with_adj",
+    "collection_per_unit_without_adj",
+    "consumption_per_installation",
+    "revised_arr",
+    "approved_avg_cost_of_supply",
+    "billed_installation_pct",
+    "dc_mnr_installation_pct",
+    "mnr_installation_pct",
+    "metered_consumption_pct",
+    "assessed_consumption_pct",
+    "fac_share_of_demand_pct",
+    "fac_collection_efficiency_pct",
+    "fac_per_unit_rs",
+    "collection_per_installation_rs",
+    "arrears_per_installation_rs",
+    "collection_efficiency_without_adj_pct",
+    "adjustment_share_pct",
+    "billing_efficiency_pct",
+    "atc_loss_pct",
+    "energy_charge_per_unit_paise",
+    "data_energy_paise",
+    "booklet_energy_paise",
+    "difference_paise",
+    "difference_pct"
+  ],
+  "metrics": [
+    {
+      "key": "demand",
+      "label": "demand",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "total demand",
+        "demand",
+        "dmd",
+        "demnd",
+        "deamnd",
+        "amount billed",
+        "billed amount",
+        "billing",
+        "billed",
+        "bill amount",
+        "demand raised",
+        "revenue demand",
+        "revenue billed",
+        "assessment"
+      ],
+      "expr": {
+        "num": "SUM(demand_total)"
+      }
+    },
+    {
+      "key": "collection",
+      "label": "collection",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "total collection",
+        "collection",
+        "collections",
+        "colection",
+        "collecton",
+        "collectn",
+        "collected",
+        "amount collected",
+        "revenue collected",
+        "realisation",
+        "realization",
+        "realised",
+        "realized",
+        "payments received",
+        "paid"
+      ],
+      "expr": {
+        "num": "SUM(collection_grand_total)"
+      }
+    },
+    {
+      "key": "collection_efficiency",
+      "label": "collection efficiency",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "collection efficiency",
+        "colection efficiency",
+        "colection efficiancy",
+        "collection efficiancy",
+        "collection eff",
+        "collection efficiency %",
+        "collection %",
+        "collection percentage",
+        "efficiency",
+        "realisation efficiency",
+        "realization efficiency",
+        "collection rate",
+        "recovery rate"
+      ],
+      "expr": {
+        "num": "SUM(collection_grand_total)",
+        "den": "SUM(demand_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "uncollected_demand",
+      "label": "uncollected demand",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "uncollected demand",
+        "uncollected",
+        "shortfall",
+        "collection shortfall",
+        "collection gap",
+        "demand not collected",
+        "unpaid demand"
+      ],
+      "expr": {
+        "num": "SUM(uncollected_demand)"
+      }
+    },
+    {
+      "key": "closing_balance",
+      "label": "closing balance (arrears)",
+      "unit": "Rs",
+      "kind": "stock",
+      "precision": 2,
+      "synonyms": [
+        "closing balance",
+        "arrears",
+        "outstanding arrears",
+        "outstanding",
+        "outstanding balance",
+        "dues",
+        "pending dues",
+        "pending amount",
+        "pending",
+        "not paid",
+        "unpaid",
+        "balance outstanding",
+        "cb",
+        "amount outstanding",
+        "receivables"
+      ],
+      "expr": {
+        "num": "SUM(closing_balance_total)"
+      }
+    },
+    {
+      "key": "opening_balance",
+      "label": "opening balance",
+      "unit": "Rs",
+      "kind": "stock",
+      "precision": 2,
+      "synonyms": [
+        "opening balance",
+        "ob",
+        "arrears brought forward",
+        "opening arrears"
+      ],
+      "expr": {
+        "num": "SUM(opening_balance_total)"
+      }
+    },
+    {
+      "key": "arrears_to_demand",
+      "label": "arrears-to-demand ratio",
+      "unit": "ratio",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "arrears to demand",
+        "arrears-to-demand",
+        "arrears/demand",
+        "arrears ratio"
+      ],
+      "expr": {
+        "num": "SUM(closing_balance_total)",
+        "den": "SUM(demand_total)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "installations",
+      "label": "installations",
+      "unit": "count",
+      "kind": "stock",
+      "precision": 0,
+      "synonyms": [
+        "total installations",
+        "installations",
+        "installation",
+        "connections",
+        "consumers",
+        "number of consumers",
+        "no of installations",
+        "customer count",
+        "customers"
+      ],
+      "expr": {
+        "num": "SUM(total_installations)"
+      }
+    },
+    {
+      "key": "live_installations",
+      "label": "live installations",
+      "unit": "count",
+      "kind": "stock",
+      "precision": 0,
+      "synonyms": [
+        "live installations",
+        "live connections",
+        "active installations",
+        "active connections",
+        "live consumers"
+      ],
+      "expr": {
+        "num": "SUM(live_installations)"
+      }
+    },
+    {
+      "key": "live_installation_pct",
+      "label": "live installations share",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "live installation %",
+        "live %",
+        "share of live installations",
+        "percentage of live installations"
+      ],
+      "expr": {
+        "num": "SUM(live_installations)",
+        "den": "SUM(total_installations)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "dc_mnr_installations",
+      "label": "DC/MNR installations",
+      "unit": "count",
+      "kind": "stock",
+      "precision": 0,
+      "synonyms": [
+        "dc/mnr installations",
+        "dc mnr installations",
+        "dc/mnr",
+        "dc and mnr",
+        "dc & mnr"
+      ],
+      "expr": {
+        "num": "SUM(dc_mnr_installations)"
+      }
+    },
+    {
+      "key": "consumption",
+      "label": "consumption",
+      "unit": "units",
+      "kind": "flow",
+      "precision": 0,
+      "synonyms": [
+        "consumption",
+        "energy consumption",
+        "units consumed",
+        "units billed",
+        "energy sold",
+        "sales",
+        "energy billed",
+        "kwh",
+        "units"
+      ],
+      "expr": {
+        "num": "SUM(consumption_total)"
+      }
+    },
+    {
+      "key": "connected_load",
+      "label": "connected load",
+      "unit": "kW",
+      "kind": "stock",
+      "precision": 2,
+      "synonyms": [
+        "connected load",
+        "load",
+        "sanctioned load"
+      ],
+      "expr": {
+        "num": "SUM(connected_load_kw)"
+      }
+    },
+    {
+      "key": "demand_per_unit",
+      "label": "average billed rate",
+      "unit": "Rs/unit",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "demand per unit",
+        "rate per unit",
+        "average tariff",
+        "average rate",
+        "revenue per unit",
+        "rupees per unit",
+        "per unit demand",
+        "billing rate"
+      ],
+      "expr": {
+        "num": "SUM(demand_total)",
+        "den": "SUM(consumption_total)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "demand_per_installation",
+      "label": "average demand per installation",
+      "unit": "Rs",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "demand per installation",
+        "average bill",
+        "bill per installation",
+        "per installation demand",
+        "average demand per consumer"
+      ],
+      "expr": {
+        "num": "SUM(demand_total)",
+        "den": "SUM(total_installations)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "energy_charges",
+      "label": "energy charges",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "energy charges",
+        "energy charge"
+      ],
+      "expr": {
+        "num": "SUM(demand_energy_charges)"
+      }
+    },
+    {
+      "key": "fixed_charges",
+      "label": "fixed charges",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "fixed charges",
+        "fixed charge"
+      ],
+      "expr": {
+        "num": "SUM(demand_fixed_charges)"
+      }
+    },
+    {
+      "key": "fac_demand",
+      "label": "FPPCA billed",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "fppca billed",
+        "fppca demand",
+        "fppca",
+        "fuel and power purchase cost adjustment",
+        "fuel & power purchase cost adjustment",
+        "fuel power purchase cost adjustment",
+        "power purchase cost adjustment",
+        "fac billed",
+        "fac demand",
+        "fac",
+        "fuel adjustment charge",
+        "fuel adjustment",
+        "fuel cost adjustment"
+      ],
+      "expr": {
+        "num": "SUM(demand_fac)"
+      }
+    },
+    {
+      "key": "tax_demand",
+      "label": "tax billed",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "tax billed",
+        "tax demand",
+        "electricity tax",
+        "tax"
+      ],
+      "expr": {
+        "num": "SUM(demand_tax)"
+      }
+    },
+    {
+      "key": "interest_demand",
+      "label": "interest billed",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "interest billed",
+        "interest demand",
+        "interest",
+        "delayed payment interest"
+      ],
+      "expr": {
+        "num": "SUM(demand_interest)"
+      }
+    },
+    {
+      "key": "fppca_collected",
+      "label": "FPPCA collected",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "fppca collected",
+        "fppca collection",
+        "fac collected",
+        "fac collection",
+        "fuel adjustment collected"
+      ],
+      "expr": {
+        "num": "SUM(collection_fac_total)"
+      }
+    },
+    {
+      "key": "fppca_outstanding",
+      "label": "FPPCA outstanding",
+      "unit": "Rs",
+      "kind": "stock",
+      "precision": 2,
+      "synonyms": [
+        "fppca outstanding",
+        "fppca arrears",
+        "fppca balance",
+        "fppca dues",
+        "fac outstanding",
+        "fac arrears",
+        "fac balance"
+      ],
+      "expr": {
+        "num": "SUM(closing_balance_fac)"
+      }
+    },
+    {
+      "key": "fppca_share",
+      "label": "FPPCA share of demand",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "fppca share",
+        "fppca % of demand",
+        "fppca percentage",
+        "share of fppca",
+        "fac share",
+        "fac % of demand"
+      ],
+      "expr": {
+        "num": "SUM(demand_fac)",
+        "den": "SUM(demand_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "fppca_collection_efficiency",
+      "label": "FPPCA collection efficiency",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "fppca collection efficiency",
+        "fppca efficiency",
+        "fac collection efficiency"
+      ],
+      "expr": {
+        "num": "SUM(collection_fac_total)",
+        "den": "SUM(demand_fac)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "fppca_per_unit",
+      "label": "FPPCA per unit",
+      "unit": "Rs/unit",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "fppca per unit",
+        "fppca rate",
+        "fac per unit",
+        "fac rate"
+      ],
+      "expr": {
+        "num": "SUM(demand_fac)",
+        "den": "SUM(consumption_total)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "dc_installations",
+      "label": "DC installations",
+      "unit": "count",
+      "kind": "stock",
+      "precision": 0,
+      "synonyms": [
+        "dc installations",
+        "dc connections",
+        "dc count",
+        "number of dc"
+      ],
+      "expr": {
+        "num": "SUM(dc_installations)"
+      }
+    },
+    {
+      "key": "mnr_installations",
+      "label": "MNR installations",
+      "unit": "count",
+      "kind": "stock",
+      "precision": 0,
+      "synonyms": [
+        "mnr installations",
+        "mnr meters",
+        "mnr count",
+        "number of mnr",
+        "mnr",
+        "meter not recording",
+        "meters not recording",
+        "non recording meters",
+        "non-recording meters"
+      ],
+      "expr": {
+        "num": "SUM(mnr_installations)"
+      }
+    },
+    {
+      "key": "mnr_installation_pct",
+      "label": "MNR installations share",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "mnr %",
+        "mnr percentage",
+        "mnr share",
+        "share of mnr",
+        "% mnr",
+        "percentage of mnr"
+      ],
+      "expr": {
+        "num": "SUM(mnr_installations)",
+        "den": "SUM(total_installations)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "dc_mnr_installation_pct",
+      "label": "DC/MNR installations share (as printed)",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "dc/mnr %",
+        "dc mnr %",
+        "% dc/mnr",
+        "dc/mnr percentage",
+        "dc percentage",
+        "dc %",
+        "share of dc"
+      ],
+      "expr": {
+        "num": "SUM(dc_column_installations)",
+        "den": "SUM(total_installations)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "billed_installation_pct",
+      "label": "billed installations share",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "billed installation %",
+        "billed installations %",
+        "% billed",
+        "billing coverage",
+        "share of installations billed"
+      ],
+      "expr": {
+        "num": "SUM(billed_installations)",
+        "den": "SUM(total_installations)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "metered_consumption_pct",
+      "label": "metered consumption share",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "metered consumption %",
+        "% metered",
+        "metered share",
+        "share of metered consumption",
+        "metered percentage"
+      ],
+      "expr": {
+        "num": "SUM(consumption_metered)",
+        "den": "SUM(consumption_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "assessed_consumption_pct",
+      "label": "assessed consumption share",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "assessed consumption %",
+        "% assessed",
+        "assessed share",
+        "share of assessed consumption",
+        "assessed percentage",
+        "unmetered consumption %",
+        "unmetered share"
+      ],
+      "expr": {
+        "num": "SUM(consumption_assessed)",
+        "den": "SUM(consumption_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "assessed_consumption",
+      "label": "assessed consumption",
+      "unit": "units",
+      "kind": "flow",
+      "precision": 0,
+      "synonyms": [
+        "assessed consumption",
+        "assessed units",
+        "unmetered consumption",
+        "estimated consumption"
+      ],
+      "expr": {
+        "num": "SUM(consumption_assessed)"
+      }
+    },
+    {
+      "key": "metered_consumption",
+      "label": "metered consumption",
+      "unit": "units",
+      "kind": "flow",
+      "precision": 0,
+      "synonyms": [
+        "metered consumption",
+        "metered units"
+      ],
+      "expr": {
+        "num": "SUM(consumption_metered)"
+      }
+    },
+    {
+      "key": "collection_per_installation",
+      "label": "average collection per installation",
+      "unit": "Rs",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "collection per installation",
+        "collection per consumer",
+        "average collection per consumer",
+        "collection per connection"
+      ],
+      "expr": {
+        "num": "SUM(collection_grand_total)",
+        "den": "SUM(total_installations)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "arrears_per_installation",
+      "label": "average arrears per installation",
+      "unit": "Rs",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "arrears per installation",
+        "arrears per consumer",
+        "dues per consumer",
+        "outstanding per consumer",
+        "balance per consumer",
+        "arrears per connection"
+      ],
+      "expr": {
+        "num": "SUM(closing_balance_total)",
+        "den": "SUM(total_installations)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "atc_loss",
+      "label": "AT&C loss",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "at&c loss",
+        "at&c losses",
+        "at & c loss",
+        "atc loss",
+        "atc losses",
+        "at&c",
+        "atc",
+        "aggregate technical and commercial loss",
+        "aggregate technical & commercial loss",
+        "aggregate technical and commercial losses",
+        "aggregate loss",
+        "commercial loss",
+        "commercial losses"
+      ],
+      "expr": {
+        "num": "100.0 * SUM(live_installations) * SUM(demand_total) - 100.0 * SUM(billed_installations) * SUM(collection_grand_total)",
+        "den": "SUM(live_installations) * SUM(demand_total)",
+        "scale": 1
+      }
+    },
+    {
+      "key": "billing_efficiency",
+      "label": "billing efficiency (installations billed / live)",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "billing efficiency",
+        "billing efficiancy",
+        "billing eff",
+        "billing efficiency %"
+      ],
+      "expr": {
+        "num": "SUM(billed_installations)",
+        "den": "SUM(live_installations)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "collection_efficiency_without_adj",
+      "label": "collection efficiency without adjustment (cash collection / demand)",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "collection efficiency without adjustment",
+        "collection efficiency without adjustments",
+        "efficiency without adjustment",
+        "collection efficiency without adj",
+        "cash collection efficiency",
+        "collection efficiency excluding adjustment",
+        "collection efficiency excluding subsidy",
+        "collection efficiency without subsidy",
+        "efficiency without subsidy"
+      ],
+      "expr": {
+        "num": "SUM(collection_cash_total)",
+        "den": "SUM(demand_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "cash_collection",
+      "label": "collection received in cash / cheque",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "cash collection",
+        "cash collected",
+        "chq/cash collection",
+        "cheque and cash collection",
+        "collection in cash",
+        "cash and cheque collection",
+        "actual cash collected"
+      ],
+      "expr": {
+        "num": "SUM(collection_cash_total)"
+      }
+    },
+    {
+      "key": "adjustment_collection",
+      "label": "Government subsidy (collection by adjustment)",
+      "unit": "Rs",
+      "kind": "flow",
+      "precision": 2,
+      "synonyms": [
+        "adjustment collection",
+        "collection by adjustment",
+        "adjustments",
+        "adjusted collection",
+        "subsidy",
+        "subsidy collected",
+        "subsidy amount",
+        "government subsidy",
+        "govt subsidy",
+        "gruha jyothi subsidy",
+        "gruhajyothi subsidy",
+        "griha jyothi subsidy",
+        "gruha jyoti subsidy",
+        "ip set subsidy",
+        "ip subsidy",
+        "subsidy received",
+        "subsidised amount",
+        "subsidized amount"
+      ],
+      "expr": {
+        "num": "SUM(collection_adjust_total)"
+      }
+    },
+    {
+      "key": "adjustment_share",
+      "label": "subsidy share of collection (collection by adjustment)",
+      "unit": "%",
+      "kind": "ratio",
+      "precision": 2,
+      "synonyms": [
+        "subsidy share",
+        "subsidy %",
+        "subsidy percentage",
+        "share of subsidy",
+        "adjustment share",
+        "adjustment %",
+        "adjustment percentage",
+        "share of adjustment",
+        "subsidy share of collection",
+        "percentage of subsidy"
+      ],
+      "expr": {
+        "num": "SUM(collection_adjust_total)",
+        "den": "SUM(collection_grand_total)",
+        "scale": 100
+      }
+    },
+    {
+      "key": "energy_charge_per_unit",
+      "label": "energy charge billed per unit",
+      "unit": "paise/unit",
+      "kind": "ratio",
+      "precision": 1,
+      "synonyms": [
+        "energy charge per unit",
+        "energy charges per unit",
+        "energy rate",
+        "billed energy rate",
+        "paise per unit",
+        "energy charge per kwh",
+        "effective tariff",
+        "average energy rate"
+      ],
+      "expr": {
+        "num": "SUM(demand_energy_charges)",
+        "den": "SUM(consumption_total)",
+        "scale": 100
+      }
+    }
+  ]
+}

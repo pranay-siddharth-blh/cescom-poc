@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About &amp; Glossary — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
+<style>
+  /* About & glossary: one short "how it answers" strip, then one search over three tabs (terms, tariff categories with
+     their FY 2025-26 rates and details on demand, booklet rules) -- nothing listed twice */
+  .panel{margin-bottom:16px}
+  .how h2{margin-bottom:12px}
+  .flow{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .flow li{position:relative;display:flex;flex-direction:column;gap:4px;padding:12px 12px 11px;border:1px solid var(--border);border-radius:12px;background:var(--paper);
+    animation:rise .45s ease both;transition:transform .2s ease,box-shadow .2s ease}
+  .flow li:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(7,37,119,.08)}
+  .flow li:nth-child(2){animation-delay:.05s}.flow li:nth-child(3){animation-delay:.1s}.flow li:nth-child(4){animation-delay:.15s}.flow li:nth-child(5){animation-delay:.2s}
+  .flow b{font-size:.84rem;color:var(--navy)}
+  .flow small{font-size:.74rem;color:var(--muted);line-height:1.45}
+  .step-num{width:24px;height:24px;border-radius:50%;color:#fff;font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--navy-glow),var(--navy) 60%,var(--navy-deep));box-shadow:0 3px 10px rgba(7,37,119,.25);margin-bottom:2px}
+  .about-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .about-bar .seg{flex:0 0 auto}
+  .about-bar .seg em{font-style:normal;font-size:.66rem;font-weight:700;opacity:.75;margin-left:3px}
+  .about-bar .filter{flex:1 1 260px;min-width:0}
+  .term-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+  .term{border:1px solid var(--border);border-radius:11px;padding:10px 13px;background:var(--surface);transition:border-color .15s ease,box-shadow .2s ease;animation:rise .35s ease both}
+  .term:hover{border-color:var(--border-strong);box-shadow:0 6px 16px rgba(7,37,119,.06)}
+  .term b{display:block;font-size:.84rem;color:var(--navy);margin-bottom:3px}
+  .term b small{font-weight:500;color:var(--faint);margin-left:6px;font-size:.68rem}
+  .term p{margin:0;font-size:.8rem;color:var(--ink);line-height:1.5}
+  .term-grid.compact .term{padding:8px 12px}
+  .term-grid.compact .term p{font-size:.76rem;color:var(--muted)}
+  .booklet-src{font-size:.74rem;color:var(--muted);margin:0 0 12px;line-height:1.5}
+  .sub-h{margin:18px 0 10px;display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:.9rem;font-weight:600;color:var(--navy)}
+  .sub-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold-line),transparent)}
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
+  .cat{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden;transition:border-color .15s ease,box-shadow .2s ease;animation:rise .35s ease both}
+  .cat:hover{border-color:var(--border-strong);box-shadow:0 6px 16px rgba(7,37,119,.07)}
+  .cat[open]{border-color:var(--navy);box-shadow:0 0 0 3px rgba(7,37,119,.08)}
+  .cat summary{list-style:none;cursor:pointer;padding:11px 13px 10px;display:flex;flex-direction:column;gap:5px}
+  .cat summary::-webkit-details-marker{display:none}
+  .cat .ttl{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:700;color:var(--navy)}
+  .cat .ttl .more{margin-left:auto;font-size:.66rem;font-weight:700;color:var(--faint)}
+  .cat[open] .ttl .more{color:var(--navy)}
+  .cat .who{font-size:.76rem;color:var(--muted);line-height:1.45}
+  .rates{display:flex;gap:6px;flex-wrap:wrap}
+  .rate{font-size:.68rem;font-weight:700;color:var(--navy);background:var(--navy-soft);border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .rate.gold{color:var(--gold-deep);background:var(--gold-soft)}
+  .vtag{display:inline-block;font-size:.6rem;font-weight:800;border-radius:6px;padding:1px 6px;background:var(--navy);color:#fff}
+  .vtag.ht{background:var(--orange)}
+  .cat .body{padding:0 13px 12px;border-top:1px dashed var(--border)}
+  .cat .body p{margin:10px 0 6px;font-size:.76rem;color:var(--ink);line-height:1.5}
+  .cat table{width:100%;border-collapse:collapse;font-size:.74rem;margin:6px 0}
+  .cat th,.cat td{border-bottom:1px solid var(--border);padding:5px 6px;text-align:left;vertical-align:top}
+  .cat th{color:var(--muted);font-weight:600;background:#f4f6fc}
+  .cat ul{margin:6px 0 0 16px;padding:0;font-size:.74rem;line-height:1.5;color:var(--ink)}
+  .empty{font-size:.82rem;color:var(--muted);padding:10px 2px}
+  mark{background:var(--gold-soft);color:inherit;border-radius:3px;padding:0 1px}
+  @media(max-width:1100px){ .flow{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media(max-width:700px){ .flow{grid-template-columns:1fr 1fr} .cat-grid,.term-grid{grid-template-columns:1fr} .cat table{display:block;overflow-x:auto} }
+</style>
+</head>
+<body data-page="about">
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
+    </div>
+    <div class="overlay-text"><b>About &amp; Glossary</b><small data-i18n="loading">Loading the latest figures</small></div>
+  </div>
+
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru">
+        <span class="brand-divider"></span>
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
+        </div>
+      </div>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
+        </div>
+        <div class="user-chip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"><b>DCB · Demand, Collection &amp; Balance</b></div>
+      <a class="ai-badge ai-link" href="/chat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></a>
+    </div>
+    <div class="flag-rule"></div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav" id="siteNav"></nav>
+      <div class="side-status" id="sideStatus" aria-live="polite"></div>
+      <p class="side-foot" data-i18n="sideFoot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</p>
+    </aside>
+
+    <div class="main" id="main">
+      <div class="content">
+        <div class="head">
+          <div>
+            <div class="eyebrow">About</div>
+            <h1>About &amp; glossary</h1>
+            <p class="sub">The terms used across the app, every CESC tariff category with its rates, and the booklet rules — in one search.</p>
+          </div>
+          <div class="head-actions"><a class="btn btn-ai ai-link" href="/chat"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span>Ask AI about this</span></a></div>
+        </div>
+        <div class="panel how">
+          <h2>How the assistant answers</h2>
+          <ol class="flow">
+            <li><span class="step-num">1</span><b>Understands</b><small>Places, years, tariff codes and measures; follow-ups ("and Konanur?") and Kannada too.</small></li>
+            <li><span class="step-num">2</span><b>Looks it up</b><small>Reviewed queries on the checked DCB mart and the CESC tariff booklet answer most questions directly.</small></li>
+            <li><span class="step-num">3</span><b>Checks</b><small>Anything else goes to the model once; its SQL must pass read-only and double-count guards.</small></li>
+            <li><span class="step-num">4</span><b>Verifies</b><small>A second check reviews model answers; a figure stated wrongly in the question is corrected.</small></li>
+            <li><span class="step-num">5</span><b>Writes</b><small>Plain sentences from the real figures, with the chart, the table and an Excel report.</small></li>
+          </ol>
+        </div>
+
+        <div class="panel">
+          <div class="about-bar">
+            <div class="seg" id="aboutTabs" style="--n:3">
+              <span class="seg-thumb" aria-hidden="true"></span>
+              <button type="button" class="active" data-tab="terms">Terms <em id="nTerms"></em></button>
+              <button type="button" data-tab="tariffs">Tariff categories <em id="nTariffs"></em></button>
+              <button type="button" data-tab="rules">Booklet rules <em id="nRules"></em></button>
+            </div>
+            <input type="search" class="filter" id="aboutFilter" placeholder="Search terms, categories or rules (e.g. MNR, homestay, ToD)…" aria-label="Search">
+          </div>
+          <div id="glossaryError" class="error" hidden></div>
+          <div id="glossarySkeleton" class="skeleton" style="height:160px"></div>
+
+          <div class="tab" id="tabTerms" hidden><div class="term-grid" id="termList"></div></div>
+
+          <div class="tab" id="tabTariffs" hidden>
+            <p class="booklet-src" id="bookletSrc"></p>
+            <div class="cat-grid" id="catList"></div>
+            <h3 class="sub-h">Older and special codes in the DCB sheets</h3>
+            <div class="term-grid compact" id="oldCodes"></div>
+          </div>
+
+          <div class="tab" id="tabRules" hidden><div class="term-grid" id="ruleList"></div></div>
+          <p class="empty" id="noMatch" hidden>Nothing matches that search.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="/static/nav.js?v=20261005j"></script>
+<script src="/static/about.js?v=20261005j"></script>
+</body>
+</html>

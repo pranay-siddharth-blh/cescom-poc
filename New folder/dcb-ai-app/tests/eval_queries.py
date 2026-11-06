@@ -1,9 +1,10 @@
 """
-Runs the full pipeline (real Gemini call + real DB execution) over the 10
+Runs the full pipeline (real gateway call + real DB execution) over the 10
 example questions + 2 adversarial questions, printing verbatim results
 and per-stage latency, then writing eval_report.md next to this file.
 
-Requires a real GEMINI_API_KEY in the project-root .env (../.env, see ../.env.example).
+Requires the internal LLM gateway (SQL_VERIFY_MODEL / SQL_VERIFY_BASE_URL /
+SQL_VERIFY_API_KEY in the project-root .env, reachable over the VPN).
 Run from the dcb-ai-app/ directory:  python -m tests.eval_queries
 """
 from __future__ import annotations
@@ -24,17 +25,17 @@ from tests.questions import EXAMPLE_QUESTIONS, ADVERSARIAL_QUESTIONS
 
 
 async def main() -> None:
-    if not settings.gemini_api_key or not settings.gemini_model:
+    if not settings.llm_configured:
         print(
-            "GEMINI_API_KEY and/or GEMINI_MODEL is not set in the project-root .env "
-            "(D:\\Cescom POC 2\\New folder\\.env). Copy .env.example to .env there "
-            "and fill both in before running this eval."
+            "The LLM gateway is not configured: set SQL_VERIFY_MODEL, SQL_VERIFY_BASE_URL and "
+            "SQL_VERIFY_API_KEY in the project-root .env (see .env.example) and connect the VPN "
+            "before running this eval."
         )
         sys.exit(1)
 
     db = init_db()
     init_llm_client()
-    router_index = build_router_index(db)
+    router_index = await build_router_index(db)
 
     report_lines = ["# DCB Chatbot — eval run\n"]
     all_results = []

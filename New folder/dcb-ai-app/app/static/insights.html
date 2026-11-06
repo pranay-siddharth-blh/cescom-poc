@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCB Insights — CESC, Mysuru</title>
+<link rel="icon" href="/static/cesc-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/vendor/fonts.css?v=20261005j">
+<link rel="stylesheet" href="/static/app.css?v=20261005j">
+<style>
+  /* Insights: one KPI box per insight with a status colour, grouped, with a filter row (RDPR / KPCL insights page) */
+  .ins-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .ins-count{display:flex;align-items:baseline;gap:8px;padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+    cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(7,37,119,.05);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+  .ins-count b{font-family:var(--serif);font-size:1.4rem;color:var(--navy)}
+  .ins-count span{font-size:.78rem;font-weight:700;color:var(--muted)}
+  .ins-count:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(7,37,119,.1)}
+  .ins-count.bad b{color:var(--bad)} .ins-count.good b{color:var(--good)} .ins-count.info b{color:var(--gold-deep)}
+  .ins-count[aria-pressed="true"]{border-color:var(--navy);box-shadow:0 0 0 3px rgba(7,37,119,.12)}
+  .ins-count.all[aria-pressed="true"]{background:var(--navy)} .ins-count.all[aria-pressed="true"] b,.ins-count.all[aria-pressed="true"] span{color:#fff}
+  .ins-group{margin-bottom:20px}
+  .ins-group h2{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--navy)}
+  .ins-group h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold-line),transparent)}
+  .ins-group h2 span{font-family:var(--sans);font-size:.68rem;font-weight:700;color:var(--gold-deep);background:var(--gold-soft);border:1px solid var(--gold-line);padding:1px 8px;border-radius:999px}
+  .ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .ins-card{display:flex;flex-direction:column}
+  .ins-card .top{align-items:flex-start}
+  .ins-card .t{flex:1}
+  .ins-tone{flex:0 0 auto;font-size:.58rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:999px}
+  .ins-card .v{white-space:normal}
+  .ins-card .v .code{font-family:var(--sans);font-size:.95rem;font-weight:700;color:var(--navy);margin-right:6px}
+  .ins-text{margin:8px 0 0;font-size:.79rem;line-height:1.5;color:var(--muted);flex:1}
+  .ins-text b{color:var(--ink)}
+  .ins-card.bad{background:linear-gradient(165deg,#fff 62%,#fff4f3)}
+  .ins-card.good{background:linear-gradient(165deg,#fff 62%,#f2fbf6)}
+  .ins-ask{align-self:flex-start;margin-top:10px;font-size:.72rem;font-weight:700;color:var(--navy);text-decoration:none;display:inline-flex;gap:5px;align-items:center}
+  .ins-ask:hover{text-decoration:underline}
+</style>
+</head>
+<body data-page="insights">
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-logos">
+      <span class="halo"><img src="/static/cescom_official_logo.png" alt=""></span>
+      <span class="halo"><img src="/static/cesc_logo_clean.png" alt=""></span>
+    </div>
+    <div class="overlay-text"><b>DCB Insights</b><small data-i18n="loading">Loading the latest figures</small></div>
+  </div>
+
+  <header class="gov-header">
+    <div class="gov-topbar">
+      <div class="gov-brand">
+        <img src="/static/cescom_official_logo.png" alt="Emblem of Karnataka">
+        <img src="/static/cesc_logo_clean.png" alt="CESC, Mysuru">
+        <span class="brand-divider"></span>
+        <div class="gov-titles">
+          <div class="gov-line1" data-i18n="govLine1">Government of Karnataka</div>
+          <div class="gov-line2" data-i18n="govLine2">Chamundeshwari Electricity Supply Corporation Limited, Mysuru</div>
+        </div>
+      </div>
+      <div class="top-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" id="langEn" aria-pressed="true">English</button>
+          <button type="button" id="langKn" aria-pressed="false">ಕನ್ನಡ</button>
+        </div>
+        <div class="user-chip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="app-bar">
+      <button type="button" class="drawer-toggle" id="sidebarToggle" data-i18n="menu">Menu</button>
+      <div class="app-bar-text" data-i18n-html="appBar"><b>DCB · Demand, Collection &amp; Balance</b></div>
+      <a class="ai-badge ai-link" href="/chat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span data-i18n="aiBadge">AI MODE</span></a>
+    </div>
+    <div class="flag-rule"></div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav" id="siteNav"></nav>
+      <div class="side-status" id="sideStatus" aria-live="polite"></div>
+      <p class="side-foot" data-i18n="sideFoot">Proof of concept on the CESC Holenarasipura Division DCB statements, FY 2015-16 to 2025-26. Not for official use.</p>
+    </aside>
+
+    <div class="main" id="main">
+      <div class="content">
+        <div class="head">
+          <div>
+            <div class="eyebrow">Insights</div>
+            <h1>Key insights</h1>
+            <p class="sub" id="subline">What changed, what is going well and what needs attention across the Holenarasipura Division.</p>
+          </div>
+          <div class="head-actions">
+            <a class="btn btn-ai ai-link" href="/chat"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg><span>Ask AI about this</span></a>
+          </div>
+        </div>
+
+        <div id="errorBanner" class="error" hidden></div>
+        <div id="skeleton"><div class="skeleton" style="height:70px"></div><div class="skeleton" style="height:220px"></div><div class="skeleton" style="height:220px"></div></div>
+
+        <div id="body" hidden>
+          <section class="ins-summary" id="summary"></section>
+          <div id="groups"></div>
+          <p class="foot-note">Every figure comes from the same fixed, read-only queries on the checked DCB mart as the dashboard. Tariff categories follow the CESC tariff booklet (old codes mapped, so every year compares). Proof of concept, not for official use.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="/static/nav.js?v=20261005j"></script>
+<script src="/static/insights.js?v=20261005j"></script>
+</body>
+</html>

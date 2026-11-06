@@ -39,14 +39,18 @@ Fixed columns: `fiscal_year`, `subdivision`, `row_type`, `sl_no`,
 
 | row_type | count | meaning |
 |---|---|---|
-| `line_item` | 5,525 | a real tariff-category line — safe to `SUM()` |
-| `spillover_fragment` | 3,681 | near-empty row carrying one stray value spilled from a merged cell in the row above; not a real line item |
+| `line_item` | 5,524 | a real tariff-category line — safe to `SUM()` |
+| `spillover_fragment` | 3,682 | near-empty row carrying one stray value spilled from a merged cell in the row above; not a real line item |
 | `sub_total` | 2,013 | the report's own "Sub Total of X" rows |
-| `other_total` | 152 | LT-TOTAL / HT-TOTAL rows |
 | `annotation` | 122 | free-text footnote rows (e.g. "Applicable to areas under municipal corporations"), not data |
 | `misc_total` | 73 | MISCELLANEOUS-Total rows — one per (year × sub-division) block |
+| `lt_total` | 73 | "LT - TOTAL" rows (LT tariffs only) |
 | `lt_ht_total` | 73 | "LT+HT - TOTAL" rows — LT+HT tariffs only, **excluding** Miscellaneous revenue |
+| `ht_total` | 73 | "HT - TOTAL" rows (HT tariffs only) |
 | `grand_total` | 73 | "GRAND TOTAL (LT+HT+Misc.)" rows — the true grand total, `lt_ht_total + misc_total` |
+| `combined_total` | 6 | a bare "Total of X" row (no "Sub" prefix) — the source's own explicit COMBINED total across >1 same-named `sub_total` groups in one year; so far only 2025-26's "Total of LT-1" (see `DCB_Star_Schema/README.md`) |
+
+`row_type` classification is done by normalizing whitespace/hyphen variants first (`classify_row_type`'s `_compact()`), not by matching each literal spelling — real source variants like `'HT - TOTAL'` (spaced dash) and `'Sub Total ofIPP'` (no space before the category name) both classify correctly as a result. Before this normalization, `'HT - TOTAL'`/`'LT - TOTAL'` fell through to a generic `other_total` bucket that nothing downstream read, silently dropping those rows' real figures from `fact_dcb_rollups` entirely — see `DCB_Star_Schema/test_grand_total_reconciliation.py`, the standing regression test that catches this bug class going forward.
 
 **Never `SUM()` across mixed row_types** — filter to `row_type='line_item'`
 for a computed total, or use the `*_total`/`grand_total` rows directly when

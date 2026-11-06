@@ -23,16 +23,9 @@ class ChartSpec(BaseModel):
     real answer text from real rows, never from LLM-authored numbers.
 
     Deliberately a concrete nested model with explicit properties, NOT
-    `dict` — Gemini's structured-output mode (response_schema) converts a
-    bare `dict` field into a JSON Schema with `additionalProperties: true`,
-    which the google-genai SDK's own `_raise_for_unsupported_mldev_properties`
-    rejects outright for the plain Gemini Developer API client this app uses
-    (non-Vertex): "additionalProperties is only supported in Gemini
-    Enterprise Agent Platform mode, not in Gemini Developer API mode." A
-    `dict` field would have broken every single LLM call, not just
-    chart-shaped ones — confirmed by calling the SDK's real schema-conversion
-    path (`google.genai._transformers.t_schema`) directly before choosing
-    this shape."""
+    `dict`, so the shape the model must return is fully specified and
+    validated (app.llm._parse_query_plan / _normalize_chart repair or drop
+    a malformed chart spec rather than failing the whole answer)."""
 
     type: Literal["bar", "line"]
     label_column: str = Field(
@@ -99,7 +92,13 @@ class LLMQueryPlan(BaseModel):
 
 
 class AskRequest(BaseModel):
-    question: str
+    # Generous bound: app.guardrails refuses anything over 500 characters with a clear message; this only stops
+    # huge bodies (the Protection middleware also caps the request size).
+    question: str = Field(max_length=4000)
+    # the last question the page had answered (as the server took it), so "and Konanur?" can be read as a follow-up
+    previous: str | None = Field(default=None, max_length=4000)   # followup.resolve ignores one over 600
+    # "voice": the response also carries spoken_answer (what the voice says, app/spoken.py). "text" is unchanged.
+    mode: str = Field(default="text", pattern="^(text|voice)$")
 
 
 class LoginRequest(BaseModel):
@@ -107,19 +106,30 @@ class LoginRequest(BaseModel):
     how limited this login is (one shared username/password, no user
     table)."""
 
-    username: str
-    password: str
+    username: str = Field(max_length=200)
+    password: str = Field(default="", max_length=200)
 
 
 class AskResponse(BaseModel):
     question: str
     answerable: bool
-    sql: str = ""
+    sql: str = ""                       # only when DCB_SHOW_TECHNICAL_DETAILS=true
     columns: list[str] = []
     rows: list[list] = []
     truncated: bool = False
     answer: str
     clarification_message: str = ""
-    entities: dict = {}
-    timing_ms: dict = {}
-    chart_data: ChartData | None = None
+    entities: dict = {}                 # only when DCB_SHOW_TECHNICAL_DETAILS=true
+    timing_ms: dict = {}                # only when DCB_SHOW_TECHNICAL_DETAILS=true
+    # Real chart data built from the query result (app.answer.build_chart): type, labels, values, series_label,
+    # unit, and optionally several `series` -- the same keys the chat page has always read, never model-authored.
+    chart_data: dict | None = None
+    table: dict | None = None           # formatted table + raw values for the page's table view and CSV
+    route: str = ""                     # only when DCB_SHOW_TECHNICAL_DETAILS=true
+    notes: list[str] = []
+    verification: str = ""              # only when DCB_SHOW_TECHNICAL_DETAILS=true
+    error: str = ""                     # only when DCB_SHOW_TECHNICAL_DETAILS=true
+    report_id: str = ""                 # set when the answer can be downloaded as an Excel report
+    asked_as: str = ""                  # the whole question a follow-up was taken as ("" when it was not one)
+    context: bool = False               # a later follow-up may build on this answer
+    spoken_answer: str = ""             # voice mode only: 1-2 sentences built from the answer (app/spoken.py), no model call

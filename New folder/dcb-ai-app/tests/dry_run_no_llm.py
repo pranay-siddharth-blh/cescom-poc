@@ -1,5 +1,5 @@
 """
-Exercises every component EXCEPT the live Gemini call (no API key needed).
+Exercises every component EXCEPT the live gateway call (no API key needed).
 This is not a substitute for tests/eval_queries.py — it cannot show real
 LLM-generated SQL or the final template-filled answer — but it gives real,
 verbatim evidence that: the DB opens read-only and truly can't be written
@@ -13,6 +13,7 @@ Run from the dcb-ai-app/ directory:  python -m tests.dry_run_no_llm
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 from pathlib import Path
@@ -50,7 +51,7 @@ GROUP BY s.subdivision_name ORDER BY pct DESC""",
 ]
 
 
-def main() -> None:
+async def main() -> None:
     print(f"DB path: {settings.db_path}  (exists: {settings.db_path.exists()})")
     db = init_db()
     print("DB opened read-only: OK")
@@ -76,14 +77,14 @@ def main() -> None:
     # 2. Read-only connection truly can't write, even if a bad query got past validate_readonly_sql.
     print("\n--- Read-only enforcement at the connection level ---")
     try:
-        db.run("DELETE FROM fact_dcb", max_rows=1, timeout_seconds=5)
+        await db.run("DELETE FROM fact_dcb", max_rows=1, timeout_seconds=5)
         print("FAILED TO BLOCK WRITE (bug!)")
     except Exception as exc:  # noqa: BLE001
         print(f"Write blocked at connection level (expected): {exc}")
 
     # 3. Router: entity extraction + semantic-layer pruning, all 12 questions.
     print("\n--- Router (entity extraction + semantic-layer pruning) ---")
-    router_index = build_router_index(db)
+    router_index = await build_router_index(db)
     print(f"subdivisions loaded: {router_index.subdivision_names}")
     print(f"fiscal years loaded: {router_index.fiscal_years}")
     all_questions = EXAMPLE_QUESTIONS + ADVERSARIAL_QUESTIONS
@@ -107,7 +108,7 @@ def main() -> None:
     # 4. Reference queries (pre-verified in example_queries.sql) through this app's own DB layer.
     print("\n--- Reference queries through app.db.ReadOnlyDB.run() ---")
     for label, sql in REFERENCE_QUERIES:
-        result = db.run(sql, max_rows=settings.dcb_max_rows, timeout_seconds=settings.dcb_query_timeout_seconds)
+        result = await db.run(sql, max_rows=settings.dcb_max_rows, timeout_seconds=settings.dcb_query_timeout_seconds)
         print(f"  {label}:")
         print(f"    columns={result.columns}")
         print(f"    rows={result.rows}")
@@ -118,4 +119,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
